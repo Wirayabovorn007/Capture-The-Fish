@@ -2,3 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
+*{
+    font-family: "IBM Plex Mono", monospace;
+}
