@@ -1,8 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+body {
+  font-family: "IBM Plex Mono", "IBM Plex Sans Thai", monospace;
+}
 
-*{
-    font-family: "IBM Plex Mono", monospace;
+article{
+	margin-left: 10%;
+  	margin-right: 10%;
+}
+
+p{
+	color: #3C3232;
+}
+
+
+@keyframes bubbleFloat {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(-50vh) translateX(20px);
+  }
+
+  100% {
+    transform: translateY(-110vh) translateX(-20px);
+    opacity: 0;
+  }
+}
+
+.bubble {
+  position: absolute;
+  bottom: -30px;
+
+  width: 8px;
+  height: 8px;
+
+  border: 1px solid rgb(176, 20, 20);
+  border-radius: 9999px;
+
+  animation: bubbleFloat linear infinite;
+}
+
+.bubble-1 {
+  left: 10%;
+  animation-duration: 12s;
+}
+
+.bubble-2 {
+  left: 30%;
+  width: 5px;
+  height: 5px;
+  animation-duration: 16s;
+  animation-delay: 3s;
+}
+
+.bubble-3 {
+  left: 55%;
+  width: 12px;
+  height: 12px;
+  animation-duration: 14s;
+  animation-delay: 6s;
+}
+
+.bubble-4 {
+  left: 75%;
+  width: 6px;
+  height: 6px;
+  animation-duration: 18s;
+  animation-delay: 2s;
+}
+
+.bubble-5 {
+  left: 90%;
+  width: 10px;
+  height: 10px;
+  animation-duration: 13s;
+  animation-delay: 8s;
 }
