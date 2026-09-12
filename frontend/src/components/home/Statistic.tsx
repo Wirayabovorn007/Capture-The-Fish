@@ -1,8 +1,8 @@
 
-import Timer from "../../assets/Timer.png"
-import Fish from "../../assets/Fish.png"
-import People from "../../assets/People.png"
-import Wing from "../../assets/Laurel Wreath.png"
+import Timer from "../../assets/home/Timer.png"
+import Fish from "../../assets/home/Fish.png"
+import People from "../../assets/home/People.png"
+import Wing from "../../assets/home/Laurel Wreath.png"
 
 
 export default function Statistic(){

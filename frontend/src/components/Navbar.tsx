@@ -1,8 +1,8 @@
-import logo from "../assets/Logo.png"
-import comp from "../assets/Goal.png"
-import story from "../assets/Storytelling.png"
-import leaderboard from "../assets/Leaderboard.png"
-import contact from "../assets/Envelope.png"
+import logo from "../assets/home/Logo.png"
+import comp from "../assets/home/Goal.png"
+import story from "../assets/home/Storytelling.png"
+import leaderboard from "../assets/home/Leaderboard.png"
+import contact from "../assets/home/Envelope.png"
 
 const navLinks = [
 	{ icon: comp, label: "แข่งขัน", href: "" },
@@ -142,7 +142,6 @@ export default function Navbar() {
         transition-all duration-300 ease-out
         hover:-translate-y-0.5
         hover:bg-[#C51A1A]
-        hover:shadow-[0_0_20px_rgba(176,20,20,0.45),0_6px_20px_rgba(176,20,20,0.2)]
         active:translate-y-0
         active:shadow-[0_0_10px_rgba(176,20,20,0.3)]
     "

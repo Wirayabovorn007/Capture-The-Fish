@@ -16,7 +16,94 @@ article{
 p{
 	color: #3C3232;
 }
+/* ================================
+   Shark swimming
+================================ */
 
+@keyframes shark-swim {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-2px) rotate(2deg);
+  }
+}
+
+.animate-shark-swim {
+  animation: shark-swim 0.8s ease-in-out infinite;
+}
+
+
+/* ================================
+   Water Wake
+================================ */
+
+.wake {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 10px;
+  height: 4px;
+
+  border: 1px solid rgba(176, 20, 20, 0.692);
+  border-radius: 9999px;
+
+  transform: translate(-50%, -50%) scale(0.6);
+
+  opacity: 0;
+
+  animation: wake-expand 2s ease-out infinite;
+}
+
+
+/* Different starting positions */
+
+.wake-1 {
+  animation-delay: 0s;
+}
+
+.wake-2 {
+  animation-delay: 0.5s;
+}
+
+.wake-3 {
+  animation-delay: 1s;
+}
+
+.wake-4 {
+  animation-delay: 1.5s;
+}
+
+
+@keyframes wake-expand {
+  0% {
+    transform:
+      translate(-50%, -50%)
+      scale(0.4);
+
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.35;
+  }
+
+  60% {
+    opacity: 0.15;
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      scale(4);
+
+    opacity: 0;
+  }
+}
 
 @keyframes bubbleFloat {
   0% {

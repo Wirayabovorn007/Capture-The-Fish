@@ -1,4 +1,4 @@
-import Mask from "../../assets/Mask.png"
+import Mask from "../../assets/home/Mask.png"
 
 export default function First_arc(){
 	return (
