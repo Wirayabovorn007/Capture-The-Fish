@@ -25,7 +25,7 @@ export default function Navbar() {
       backdrop-blur-xl
       backdrop-saturate-150
 
-      shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
+      shadow-[0_8px_32px_rgba(0,0,0,0.04)]"
 			>
 		  <div
       className="
