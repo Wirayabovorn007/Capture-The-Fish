@@ -5,15 +5,15 @@ import leaderboard from "../assets/home/Leaderboard.png"
 import contact from "../assets/home/Envelope.png"
 
 const navLinks = [
-	{ icon: comp, label: "แข่งขัน", href: "" },
-	{ icon: story, label: "เนื้อเรื่อง", href: "" },
-	{ icon: leaderboard, label: "ตารางคะแนน", href: "" },
-	{ icon: contact, label: "ติดต่อเรา", href: "" },
+	{ icon: comp, label: "แข่งขัน", href: "/competition" },
+	{ icon: story, label: "เนื้อเรื่อง", href: "/story" },
+	{ icon: leaderboard, label: "ตารางคะแนน", href: "/leaderboard" },
+	{ icon: contact, label: "ติดต่อเรา", href: "/contact" },
 ]
 
 export default function Navbar() {
 	return (
-		<nav className="sticky top-0 z-50 w-full px-4 py-5">
+		<nav className="sticky top-0 my-4 z-50 w-full px-4 py-0">
 			<div
 			
         className="  relative mx-auto flex max-w-6xl items-center justify-between
