@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react"
-import Shark from "../assets/global/shark.png"
+import Shark from "../../assets/global/shark.png"
 
 export default function Styles(){
 	  const sharkRef = useRef<HTMLDivElement>(null)
