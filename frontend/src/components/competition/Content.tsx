@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Search, ChevronDown, Clock, Lock, Swords, Orbit } from "lucide-react"
+import Reveal from "../effects/Reveal"
 
 type Difficulty = "Easy" | "Medium" | "Hard"
 type Variant = "matrix" | "lock" | "knife"
@@ -122,7 +123,7 @@ export default function Content() {
 			      pushes this section down on its own
 			====================================================== */}
 			<section
-				className="relative z-0 overflow-hidden px-6 pb-14 pt-32 sm:px-10 sm:pt-40"
+				className="top-0 absolute w-full z-0 overflow-hidden px-6 pb-14 pt-32 sm:px-10 sm:pt-40"
 				style={{
 					background: "linear-gradient(135deg, #3D3D3D 0%, #1e1e1e 100%)",
 				}}
@@ -208,7 +209,8 @@ export default function Content() {
 			{/* =====================================================
 			    Search & Filters
 			====================================================== */}
-			<section className="px-6 py-6 sm:px-10">
+			<Reveal>
+			<section className="px-6 py-6 sm:px-10 mt-80">
 				<div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center">
 					<div className="flex flex-1 items-center gap-3 rounded-md border border-gray-300 px-4 py-3 transition-colors focus-within:border-[#B01414]">
 						<Search className="h-5 w-5 shrink-0 text-gray-400" />
@@ -226,10 +228,12 @@ export default function Content() {
 					</div>
 				</div>
 			</section>
+			</Reveal>
 
 			{/* =====================================================
 			    Challenge Grid
 			====================================================== */}
+			<Reveal>
 			<section className=" px-6 py-10 sm:px-10">
 				<div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 					{challenges.map((challenge) => (
@@ -237,6 +241,7 @@ export default function Content() {
 					))}
 				</div>
 			</section>
+			</Reveal>	
 		</>
 	)
 }

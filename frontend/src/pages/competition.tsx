@@ -6,9 +6,12 @@ export default function Competition()
 {
 	return (
 		<>
-			<Navbar/>
-			<Content/>
-			<Footer/>
+			<div className="absolute w-full">
+				<Navbar/>
+				<Content/>
+				<Footer/>
+			</div>
+			
 		</>
 	)
 }
