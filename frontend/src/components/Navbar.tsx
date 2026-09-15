@@ -134,7 +134,7 @@ export default function Navbar() {
 
 				<div className="flex items-center gap-10">
 					<span className="hidden h-6 w-px bg-[#B01414]/40 md:block" />
-				<button
+				<a href="/login"><button
     className="
         group relative overflow-hidden
         bg-[#B01414] px-6 py-2.5 text-sm text-white
@@ -160,7 +160,7 @@ export default function Navbar() {
     <span className="relative">
         เข้าสู่ระบบ
     </span>
-</button>
+</button></a>
 				</div>
 				</div>
 
