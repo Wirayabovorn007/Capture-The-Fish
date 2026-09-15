@@ -42,7 +42,8 @@ export default function Profile() {
               </div>
 
               {/* Manage Profile */}
-              <button
+            <a href="/profile-setting">
+				  <button
                 type="button"
                 className="
                   group
@@ -70,6 +71,7 @@ export default function Profile() {
                   "
                 />
               </button>
+			</a>
             </div>
 
             {/* Profile Summary */}
