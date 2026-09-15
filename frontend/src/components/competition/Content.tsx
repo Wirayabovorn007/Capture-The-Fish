@@ -296,12 +296,14 @@ function ChallengeCard({ challenge }: { challenge: Challenge }) {
 
 				<h3 className="mb-4 text-xl font-bold text-gray-800">{challenge.title}</h3>
 
-				<button
+				<a href={"/challenge?id="+challenge.id}>
+					<button
 					type="button"
 					className="rounded-md bg-[#B01414] px-8 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#8F1010] active:scale-95"
 				>
 					ออกล่า
 				</button>
+				</a>
 			</div>
 		</article>
 	)
