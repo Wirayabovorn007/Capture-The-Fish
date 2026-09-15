@@ -1,14 +1,16 @@
 import Navbar from "../components/Navbar"
+import Reveal from "../components/effects/Reveal"
 
 export default function Login() {
   return (
     <>
 	<Navbar/>
+	<Reveal>
 	<main className="flex min-h-screen items-center">
       <div className="mx-auto w-full max-w-6xl px-6 sm:px-10">
         <div className="max-w-4xl">
           {/* Heading */}
-          <h1 className="text-5xl font-bold tracking-tight text-[#b51217] sm:text-6xl lg:text-7xl">
+          <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl lg:text-7xl">
             Login / Sign up
           </h1>
 
@@ -76,7 +78,7 @@ export default function Login() {
         </div>
       </div>
     </main>
-	
+	</Reveal>
 	</>
   )
 }

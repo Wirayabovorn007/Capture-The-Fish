@@ -217,7 +217,7 @@ export default function Content() {
 						<input
 							type="text"
 							placeholder="ค้นหาโจทย์ หมวดหมู่ อื่นๆ"
-							className="w-full text-sm text-gray-700 outline-none placeholder:text-gray-400"
+							className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
 						/>
 					</div>
 
