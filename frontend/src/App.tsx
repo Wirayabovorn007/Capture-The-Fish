@@ -7,6 +7,7 @@ import Login from "./pages/login";
 import Profile from "./pages/profile";
 import ManageProfile from "./pages/manage_profile";
 import Contact from "./pages/contact";
+import Leaderboard from "./pages/leaderboard";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile-setting" element={<ManageProfile />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
         </Routes>
       </div>
     </Router>
