@@ -8,6 +8,7 @@ import Profile from "./pages/profile";
 import ManageProfile from "./pages/manage_profile";
 import Contact from "./pages/contact";
 import Leaderboard from "./pages/leaderboard";
+import Story from "./pages/story";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/profile-setting" element={<ManageProfile />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/story" element={<Story />} />
         </Routes>
       </div>
     </Router>
