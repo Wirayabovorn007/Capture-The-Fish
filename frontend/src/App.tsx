@@ -6,6 +6,7 @@ import Challenge_detail from "./pages/challenge_detail";
 import Login from "./pages/login";
 import Profile from "./pages/profile";
 import ManageProfile from "./pages/manage_profile";
+import Contact from "./pages/contact";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile-setting" element={<ManageProfile />} />
+          <Route path="/contact" element={<Contact />} />
         </Routes>
       </div>
     </Router>
