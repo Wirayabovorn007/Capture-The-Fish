@@ -374,7 +374,7 @@ export default function Story() {
             ACT I
         ====================================================== */}
 
-        <section className="relative bg-white px-5 pb-32 pt-20 sm:px-8 lg:px-16">
+        <section className="relative  px-5 pb-32 pt-20 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-[1100px]">
 
             {/* ================= Intro ================= */}
@@ -593,15 +593,6 @@ export default function Story() {
                   />
                 ))}
               </div>
-            </div>
-
-            {/* ================= FINAL BRANCH ================= */}
-
-            <div className="relative mt-8 hidden h-[260px] lg:block">
-              <div
-                aria-hidden="true"
-                className="story-final-line"
-              />
             </div>
 
             {/* ================= TREASURE ================= */}
