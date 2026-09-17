@@ -2,7 +2,7 @@
 ```
 npm run dev
 ```
-## To run Backtend
+## To run Backend
 ```
-npm 
+npm start
 ```
