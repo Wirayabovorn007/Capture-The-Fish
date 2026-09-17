@@ -4,5 +4,5 @@ npm run dev
 ```
 ## To run Backtend
 ```
-npm start
+npm 
 ```
