@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Settings, Trophy, Flame, Star } from "lucide-react"
+import { Settings } from "lucide-react"
 import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth"
 
 import Navbar from "../components/Navbar"

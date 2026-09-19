@@ -1,68 +1,9 @@
-import { useEffect, useRef, useState } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useRef } from "react"
 import TaskSetup from "../components/competition/Setup_task"
 import Task from "../components/competition/Task"
 
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
-
-type Difficulty = "Easy" | "Medium" | "Hard"
-type Variant = "matrix" | "lock" | "knife"
-
-type Challenge = {
-	id: number
-	title: string
-	difficulty: Difficulty
-	time: string
-	variant: Variant
-}
-
-const challenges: Challenge[] = Array.from({ length: 10 }).map((_, i) => {
-	const set: Omit<Challenge, "id">[] = [
-		{ title: "Cybersecurity 101", difficulty: "Easy", time: "45 min", variant: "matrix" },
-		{ title: "W1SEman", difficulty: "Medium", time: "45 min", variant: "lock" },
-		{ title: "Endpoint investigation", difficulty: "Hard", time: "45 min", variant: "knife" },
-	]
-	return { id: i + 1, ...set[i % set.length] }
-})
-
-/* =============================================================
-   Count-up hook (same easing pattern as Statistic.tsx)
-============================================================= */
-function useCountUp(end: number, start: boolean, duration = 1200) {
-	const [value, setValue] = useState(0)
-	const startedRef = useRef(false)
-
-	useEffect(() => {
-		if (!start || startedRef.current) return
-		startedRef.current = true
-
-		let rafId: number
-		const startTime = performance.now()
-
-		const tick = (now: number) => {
-			const elapsed = now - startTime
-			const progress = Math.min(elapsed / duration, 1)
-			const eased = 1 - Math.pow(1 - progress, 3)
-			setValue(Math.round(eased * end))
-
-			if (progress < 1) {
-				rafId = requestAnimationFrame(tick)
-			} else {
-				setValue(end)
-			}
-		}
-
-		rafId = requestAnimationFrame(tick)
-		return () => cancelAnimationFrame(rafId)
-	}, [start, end, duration])
-
-	return value
-}
-
-function CountUp({ end, start, duration }: { end: number; start: boolean; duration?: number }) {
-	return <>{useCountUp(end, start, duration)}</>
-}
 
 /* =============================================================
    Challenge Detail
@@ -71,10 +12,6 @@ function CountUp({ end, start, duration }: { end: number; start: boolean; durati
 export default function Challenge_detail() {
 	const heroRef = useRef<HTMLDivElement>(null)
 
-
-
-	const [searchParams] = useSearchParams();
-	const ch_id = searchParams.get("id");
 
 	return (
 		<>

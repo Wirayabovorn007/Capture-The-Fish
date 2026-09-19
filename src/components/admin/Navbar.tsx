@@ -1,23 +1,59 @@
+import { useEffect, useState } from "react"
+import { getCurrentUser, fetchUserAttributes, signOut } from "aws-amplify/auth"
+
 import logo from "../../assets/home/Logo.png"
 import dashboard from "../../assets/home/Goal.png"
 import management from "../../assets/home/Storytelling.png"
-import challenge from "../../assets/home/Leaderboard.png"
-import users from "../../assets/home/Envelope.png"
 
 const adminNavLinks = [
   {
     icon: dashboard,
     label: "Dashboard",
-    href: "/admin",
+    href: "/admin/dashboard",
   },
   {
     icon: management,
     label: "จัดการโจทย์/ผู้ใช้",
     href: "/admin/management",
-  }
+  },
 ]
 
 export default function AdminNavbar() {
+  const [user, setUser] = useState<{
+    username: string
+    email?: string
+    profileImage?: string
+  } | null>(null)
+
+  useEffect(() => {
+    checkUser()
+  }, [])
+
+  const checkUser = async () => {
+    try {
+      const currentUser = await getCurrentUser()
+      const attributes = await fetchUserAttributes()
+
+      setUser({
+        username: attributes.preferred_username || currentUser.username,
+        email: attributes.email,
+        profileImage: attributes.picture,
+      })
+    } catch {
+      setUser(null)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      setUser(null)
+      window.location.href = "/login"
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
+
   return (
     <nav className="sticky top-0 z-50 my-4 w-full px-4 py-0">
       <div
@@ -55,12 +91,12 @@ export default function AdminNavbar() {
           "
         />
 
-        {/* =========================================
+        {/* =========================
             Logo
-        ========================================= */}
+        ========================= */}
 
         <a
-          href="/admin"
+          href="/admin/dashboard"
           className="
             group relative z-10 shrink-0
             transition-all duration-300 ease-out
@@ -96,65 +132,63 @@ export default function AdminNavbar() {
           />
         </a>
 
-        {/* =========================================
+        {/* =========================
             Admin Navigation
-        ========================================= */}
+        ========================= */}
 
         <div className="relative z-10 flex items-center">
           {/* Desktop Menu */}
 
           <div className="mx-6 hidden items-center gap-7 md:flex lg:mx-10 lg:gap-8">
-            {adminNavLinks.map(
-              ({ icon, label, href }) => (
-                <a
-                  key={label}
-                  href={href}
+            {adminNavLinks.map(({ icon, label, href }) => (
+              <a
+                key={label}
+                href={href}
+                className="
+                  group relative flex flex-col
+                  items-center gap-1
+                  text-[#B01414]
+                  transition-all duration-300
+                  ease-out
+                  hover:-translate-y-1
+                "
+              >
+                <img
+                  src={icon}
+                  alt=""
                   className="
-                    group relative flex flex-col
-                    items-center gap-1
-                    text-[#B01414]
+                    h-6 w-6
+                    opacity-90
                     transition-all duration-300
                     ease-out
-                    hover:-translate-y-1
+                    group-hover:scale-110
+                    group-hover:-rotate-3
+                    group-hover:opacity-100
+                    group-hover:drop-shadow-[0_0_6px_rgba(176,20,20,0.5)]
+                  "
+                />
+
+                <span
+                  className="
+                    relative whitespace-nowrap
+                    text-xs font-medium
+                    transition-all duration-300
+                    after:absolute
+                    after:-bottom-1
+                    after:left-1/2
+                    after:h-[2px]
+                    after:w-0
+                    after:-translate-x-1/2
+                    after:bg-[#B01414]
+                    after:transition-all
+                    after:duration-300
+                    group-hover:after:w-full
                   "
                 >
-                  <img
-                    src={icon}
-                    alt=""
-                    className="
-                      h-6 w-6
-                      opacity-90
-                      transition-all duration-300
-                      ease-out
-                      group-hover:scale-110
-                      group-hover:-rotate-3
-                      group-hover:opacity-100
-                      group-hover:drop-shadow-[0_0_6px_rgba(176,20,20,0.5)]
-                    "
-                  />
-
-                  <span
-                    className="
-                      relative whitespace-nowrap
-                      text-xs font-medium
-                      transition-all duration-300
-                      after:absolute
-                      after:-bottom-1
-                      after:left-1/2
-                      after:h-[2px]
-                      after:w-0
-                      after:-translate-x-1/2
-                      after:bg-[#B01414]
-                      after:transition-all
-                      after:duration-300
-                      group-hover:after:w-full
-                    "
-                  >
-                    {label}
-                  </span>
-                </a>
-              )
-            )}
+                  {label}
+                </span>
+              </a>
+            ))}
           </div>
 
           {/* Divider */}
@@ -167,83 +201,60 @@ export default function AdminNavbar() {
             "
           />
 
-          {/* =========================================
-              Admin Badge + Logout
-          ========================================= */}
+          {/* =========================
+              Admin Profile + Logout
+          ========================= */}
 
-          <div className="ml-4 flex items-center gap-3 lg:ml-6 lg:gap-5">
-            <div
-              className="
-                hidden items-center gap-2
-                rounded-full
-                border border-[#B01414]/15
-                bg-[#B01414]/5
-                px-3 py-1.5
-                md:flex
-              "
-            >
-              <span
-                className="
-                  h-2 w-2
-                  rounded-full
-                  bg-[#B01414]
-                  shadow-[0_0_8px_rgba(176,20,20,0.5)]
-                "
-              />
+          <div className="ml-4 flex items-center gap-3 lg:ml-6">
+            {user && (
+              <>
+                {/* Logout Icon Button */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  title="ออกจากระบบ"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B01414]/30 text-[#B01414] transition-all duration-300 hover:bg-[#B01414] hover:text-white active:scale-95"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-sm"></i>
+                </button>
 
-              <span
-                className="
-                  text-xs font-semibold
-                  text-[#B01414]
-                "
-              >
-                ADMIN
-              </span>
-            </div>
+                {/* Username / Email */}
+                <a
+                  href="/profile"
+                  className="hidden cursor-pointer text-right group/nav lg:block"
+                >
+                  <p className="text-xs font-bold text-[#403a38] transition-colors group-hover/nav:text-[#B01414]">
+                    {user.username}
+                  </p>
+                  <p className="text-[10px] text-gray-500">{user.email}</p>
+                </a>
 
-            <a
-              href="/admin/login"
-              className="
-                group relative overflow-hidden
-                rounded-lg
-                bg-[#B01414]
-                px-4 py-2.5
-                text-sm text-white
-                transition-all duration-300
-                ease-out
-                hover:-translate-y-0.5
-                hover:bg-[#C51A1A]
-                active:translate-y-0
-                active:shadow-[0_0_10px_rgba(176,20,20,0.3)]
-                md:px-5
-              "
-            >
-              {/* Shine */}
-
-              <span
-                className="
-                  pointer-events-none
-                  absolute inset-y-0
-                  -left-1/2
-                  w-1/3
-                  rotate-12
-                  bg-white/20
-                  transition-all duration-500
-                  group-hover:left-[120%]
-                "
-              />
-
-              <span className="relative">
-                ออกจากระบบ
-              </span>
-            </a>
+                {/* Profile Image */}
+                <a
+                  href="/profile"
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#B01414]/30 bg-gray-200 font-bold text-[#B01414] transition-transform hover:scale-105"
+                >
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    user.username
+                      ? user.username.charAt(0).toUpperCase()
+                      : "A"
+                  )}
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* =========================================
+      {/* =========================
           Mobile Admin Navigation
-      ========================================= */}
+      ========================= */}
 
       <div
         className="
@@ -258,32 +269,30 @@ export default function AdminNavbar() {
           md:hidden
         "
       >
-        {adminNavLinks.map(
-          ({ icon, label, href }) => (
-            <a
-              key={label}
-              href={href}
-              className="
-                flex shrink-0
-                items-center gap-2
-                rounded-xl
-                px-3 py-2
-                text-xs font-medium
-                text-[#B01414]
-                transition-all
-                hover:bg-[#B01414]/10
-              "
-            >
-              <img
-                src={icon}
-                alt=""
-                className="h-5 w-5"
-              />
+        {adminNavLinks.map(({ icon, label, href }) => (
+          <a
+            key={label}
+            href={href}
+            className="
+              flex shrink-0
+              items-center gap-2
+              rounded-xl
+              px-3 py-2
+              text-xs font-medium
+              text-[#B01414]
+              transition-all
+              hover:bg-[#B01414]/10
+            "
+          >
+            <img
+              src={icon}
+              alt=""
+              className="h-5 w-5"
+            />
 
-              <span>{label}</span>
-            </a>
-          )
-        )}
+            <span>{label}</span>
+          </a>
+        ))}
       </div>
     </nav>
   )

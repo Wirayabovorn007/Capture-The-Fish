@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Camera, Image as ImageIcon } from "lucide-react"
-import { fetchUserAttributes, updatePassword, updateUserAttributes, fetchAuthSession } from "aws-amplify/auth"
+import { fetchUserAttributes, updatePassword, updateUserAttributes } from "aws-amplify/auth"
 
 import Reveal from "../components/effects/Reveal"
 import Navbar from "../components/Navbar"
