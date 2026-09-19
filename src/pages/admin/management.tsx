@@ -244,6 +244,12 @@ export default function Management() {
   const [message, setMessage] =
     useState("")
 
+  const [deletingChallenge, setDeletingChallenge] =
+    useState<Challenge | null>(null)
+
+  const [isDeleting, setIsDeleting] =
+    useState(false)
+
   const isEditing = editingId !== null
 
   /*
@@ -504,6 +510,66 @@ export default function Management() {
           block: "start",
         })
     }, 50)
+  }
+
+  /*
+   * =========================================
+   * Delete Challenge
+   * =========================================
+   */
+
+  const handleDeleteChallenge = (
+    selectedChallenge: Challenge
+  ) => {
+    setMessage("")
+    setDeletingChallenge(selectedChallenge)
+  }
+
+  const confirmDeleteChallenge = async () => {
+    if (!deletingChallenge) {
+      return
+    }
+
+    const challengeToDelete = deletingChallenge
+
+    setIsDeleting(true)
+    setMessage("")
+
+    try {
+      /*
+       * TODO:
+       * DELETE /api/admin/challenges/:id
+       */
+
+      await new Promise(
+        (resolve) =>
+          setTimeout(resolve, 500)
+      )
+
+      setChallenges((prev) =>
+        prev.filter(
+          (item) =>
+            item.id !== challengeToDelete.id
+        )
+      )
+
+      if (editingId === challengeToDelete.id) {
+        setEditingId(null)
+        setChallenge(createEmptyChallenge())
+        setShowForm(false)
+      }
+
+      setDeletingChallenge(null)
+      setMessage(
+        `ลบโจทย์ "${challengeToDelete.title}" สำเร็จ`
+      )
+    } catch {
+      setMessage(
+        "ไม่สามารถลบโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
+      )
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   /*
@@ -1887,17 +1953,33 @@ export default function Management() {
 
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleEdit(
-                                  item
-                                )
-                              }
-                              className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-[#d8d2cf] bg-white px-4 text-sm font-medium text-[#403a38] hover:border-[#b01414] hover:text-[#b01414]"
-                            >
-                              แก้ไข
-                            </button>
+                            <div className="flex shrink-0 gap-2">
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleEdit(
+                                    item
+                                  )
+                                }
+                                className="inline-flex h-10 items-center justify-center rounded-lg border border-[#d8d2cf] bg-white px-4 text-sm font-medium text-[#403a38] transition-all hover:border-[#b01414] hover:text-[#b01414]"
+                              >
+                                แก้ไข
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeleteChallenge(
+                                    item
+                                  )
+                                }
+                                className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition-all hover:border-red-600 hover:bg-red-50"
+                              >
+                                ลบ
+                              </button>
+
+                            </div>
 
                           </div>
 
@@ -1915,6 +1997,106 @@ export default function Management() {
           </div>
         </main>
       </Reveal>
+
+      {/* =========================================
+          Delete Challenge Confirmation Modal
+      ========================================= */}
+
+      {deletingChallenge && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            if (!isDeleting) {
+              setDeletingChallenge(null)
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white shadow-2xl"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+
+            <div className="p-6 sm:p-8">
+
+              <div className="flex items-start gap-4">
+
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                  <svg
+                    className="h-6 w-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 9v4" />
+                    <path d="M12 17h.01" />
+                    <path d="M10.3 3.8 2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z" />
+                  </svg>
+                </div>
+
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold text-[#403a38]">
+                    ยืนยันการลบโจทย์
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-[#77716e]">
+                    คุณกำลังจะลบ Challenge นี้ออกจากรายการจัดการอย่างถาวร
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="mt-6 rounded-xl border border-red-100 bg-red-50 p-4">
+                <p className="font-semibold text-[#403a38]">
+                  {deletingChallenge.title}
+                </p>
+
+                <p className="mt-1 font-mono text-xs text-[#77716e]">
+                  {deletingChallenge.challengeId}
+                </p>
+
+                <p className="mt-3 text-sm leading-6 text-red-700">
+                  การลบจะนำโจทย์ออกจากรายการ Challenge ในหน้านี้ และถ้ามี Docker Container หรือข้อมูลที่ผูกกับโจทย์ ระบบ Backend ควรจัดการลบข้อมูลเหล่านั้นด้วย
+                </p>
+              </div>
+
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-[#eeeae8] p-6 sm:flex-row sm:justify-end sm:p-8">
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() =>
+                  setDeletingChallenge(null)
+                }
+                className="h-11 rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#77716e] transition-all hover:border-[#403a38] hover:text-[#403a38] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={
+                  confirmDeleteChallenge
+                }
+                className="h-11 rounded-xl bg-red-600 px-5 text-sm font-semibold text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting
+                  ? "กำลังลบ..."
+                  : "ยืนยันลบโจทย์"}
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* =========================================
           User Detail Modal
