@@ -1,45 +1,137 @@
 import { useEffect, useRef, useState } from "react";
-
+import { signIn, signUp, confirmSignIn, confirmSignUp, resendSignUpCode, signOut, getCurrentUser } from "aws-amplify/auth";
+import { Amplify } from "aws-amplify";
 import Navbar from "../components/Navbar";
 import Reveal from "../components/effects/Reveal";
 
 export default function Login() {
-  const [showOtp, setShowOtp] = useState(false);
+  const [viewMode, setViewMode] = useState<"login" | "signup" | "otp">("login");
+  
+  // ฟอร์มสเตท
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [userNameInput, setUserNameInput] = useState("");
+  
+  // ข้อความแจ้งเตือนสีแดง (Error Message) แต่ละฟิลด์หรือภาพรวม
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // ระบบ OTP
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [countdown, setCountdown] = useState(60);
+  const [loading, setLoading] = useState(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Start countdown when OTP section is shown
+  // โหลด Config และตั้งค่า Amplify
   useEffect(() => {
-    if (!showOtp || countdown <= 0) return;
+    fetch('/config.json')
+      .then((res) => res.json())
+      .then((config) => {
+        Amplify.configure({
+          Auth: {
+            Cognito: {
+              userPoolId: config.USER_POOL_ID,
+              userPoolClientId: config.CLIENT_ID,
+            }
+          }
+        });
+      })
+      .catch((err) => console.error("Failed to load config.json", err));
+  }, []);
 
+  // ตัวนับเวลาถอยหลัง OTP
+  useEffect(() => {
+    if (viewMode !== "otp" || countdown <= 0) return;
     const timer = setInterval(() => {
       setCountdown((prev) => prev - 1);
     }, 1000);
-
     return () => clearInterval(timer);
-  }, [showOtp, countdown]);
+  }, [viewMode, countdown]);
 
-  // Press "Login with Google"
-  const handleGoogleLogin = () => {
-    setShowOtp(true);
-    setCountdown(60);
-
-    // Focus first OTP input
-    setTimeout(() => {
-      inputRefs.current[0]?.focus();
-    }, 100);
+  // เปลี่ยนโหมดพร้อมเคลียร์ Error
+  const switchMode = (mode: "login" | "signup" | "otp") => {
+    setViewMode(mode);
+    setErrorMsg("");
   };
 
-  // Handle OTP input
-  const handleOtpChange = (
-    index: number,
-    value: string
-  ) => {
-    // Only allow numbers
-    const number = value.replace(/\D/g, "");
+  // จัดการการ Login
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setLoading(true);
+    try {
+      // เคลียร์ Session เก่าทิ้งก่อน login ป้องกัน Error UserAlreadyAuthenticatedException
+      try {
+        await signOut();
+      } catch (signOutErr) {
+        // ข้าม error หากไม่มี user ค้างอยู่
+      }
 
+      const { nextStep } = await signIn({ username: email, password });
+      
+      if (
+        nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE' || 
+        nextStep.signInStep === 'CONFIRM_SIGN_UP'
+      ) {
+        setViewMode("otp");
+        setCountdown(60);
+        setTimeout(() => inputRefs.current[0]?.focus(), 100);
+      } else if (nextStep.signInStep === 'DONE') {
+        window.location.href = "/";
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setErrorMsg(error.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // จัดการการ Sign Up พร้อมเช็ค Password
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+
+    if (password !== confirmPassword) {
+      setErrorMsg("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { nextStep } = await signUp({
+        username: email,
+        password,
+        options: {
+          userAttributes: {
+            email,
+            preferred_username: userNameInput,
+          }
+        }
+      });
+
+      if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+        // ไปหน้า OTP ทันทีโดยไม่ใช้ alert
+        setViewMode("otp");
+        setCountdown(60);
+        setTimeout(() => inputRefs.current[0]?.focus(), 100);
+      }
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      setErrorMsg(error.message || "เกิดข้อผิดพลาดในการสมัครสมาชิก");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    setErrorMsg("กำลังเชื่อมต่อกับ Google OAuth...");
+  };
+
+  // จัดการกรอก OTP
+  const handleOtpChange = (index: number, value: string) => {
+    const number = value.replace(/\D/g, "");
     if (!number) {
       const newOtp = [...otp];
       newOtp[index] = "";
@@ -48,100 +140,85 @@ export default function Login() {
     }
 
     const newOtp = [...otp];
-
-    // Handle pasted/multiple numbers
     if (number.length > 1) {
       const digits = number.slice(0, 6).split("");
-
       digits.forEach((digit, i) => {
-        if (index + i < 6) {
-          newOtp[index + i] = digit;
-        }
+        if (index + i < 6) newOtp[index + i] = digit;
       });
-
       setOtp(newOtp);
-
       const nextIndex = Math.min(index + digits.length, 5);
-
-      setTimeout(() => {
-        inputRefs.current[nextIndex]?.focus();
-      }, 0);
-
+      setTimeout(() => inputRefs.current[nextIndex]?.focus(), 0);
       return;
     }
 
     newOtp[index] = number;
     setOtp(newOtp);
-
-    // Move to next input
-    if (index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    if (index < 5) inputRefs.current[index + 1]?.focus();
   };
 
-  // Handle backspace
-  const handleKeyDown = (
-    index: number,
-    event: React.KeyboardEvent<HTMLInputElement>
-  ) => {
+  const handleKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
-  // Handle paste
-  const handlePaste = (
-    event: React.ClipboardEvent<HTMLInputElement>
-  ) => {
+  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
     event.preventDefault();
-
-    const pasted = event.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-
+    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (!pasted) return;
 
     const newOtp = ["", "", "", "", "", ""];
-
     pasted.split("").forEach((digit, index) => {
       newOtp[index] = digit;
     });
-
     setOtp(newOtp);
-
     const nextIndex = Math.min(pasted.length, 5);
-
-    setTimeout(() => {
-      inputRefs.current[nextIndex]?.focus();
-    }, 0);
+    setTimeout(() => inputRefs.current[nextIndex]?.focus(), 0);
   };
 
-  // Verify OTP
-  const handleVerify = () => {
+  // ยืนยัน OTP
+  const handleVerify = async () => {
     const code = otp.join("");
+    if (code.length !== 6) return;
 
-    if (code.length !== 6) {
-      return;
+    setErrorMsg("");
+    setLoading(true);
+    try {
+      try {
+        const result = await confirmSignUp({ username: email, confirmationCode: code });
+        if (result.isSignUpComplete) {
+          switchMode("login");
+          setErrorMsg("");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        const result = await confirmSignIn({ challengeResponse: code });
+        if (result.isSignedIn) {
+          window.location.href = "/";
+          return;
+        }
+      }
+    } catch (error: any) {
+      console.error("Verify OTP error:", error);
+      setErrorMsg("รหัส OTP ไม่ถูกต้องหรือหมดอายุ");
+    } finally {
+      setLoading(false);
     }
-
-    console.log("OTP:", code);
-
-    // TODO:
-    // Send OTP to your backend here.
   };
 
-  // Resend OTP
-  const handleResend = () => {
+  const handleResend = async () => {
     if (countdown > 0) return;
-
-    setOtp(["", "", "", "", "", ""]);
-    setCountdown(60);
-
-    inputRefs.current[0]?.focus();
-
-    // TODO:
-    // Request a new OTP from your backend here.
+    try {
+      await resendSignUpCode({ username: email });
+      setOtp(["", "", "", "", "", ""]);
+      setCountdown(60);
+      inputRefs.current[0]?.focus();
+      setErrorMsg("");
+    } catch (error: any) {
+      console.error("Resend OTP error:", error);
+      setErrorMsg("ไม่สามารถส่งรหัส OTP ใหม่ได้");
+    }
   };
 
   return (
@@ -151,120 +228,187 @@ export default function Login() {
       <Reveal>
         <main className="flex min-h-screen items-center">
           <div className="mx-auto w-full max-w-6xl px-6 sm:px-10">
-            {!showOtp ? (
-              /* ================= GOOGLE LOGIN ================= */
-              <div className="max-w-4xl">
-                {/* Heading */}
-                <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl lg:text-7xl">
-                  Login / Sign up
+            {viewMode === "login" && (
+              /* ================= LOGIN FORM ================= */
+              <div className="max-w-xl">
+                <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl">
+                  Login
                 </h1>
-
-                {/* Subtitle */}
-                <h2 className="mt-1 text-3xl text-[#403a38] sm:text-4xl">
-                  Explore the challenge!
+                <h2 className="mt-1 text-2xl text-[#403a38]">
+                  Welcome back to CTF Arena
                 </h2>
 
-                {/* Description */}
-                <p className="mt-3 max-w-4xl text-sm text-[#403a38] sm:text-base">
-                  เปลี่ยนการฝึก Cybersecurity แบบเดิม ๆ
-                  ให้กลายเป็นการผจญภัย ออกล่า Flag
-                  สะสมปลา และปลดล็อกทักษะใหม่ไปพร้อมกัน
+                <form onSubmit={handleLoginSubmit} className="mt-8 space-y-4">
+                  {errorMsg && (
+                    <p className="text-sm font-medium text-red-600">{errorMsg}</p>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#403a38]">Email / Username</label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#b01414] focus:outline-none"
+                      placeholder="name@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#403a38]">Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#b01414] focus:outline-none"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#b01414] py-2.5 text-white font-medium hover:bg-[#8f1010] transition"
+                  >
+                    {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                  </button>
+                </form>
+
+                <div className="mt-6 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="flex w-full items-center justify-center gap-2 border border-gray-300 bg-white py-2.5 text-sm text-[#403a38] hover:border-[#b01414] transition"
+                  >
+                    <span>เข้าสู่ระบบด้วย Google</span>
+                  </button>
+                </div>
+
+                <p className="mt-6 text-sm text-[#403a38]">
+                  ยังไม่มีบัญชีใช่ไหม?{" "}
+                  <button
+                    onClick={() => switchMode("signup")}
+                    className="font-bold text-[#b01414] hover:underline"
+                  >
+                    สมัครสมาชิก
+                  </button>
                 </p>
-
-                {/* Google Login */}
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  className="
-                    mt-9
-                    flex
-                    h-10
-                    items-center
-                    gap-3
-                    border
-                    border-gray-200
-                    bg-white
-                    px-5
-                    text-sm
-                    text-[#403a38]
-                    transition-all
-                    duration-200
-                    hover:border-[#b01414]
-                    hover:shadow-md
-                    active:scale-[0.98]
-                  "
-                >
-                  {/* Google Logo */}
-                  <span className="flex h-6 w-6 items-center justify-center">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-5 w-5"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fill="#4285F4"
-                        d="M21.35 12.27c0-.68-.06-1.34-.17-1.97H12v3.73h5.22a4.47 4.47 0 0 1-1.94 2.93v2.44h3.14c1.84-1.69 2.93-4.18 2.93-7.13Z"
-                      />
-
-                      <path
-                        fill="#34A853"
-                        d="M12 21.75c2.63 0 4.84-.87 6.45-2.35l-3.14-2.44c-.87.58-1.98.92-3.31.92-2.54 0-4.7-1.72-5.47-4.03H3.28v2.52A9.74 9.74 0 0 0 12 21.75Z"
-                      />
-
-                      <path
-                        fill="#FBBC05"
-                        d="M6.53 13.85A5.86 5.86 0 0 1 6.22 12c0-.64.11-1.26.31-1.85V7.63H3.28A9.74 9.74 0 0 0 2.25 12c0 1.57.38 3.05 1.03 4.37l3.25-2.52Z"
-                      />
-
-                      <path
-                        fill="#EA4335"
-                        d="M12 6.12c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.83 3.22 14.63 2.25 12 2.25a9.74 9.74 0 0 0-8.72 5.38l3.25 2.52C7.3 7.84 9.46 6.12 12 6.12Z"
-                      />
-                    </svg>
-                  </span>
-
-                  <span>เข้าสู่ระบบด้วย Google</span>
-                </button>
               </div>
-            ) : (
+            )}
+
+            {viewMode === "signup" && (
+              /* ================= SIGN UP FORM ================= */
+              <div className="max-w-xl">
+                <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl">
+                  Sign up
+                </h1>
+                <h2 className="mt-1 text-2xl text-[#403a38]">
+                  Create your CTF account
+                </h2>
+
+                <form onSubmit={handleSignUpSubmit} className="mt-8 space-y-4">
+                  {errorMsg && (
+                    <p className="text-sm font-medium text-red-600">{errorMsg}</p>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#403a38]">ชื่อผู้ใช้ (Username)</label>
+                    <input
+                      type="text"
+                      required
+                      value={userNameInput}
+                      onChange={(e) => setUserNameInput(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#b01414] focus:outline-none"
+                      placeholder="YourUsername"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#403a38]">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#b01414] focus:outline-none"
+                      placeholder="name@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#403a38]">Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#b01414] focus:outline-none"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#403a38]">Confirm Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#b01414] focus:outline-none"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#b01414] py-2.5 text-white font-medium hover:bg-[#8f1010] transition"
+                  >
+                    {loading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
+                  </button>
+                </form>
+
+                <p className="mt-6 text-sm text-[#403a38]">
+                  มีบัญชีอยู่แล้ว?{" "}
+                  <button
+                    onClick={() => switchMode("login")}
+                    className="font-bold text-[#b01414] hover:underline"
+                  >
+                    เข้าสู่ระบบ
+                  </button>
+                </p>
+              </div>
+            )}
+
+            {viewMode === "otp" && (
               /* ================= OTP VERIFICATION ================= */
               <div className="max-w-4xl">
-                {/* Back */}
                 <button
                   type="button"
-                  onClick={() => setShowOtp(false)}
-                  className="
-                    mb-8
-                    flex
-                    items-center
-                    gap-2
-                    text-sm
-                    text-[#403a38]
-                    transition-colors
-                    hover:text-[#b01414]
-                  "
+                  onClick={() => switchMode("login")}
+                  className="mb-8 flex items-center gap-2 text-sm text-[#403a38] hover:text-[#b01414]"
                 >
                   <span className="text-lg">←</span>
-                  <span>กลับ</span>
+                  <span>กลับหน้าเข้าสู่ระบบ</span>
                 </button>
 
-                {/* Heading */}
-                <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl lg:text-7xl">
+                <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl">
                   Verify your account
                 </h1>
-
-                {/* Subtitle */}
-                <h2 className="mt-1 text-3xl text-[#403a38] sm:text-4xl">
-                  Check your email
-                </h2>
-
-                {/* Description */}
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#403a38] sm:text-base">
-                  เราได้ส่งรหัส OTP 6 หลักไปยังอีเมลของคุณ
-                  กรุณากรอกรหัสเพื่อดำเนินการต่อ
+                <h2 className="mt-1 text-3xl text-[#403a38]">Check your email</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#403a38]">
+                  เราได้ส่งรหัส OTP 6 หลักไปยังอีเมล <span className="font-semibold">{email}</span> กรุณากรอกรหัสเพื่อยืนยัน
+                </p>
+                <p className="mt-1 text-xs text-red-500 font-medium">
+                  * หากไม่เจออีเมล กรุณาตรวจสอบในจดหมายขยะ (Spam) หรือกล่องจดหมายอื่นๆ
                 </p>
 
-                {/* OTP Box */}
+                {errorMsg && (
+                  <p className="mt-3 text-sm font-medium text-red-600">{errorMsg}</p>
+                )}
+
                 <div className="mt-9 flex gap-2 sm:gap-3">
                   {otp.map((digit, index) => (
                     <input
@@ -276,90 +420,35 @@ export default function Login() {
                       inputMode="numeric"
                       maxLength={1}
                       value={digit}
-                      onChange={(event) =>
-                        handleOtpChange(
-                          index,
-                          event.target.value
-                        )
-                      }
-                      onKeyDown={(event) =>
-                        handleKeyDown(index, event)
-                      }
+                      onChange={(event) => handleOtpChange(index, event.target.value)}
+                      onKeyDown={(event) => handleKeyDown(index, event)}
                       onPaste={handlePaste}
                       aria-label={`OTP digit ${index + 1}`}
-                      className="
-                        h-14
-                        w-12
-                        rounded-md
-                        border
-                        border-gray-300
-                        bg-white
-                        text-center
-                        font-mono
-                        text-2xl
-                        font-bold
-                        text-[#403a38]
-                        outline-none
-                        transition-all
-                        duration-200
-                        hover:border-gray-400
-                        focus:border-[#b01414]
-                        focus:ring-2
-                        focus:ring-[#b01414]/20
-                        sm:h-16
-                        sm:w-14
-                      "
+                      className="h-14 w-12 rounded-md border border-gray-300 bg-white text-center font-mono text-2xl font-bold text-[#403a38] outline-none transition-all focus:border-[#b01414] focus:ring-2 focus:ring-[#b01414]/20 sm:h-16 sm:w-14"
                     />
                   ))}
                 </div>
 
-                {/* Verify button */}
                 <button
                   type="button"
                   onClick={handleVerify}
-                  disabled={otp.join("").length !== 6}
-                  className="
-                    mt-8
-                    h-11
-                    bg-[#b01414]
-                    px-8
-                    text-sm
-                    font-medium
-                    text-white
-                    transition-all
-                    duration-200
-                    hover:bg-[#8f1010]
-                    hover:shadow-md
-                    active:scale-[0.98]
-                    disabled:cursor-not-allowed
-                    disabled:bg-gray-300
-                    disabled:shadow-none
-                  "
+                  disabled={otp.join("").length !== 6 || loading}
+                  className="mt-8 h-11 bg-[#b01414] px-8 text-sm font-medium text-white transition hover:bg-[#8f1010] disabled:bg-gray-300"
                 >
-                  ยืนยันรหัส OTP
+                  {loading ? "กำลังตรวจสอบ..." : "ยืนยันรหัส OTP"}
                 </button>
 
-                {/* Resend */}
                 <div className="mt-5 text-sm text-[#403a38]">
                   {countdown > 0 ? (
                     <p>
                       ส่งรหัสอีกครั้งใน{" "}
-                      <span className="font-mono font-bold text-[#b01414]">
-                        {countdown}
-                      </span>{" "}
-                      วินาที
+                      <span className="font-mono font-bold text-[#b01414]">{countdown}</span> วินาที
                     </p>
                   ) : (
                     <button
                       type="button"
                       onClick={handleResend}
-                      className="
-                        font-medium
-                        text-[#b01414]
-                        transition-colors
-                        hover:text-[#8f1010]
-                        hover:underline
-                      "
+                      className="font-medium text-[#b01414] hover:underline"
                     >
                       ส่งรหัส OTP อีกครั้ง
                     </button>
