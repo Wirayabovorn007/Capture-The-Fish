@@ -77,32 +77,18 @@ export default function ProblemSlider() {
   const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(0);
 
-  /**
-   * Controls the direction of the card animation.
-   *
-   * right:
-   * New cards enter from the right.
-   *
-   * left:
-   * New cards enter from the left.
-   */
   const [slideDirection, setSlideDirection] = useState<
     "left" | "right"
   >("right");
 
-  /**
-   * Changing this value forces React to remount
-   * the animated container and restart the animation.
-   */
+ 
   const [animationKey, setAnimationKey] = useState(0);
 
   const activeTabIndex = tabs.findIndex(
     (tab) => tab.value === activeTab
   );
 
-  /**
-   * Filter problems based on active tab.
-   */
+ 
   const filteredProblems = useMemo(() => {
     if (activeTab === "all") {
       return problems;
@@ -568,6 +554,7 @@ function ProblemCard({
             mt-auto pushes this to the bottom regardless
             of the title/content height.
         ================================================== */}
+      <a href={`/challenge?id=${problem.id}`}>
         <button
           type="button"
           className="
@@ -588,6 +575,7 @@ function ProblemCard({
         >
           ออกล่า
         </button>
+      </a>
       </div>
     </article>
   );

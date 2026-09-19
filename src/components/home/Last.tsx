@@ -29,18 +29,22 @@ export default function CybersecurityCTA() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            className=" bg-white px-6 py-3 text-sm font-semibold text-[#A61B1B] transition-colors hover:bg-white/90"
-          >
-            จับปลาเลย
-          </button>
+          <a href="/story">
+            <button
+              type="button"
+              className=" bg-white px-6 py-3 text-sm font-semibold text-[#A61B1B] transition-colors hover:bg-white/90"
+            >
+              จับปลาเลย
+            </button>
+          </a>
+          <a href="/competition">
           <button
             type="button"
             className="border border-white/70 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
           >
             ดูโจทย์ทั้งหมด
           </button>
+          </a>
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">

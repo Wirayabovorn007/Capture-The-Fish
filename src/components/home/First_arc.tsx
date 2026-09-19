@@ -10,6 +10,7 @@ export default function First_arc(){
 		
 		
 					<div className="mt-10 flex gap-4">
+			<a href="/story">
 			<button
 				className="
 					group relative overflow-hidden
@@ -38,7 +39,9 @@ export default function First_arc(){
 					"
 				/>
 			</button>
+			</a>
 		
+			<a href="/competition">
 			<button
 				className="
 					group relative overflow-hidden
@@ -60,6 +63,7 @@ export default function First_arc(){
 				</span>
 				
 			</button>
+			</a>
 		</div>
 					<div className="flex mt-60 text-sm">
 						<img src={Mask} alt="" className="h-auto w-auto mx-1"/>
