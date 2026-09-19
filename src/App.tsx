@@ -9,6 +9,9 @@ import ManageProfile from "./pages/manage_profile";
 import Contact from "./pages/contact";
 import Leaderboard from "./pages/leaderboard";
 import Story from "./pages/story";
+import AdminLogin from "./pages/admin/login";
+import AdminDashboard from "./pages/admin/dashboard";
+import Management from "./pages/admin/management";
 
 export default function App() {
   return (
@@ -26,6 +29,12 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/story" element={<Story />} />
+
+
+          {/* Admin */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/manage" element={<Management />} />
         </Routes>
       </div>
     </Router>
