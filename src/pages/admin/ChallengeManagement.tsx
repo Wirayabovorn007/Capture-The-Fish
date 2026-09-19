@@ -23,6 +23,8 @@ type ChallengeForm = {
   category: string
   difficulty: string
   description: string
+  objective: string
+  hint: string
   containers: DockerContainer[]
 }
 
@@ -62,6 +64,8 @@ function createEmptyChallenge(): ChallengeForm {
     category: "Web Security",
     difficulty: "Easy",
     description: "",
+    objective: "",
+    hint: "",
     containers: [createEmptyContainer()],
   }
 }
@@ -244,6 +248,8 @@ export default function ChallengeManagement() {
       category: selectedChallenge.category,
       difficulty: selectedChallenge.difficulty,
       description: selectedChallenge.description,
+      objective: selectedChallenge.objective ?? "",
+      hint: selectedChallenge.hint ?? "",
       containers: selectedChallenge.containers.map(
         (container) => ({
           ...container,
@@ -362,6 +368,8 @@ export default function ChallengeManagement() {
       category: challenge.category,
       difficulty: challenge.difficulty,
       description: challenge.description.trim(),
+      objective: challenge.objective.trim(),
+      hint: challenge.hint.trim(),
       containers: challenge.containers.map(
         ({ name, image, port }) => ({
           name: name.trim(),
@@ -652,6 +660,78 @@ export default function ChallengeManagement() {
                               focus:ring-[#b01414]/10
                             "
                           />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                            Objective
+                          </label>
+
+                          <textarea
+                            value={challenge.objective}
+                            onChange={(event) =>
+                              updateChallengeField(
+                                "objective",
+                                event.target.value
+                              )
+                            }
+                            rows={3}
+                            placeholder="เช่น ค้นหา Flag ที่ถูกซ่อนอยู่ภายในเว็บไซต์"
+                            className="
+                              w-full
+                              resize-y
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white
+                              px-4 py-3
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              placeholder:text-[#aaa4a1]
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                            Hints
+                          </label>
+
+                          <textarea
+                            value={challenge.hint}
+                            onChange={(event) =>
+                              updateChallengeField(
+                                "hint",
+                                event.target.value
+                              )
+                            }
+                            rows={3}
+                            placeholder="เช่น dirb, Browser Developer Tools, Not everything on a website is meant to be seen."
+                            className="
+                              w-full
+                              resize-y
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white
+                              px-4 py-3
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              placeholder:text-[#aaa4a1]
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                          />
+
+                          <p className="mt-2 text-xs text-[#999390]">
+                            หากมีหลาย Hint ให้ใช้เครื่องหมาย , คั่นแต่ละข้อ
+                          </p>
                         </div>
 
                       </div>
