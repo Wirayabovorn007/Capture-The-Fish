@@ -9,17 +9,25 @@ import ManageProfile from "./pages/manage_profile";
 import Contact from "./pages/contact";
 import Leaderboard from "./pages/leaderboard";
 import Story from "./pages/story";
-import AdminLogin from "./pages/admin/login";
+
+// Admin pages
 import AdminDashboard from "./pages/admin/dashboard";
 import Management from "./pages/admin/management";
+import ChallengeManagement from "./pages/admin/ChallengeManagement";
+import UserManagement from "./pages/admin/UserManagement";
+
+// Route Protection
+import AdminRoute from "./components/auth/AdminRoute";
 
 export default function App() {
   return (
     <Router>
       <Styles />
-      
+
       <div className="relative min-h-screen">
         <Routes>
+          {/* ================= USER ================= */}
+
           <Route path="/" element={<Home />} />
           <Route path="/competition" element={<Competition />} />
           <Route path="/challenge" element={<Challenge_detail />} />
@@ -30,11 +38,43 @@ export default function App() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/story" element={<Story />} />
 
+          {/* ================= ADMIN ================= */}
 
-          {/* Admin */}
-          <Route path="/admin/" element={<AdminDashboard />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/management" element={<Management />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/management"
+            element={
+              <AdminRoute>
+                <Management />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/challenges"
+            element={
+              <AdminRoute>
+                <ChallengeManagement />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <UserManagement />
+              </AdminRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>

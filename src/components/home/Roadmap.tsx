@@ -1,5 +1,4 @@
 import {
-  Award,
   BookOpen,
   Crosshair,
   Trophy,

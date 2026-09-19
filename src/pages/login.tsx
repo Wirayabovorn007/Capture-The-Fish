@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { signIn, signUp, confirmSignIn, confirmSignUp, resendSignUpCode, signOut, getCurrentUser } from "aws-amplify/auth";
+import { signIn, signUp, confirmSignIn, confirmSignUp, resendSignUpCode, signOut } from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
 import Navbar from "../components/Navbar";
 import Reveal from "../components/effects/Reveal";
+import { isAdmin } from "../utils/auth"
 
 export default function Login() {
   const [viewMode, setViewMode] = useState<"login" | "signup" | "otp">("login");
@@ -77,8 +78,14 @@ export default function Login() {
         setViewMode("otp");
         setCountdown(60);
         setTimeout(() => inputRefs.current[0]?.focus(), 100);
-      } else if (nextStep.signInStep === 'DONE') {
-        window.location.href = "/";
+      } else if (nextStep.signInStep === "DONE") {
+        const admin = await isAdmin()
+
+        if (admin) {
+          window.location.href = "/admin/dashboard"
+        } else {
+          window.location.href = "/"
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -193,10 +200,20 @@ export default function Login() {
           return;
         }
       } catch {
-        const result = await confirmSignIn({ challengeResponse: code });
+        const result = await confirmSignIn({
+          challengeResponse: code
+        })
+
         if (result.isSignedIn) {
-          window.location.href = "/";
-          return;
+          const admin = await isAdmin()
+
+          if (admin) {
+            window.location.href = "/admin/dashboard"
+          } else {
+            window.location.href = "/"
+          }
+
+          return
         }
       }
     } catch (error: any) {
