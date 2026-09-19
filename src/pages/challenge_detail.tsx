@@ -235,8 +235,8 @@ export default function Challenge_detail() {
         ====================================================== */}
 
         <section>
-          <TaskSetup />
-          <Task />
+          <TaskSetup challengeId={challenge.challengeId} />
+          <Task challengeId={challenge.challengeId} />
         </section>
 
         <Footer />

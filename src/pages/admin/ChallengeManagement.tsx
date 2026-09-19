@@ -25,6 +25,7 @@ type ChallengeForm = {
   description: string
   objective: string
   hint: string
+  flag: string    
   containers: DockerContainer[]
 }
 
@@ -66,6 +67,7 @@ function createEmptyChallenge(): ChallengeForm {
     description: "",
     objective: "",
     hint: "",
+    flag: "",
     containers: [createEmptyContainer()],
   }
 }
@@ -250,6 +252,7 @@ export default function ChallengeManagement() {
       description: selectedChallenge.description,
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
+      flag: "",
       containers: selectedChallenge.containers.map(
         (container) => ({
           ...container,
@@ -345,6 +348,11 @@ export default function ChallengeManagement() {
       return
     }
 
+    if (!isEditing && !challenge.flag.trim()) {
+      setMessage("กรุณากรอก Flag ของโจทย์")
+      return
+    }
+
     const invalidContainer =
       challenge.containers.some(
         (container) =>
@@ -364,12 +372,13 @@ export default function ChallengeManagement() {
 
     const payload: ApiChallenge = {
       title: challenge.title.trim(),
-      challengeId: challenge.challengeId.trim(),
+      challengeId: isEditing ? editingId! : challenge.challengeId.trim(),
       category: challenge.category,
       difficulty: challenge.difficulty,
       description: challenge.description.trim(),
       objective: challenge.objective.trim(),
       hint: challenge.hint.trim(),
+      flag: challenge.flag.trim(),
       containers: challenge.containers.map(
         ({ name, image, port }) => ({
           name: name.trim(),
@@ -734,6 +743,29 @@ export default function ChallengeManagement() {
                           </p>
                         </div>
 
+                      </div>
+
+                      <div className="mt-6">
+                        <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                          Flag
+                          {!isEditing && <span className="ml-1 text-[#b01414]">*</span>}
+                        </label>
+
+                        <input
+                          type="text"
+                          value={challenge.flag}
+                          onChange={(event) =>
+                            updateChallengeField("flag", event.target.value)
+                          }
+                          placeholder="เช่น flag{salmon_secret}"
+                          className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 font-mono text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:ring-2 focus:ring-[#b01414]/10"
+                        />
+
+                        <p className="mt-2 text-xs text-[#999390]">
+                          {isEditing
+                            ? "ปล่อยว่างหากไม่ต้องการเปลี่ยน Flag เดิม"
+                            : "Flag จะถูกใช้ตรวจคำตอบของผู้เล่นและไม่แสดงในหน้า Challenge"}
+                        </p>
                       </div>
 
                       {/* Containers */}
