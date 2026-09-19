@@ -10,5 +10,9 @@ export type Challenge = {
   category: string
   difficulty: string
   description: string
+
+  objective: string
+  hint: string
+
   containers: DockerContainer[]
 }
