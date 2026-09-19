@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from "react"
-import Navbar from "../../components/Navbar"
+import Navbar from "../../components/admin/Navbar"
 import Reveal from "../../components/effects/Reveal"
 
 type ManagementTab = "users" | "challenges"

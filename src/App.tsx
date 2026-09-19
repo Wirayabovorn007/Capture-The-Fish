@@ -32,9 +32,9 @@ export default function App() {
 
 
           {/* Admin */}
+          <Route path="/admin/" element={<AdminDashboard />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/manage" element={<Management />} />
+          <Route path="/admin/management" element={<Management />} />
         </Routes>
       </div>
     </Router>

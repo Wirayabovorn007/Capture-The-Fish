@@ -1,4 +1,4 @@
-import Navbar from "../../components/Navbar"
+import Navbar from "../../components/admin/Navbar"
 import Reveal from "../../components/effects/Reveal"
 
 const leaderboard = [
