@@ -1,5 +1,14 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
+
+import {
+  createChallenge,
+  deleteChallenge,
+  getChallenges,
+  updateChallenge as updateChallengeApi,
+} from "../../services/challengeApi"
+
+import type { Challenge as ApiChallenge } from "../../types/challenge"
 
 type DockerContainer = {
   id: number
@@ -8,20 +17,16 @@ type DockerContainer = {
   port: string
 }
 
-type Challenge = {
-  id: number
-  title: string
-  challengeId: string
-  category: string
-  description: string
-  containers: DockerContainer[]
-}
-
 type ChallengeForm = {
   title: string
   challengeId: string
   category: string
+  difficulty: string
   description: string
+  containers: DockerContainer[]
+}
+
+type Challenge = Omit<ApiChallenge, "containers"> & {
   containers: DockerContainer[]
 }
 
@@ -35,48 +40,10 @@ const categories = [
   "Miscellaneous",
 ]
 
-const initialChallenges: Challenge[] = [
-  {
-    id: 1,
-    title: "Phishing in the Dark",
-    challengeId: "phishing-in-the-dark",
-    category: "Web Security",
-    description:
-      "ค้นหาและวิเคราะห์ช่องโหว่จากเว็บไซต์ที่ถูกสร้างขึ้นเพื่อจำลองสถานการณ์ Phishing",
-    containers: [
-      {
-        id: 101,
-        name: "app",
-        image: "ctfarena/phishing-dark:latest",
-        port: "80",
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Hidden Message",
-    challengeId: "hidden-message",
-    category: "Cryptography",
-    description:
-      "ค้นหาข้อความที่ถูกซ่อนอยู่และถอดรหัสเพื่อค้นหา Flag ที่ถูกต้อง",
-    containers: [
-      {
-        id: 201,
-        name: "crypto",
-        image: "ctfarena/hidden-message:latest",
-        port: "8080",
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: "Digital Evidence",
-    challengeId: "digital-evidence",
-    category: "Forensics",
-    description:
-      "วิเคราะห์ข้อมูล Digital Evidence เพื่อค้นหาเบาะแสที่นำไปสู่ Flag",
-    containers: [],
-  },
+const difficulties = [
+  "Easy",
+  "Medium",
+  "Hard",
 ]
 
 function createEmptyContainer(): DockerContainer {
@@ -93,6 +60,7 @@ function createEmptyChallenge(): ChallengeForm {
     title: "",
     challengeId: "",
     category: "Web Security",
+    difficulty: "Easy",
     description: "",
     containers: [createEmptyContainer()],
   }
@@ -114,13 +82,16 @@ function createChallengeId(title: string) {
 
 export default function ChallengeManagement() {
   const [challenges, setChallenges] =
-    useState<Challenge[]>(initialChallenges)
+    useState<Challenge[]>([])
+
+  const [isLoading, setIsLoading] =
+    useState(true)
 
   const [challenge, setChallenge] =
     useState<ChallengeForm>(createEmptyChallenge())
 
   const [editingId, setEditingId] =
-    useState<number | null>(null)
+    useState<string | null>(null)
 
   const [showForm, setShowForm] =
     useState(false)
@@ -139,6 +110,38 @@ export default function ChallengeManagement() {
 
   const [isDeleting, setIsDeleting] =
     useState(false)
+
+  const toUiChallenge = (
+    item: ApiChallenge
+  ): Challenge => ({
+    ...item,
+    containers: (item.containers ?? []).map(
+      (container, index) => ({
+        ...container,
+        id: Date.now() + index + Math.random(),
+      })
+    ),
+  })
+
+  const loadChallenges = async () => {
+    try {
+      setIsLoading(true)
+      const data = await getChallenges()
+      setChallenges(data.map(toUiChallenge))
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "ไม่สามารถโหลดโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadChallenges()
+  }, [])
 
   const isEditing = editingId !== null
 
@@ -159,14 +162,14 @@ export default function ChallengeManagement() {
     })
   }, [challenges, searchQuery])
 
-  const updateChallenge = (
+  const updateChallengeField = (
     field: keyof Omit<ChallengeForm, "containers">,
     value: string
   ) => {
     setChallenge((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "title"
+      ...(field === "title" && !isEditing
         ? {
             challengeId: createChallengeId(value),
           }
@@ -234,11 +237,12 @@ export default function ChallengeManagement() {
   }
 
   const handleEdit = (selectedChallenge: Challenge) => {
-    setEditingId(selectedChallenge.id)
+    setEditingId(selectedChallenge.challengeId)
     setChallenge({
       title: selectedChallenge.title,
       challengeId: selectedChallenge.challengeId,
       category: selectedChallenge.category,
+      difficulty: selectedChallenge.difficulty,
       description: selectedChallenge.description,
       containers: selectedChallenge.containers.map(
         (container) => ({
@@ -277,34 +281,30 @@ export default function ChallengeManagement() {
     setMessage("")
 
     try {
-      /*
-       * TODO:
-       * DELETE /api/admin/challenges/:id
-       */
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, 500)
+      await deleteChallenge(
+        challengeToDelete.challengeId
       )
 
-      setChallenges((prev) =>
-        prev.filter(
-          (item) => item.id !== challengeToDelete.id
-        )
-      )
-
-      if (editingId === challengeToDelete.id) {
+      if (
+        editingId ===
+        challengeToDelete.challengeId
+      ) {
         setEditingId(null)
         setChallenge(createEmptyChallenge())
         setShowForm(false)
       }
 
       setDeletingChallenge(null)
+      await loadChallenges()
+
       setMessage(
         `ลบโจทย์ "${challengeToDelete.title}" สำเร็จ`
       )
-    } catch {
+    } catch (error) {
       setMessage(
-        "ไม่สามารถลบโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
+        error instanceof Error
+          ? error.message
+          : "ไม่สามารถลบโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
       )
     } finally {
       setIsDeleting(false)
@@ -326,6 +326,11 @@ export default function ChallengeManagement() {
 
     if (!challenge.title.trim()) {
       setMessage("กรุณากรอกชื่อโจทย์")
+      return
+    }
+
+    if (!challenge.challengeId.trim()) {
+      setMessage("ไม่สามารถสร้าง Challenge ID ได้")
       return
     }
 
@@ -351,60 +356,42 @@ export default function ChallengeManagement() {
 
     setIsSaving(true)
 
+    const payload: ApiChallenge = {
+      title: challenge.title.trim(),
+      challengeId: challenge.challengeId.trim(),
+      category: challenge.category,
+      difficulty: challenge.difficulty,
+      description: challenge.description.trim(),
+      containers: challenge.containers.map(
+        ({ name, image, port }) => ({
+          name: name.trim(),
+          image: image.trim(),
+          port: port.trim(),
+        })
+      ),
+    }
+
     try {
-      /*
-       * TODO:
-       * POST /api/admin/challenges
-       * PUT  /api/admin/challenges/:id
-       */
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, 700)
-      )
-
-      if (isEditing && editingId !== null) {
-        setChallenges((prev) =>
-          prev.map((item) =>
-            item.id === editingId
-              ? {
-                  ...item,
-                  title: challenge.title,
-                  challengeId: challenge.challengeId,
-                  category: challenge.category,
-                  description: challenge.description,
-                  containers: challenge.containers,
-                }
-              : item
-          )
-        )
-
+      if (isEditing) {
+        await updateChallengeApi(payload)
         setMessage("แก้ไขโจทย์สำเร็จ")
       } else {
-        const newChallenge: Challenge = {
-          id: Date.now(),
-          title: challenge.title,
-          challengeId: challenge.challengeId,
-          category: challenge.category,
-          description: challenge.description,
-          containers: challenge.containers,
-        }
-
-        setChallenges((prev) => [
-          newChallenge,
-          ...prev,
-        ])
-
+        await createChallenge(payload)
         setMessage("สร้างโจทย์สำเร็จ")
       }
 
       setEditingId(null)
       setChallenge(createEmptyChallenge())
       setShowForm(false)
-    } catch {
+
+      await loadChallenges()
+    } catch (error) {
       setMessage(
-        isEditing
-          ? "ไม่สามารถแก้ไขโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
-          : "ไม่สามารถสร้างโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
+        error instanceof Error
+          ? error.message
+          : isEditing
+            ? "ไม่สามารถแก้ไขโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
+            : "ไม่สามารถสร้างโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
       )
     } finally {
       setIsSaving(false)
@@ -489,7 +476,7 @@ export default function ChallengeManagement() {
                             onChange={(
                               event
                             ) =>
-                              updateChallenge(
+                              updateChallengeField(
                                 "title",
                                 event.target
                                   .value
@@ -551,7 +538,7 @@ export default function ChallengeManagement() {
                             onChange={(
                               event
                             ) =>
-                              updateChallenge(
+                              updateChallengeField(
                                 "category",
                                 event.target
                                   .value
@@ -592,6 +579,44 @@ export default function ChallengeManagement() {
 
                         <div>
                           <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                            ระดับความยาก
+                          </label>
+
+                          <select
+                            value={challenge.difficulty}
+                            onChange={(event) =>
+                              updateChallengeField(
+                                "difficulty",
+                                event.target.value
+                              )
+                            }
+                            className="
+                              h-12 w-full
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white px-4
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                          >
+                            {difficulties.map((difficulty) => (
+                              <option
+                                key={difficulty}
+                                value={difficulty}
+                              >
+                                {difficulty}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
                             คำอธิบาย
                           </label>
 
@@ -602,7 +627,7 @@ export default function ChallengeManagement() {
                             onChange={(
                               event
                             ) =>
-                              updateChallenge(
+                              updateChallengeField(
                                 "description",
                                 event.target
                                   .value
@@ -911,10 +936,18 @@ export default function ChallengeManagement() {
 
                   <div className="divide-y divide-[#eeeae8]">
 
-                    {filteredChallenges.map(
+                    {isLoading ? (
+                      <div className="p-8 text-center text-sm text-[#77716e]">
+                        กำลังโหลด Challenge...
+                      </div>
+                    ) : filteredChallenges.length === 0 ? (
+                      <div className="p-8 text-center text-sm text-[#77716e]">
+                        ไม่พบ Challenge
+                      </div>
+                    ) : filteredChallenges.map(
                       (item, index) => (
                         <div
-                          key={item.id}
+                          key={item.challengeId}
                           className="group p-6 transition-colors hover:bg-[#faf9f8] sm:p-7"
                         >
 
