@@ -1,2 +1,2 @@
-# React + TypeScript + Vite
-Frontend of CTFish
+# Frontend of CTFish 
+React + TypeScript + Vite

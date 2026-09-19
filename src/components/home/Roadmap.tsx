@@ -10,6 +10,7 @@ type TimelineItem = {
   description: string;
   icon: React.ElementType;
   side: "left" | "right";
+  path: string;
 };
 
 const timelineItems: TimelineItem[] = [
@@ -19,6 +20,7 @@ const timelineItems: TimelineItem[] = [
       "เรียนรู้ Cybersecurity ผ่านเรื่องราวและภารกิจที่เชื่อมโยงกัน ค่อย ๆ ปลดล็อกความท้าทายจากระดับเริ่มต้นไปสู่โจทย์ที่ซับซ้อนพร้อมสะสมปลาและทักษะระหว่างการเดินทาง",
     icon: BookOpen,
     side: "left",
+    path: "/story",
   },
   {
     title: "Competition",
@@ -26,6 +28,7 @@ const timelineItems: TimelineItem[] = [
       "ท้าทายความสามารถของตัวเองด้วยโจทย์ Cybersecurity ที่ต้องแข่งกับเวลา แก้โจทย์ ค้นหา Flag และทำคะแนนให้ได้มากที่สุด เพื่อพิสูจน์ว่าใครคือนักล่าที่เก่งที่สุด",
     icon: Crosshair,
     side: "right",
+    path: "/competition"
   },
   {
     title: "Leaderboard",
@@ -33,14 +36,8 @@ const timelineItems: TimelineItem[] = [
       "แสดงความสำเร็จจากการเรียนรู้และพิชิตโจทย์บนแพลตฟอร์ม เมื่อผ่านเงื่อนไขที่กำหนด คุณจะได้รับใบรับรองเพื่อยืนยันความสำเร็จและทักษะที่ได้ฝึกฝน",
     icon: Trophy,
     side: "left",
-  },
-  {
-    title: "Certification",
-    description:
-      "แสดงความสำเร็จจากการเรียนรู้และพิชิตโจทย์บนแพลตฟอร์ม เมื่อผ่านเงื่อนไขที่กำหนด คุณจะได้รับใบรับรองเพื่อยืนยันความสำเร็จและทักษะที่ได้ฝึกฝน",
-    icon: Award,
-    side: "right",
-  },
+    path: "/leaderboard"
+  }
 ];
 
 export default function LearningJourney() {
@@ -303,7 +300,8 @@ function TimelineCard({
         {/* ===================================================
             More button
         ==================================================== */}
-        <button
+       <a href={item.path}>
+         <button
           type="button"
           className="
             mt-7
@@ -323,6 +321,7 @@ function TimelineCard({
           เพิ่มเติม
           <span aria-hidden="true">→</span>
         </button>
+       </a>
       </article>
     </div>
   );
