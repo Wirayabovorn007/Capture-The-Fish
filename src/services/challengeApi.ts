@@ -1,3 +1,4 @@
+import { getAuthHeaders } from "../utils/auth"
 import type {
   Challenge,
   ChallengeStatusResponse,
@@ -48,7 +49,7 @@ export async function createChallenge(challenge: Challenge) {
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=create_challenge`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await getAuthHeaders(),
     body: JSON.stringify(challenge),
   })
   const data = await readJson(response)
@@ -60,7 +61,7 @@ export async function updateChallenge(challenge: Challenge) {
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=update_challenge`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: await getAuthHeaders(),
     body: JSON.stringify(challenge),
   })
   const data = await readJson(response)
@@ -70,14 +71,14 @@ export async function updateChallenge(challenge: Challenge) {
 
 export async function deleteChallenge(challengeId: string) {
   const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=delete_challenge&challengeId=${encodeURIComponent(challengeId)}`, { method: "DELETE" })
+  const response = await fetch(`${baseUrl}/?action=delete_challenge&challengeId=${encodeURIComponent(challengeId)}`, { method: "DELETE", headers: await getAuthHeaders(false) })
   const data = await readJson(response)
   if (data.status !== "SUCCESS") throw new Error(data.error || "ลบ Challenge ไม่สำเร็จ")
 }
 
 export async function spawnChallenge(challengeId: string): Promise<SpawnChallengeResponse> {
   const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=spawn&challengeId=${encodeURIComponent(challengeId)}`, { method: "POST" })
+  const response = await fetch(`${baseUrl}/?action=spawn&challengeId=${encodeURIComponent(challengeId)}`, { method: "POST", headers: await getAuthHeaders(false) })
   const data = await readJson(response)
   if (!data.sessionId) throw new Error(data.error || "ไม่สามารถเริ่ม Challenge ได้")
   return { status: data.status, sessionId: data.sessionId }
@@ -85,7 +86,7 @@ export async function spawnChallenge(challengeId: string): Promise<SpawnChalleng
 
 export async function getChallengeStatus(challengeId: string, sessionId: string): Promise<ChallengeStatusResponse> {
   const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=status&challengeId=${encodeURIComponent(challengeId)}&sessionId=${encodeURIComponent(sessionId)}&t=${Date.now()}`)
+  const response = await fetch(`${baseUrl}/?action=status&challengeId=${encodeURIComponent(challengeId)}&sessionId=${encodeURIComponent(sessionId)}&t=${Date.now()}`, { headers: await getAuthHeaders(false) })
   const data = await readJson(response)
   return {
     status: data.status ?? "UNKNOWN",
@@ -97,7 +98,7 @@ export async function getChallengeStatus(challengeId: string, sessionId: string)
 
 export async function terminateChallenge(sessionId: string) {
   const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=terminate&sessionId=${encodeURIComponent(sessionId)}`, { method: "POST" })
+  const response = await fetch(`${baseUrl}/?action=terminate&sessionId=${encodeURIComponent(sessionId)}`, { method: "POST", headers: await getAuthHeaders(false) })
   const data = await readJson(response)
   if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถหยุด Challenge ได้")
 }
@@ -106,7 +107,7 @@ export async function submitFlag(challengeId: string, flag: string): Promise<Sub
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=submit_flag`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await getAuthHeaders(),
     body: JSON.stringify({ challengeId, flag }),
   })
   const data = await readJson(response)
@@ -118,7 +119,8 @@ export async function getActiveChallenge(challengeId: string) {
   const baseUrl = await getApiUrl()
 
   const response = await fetch(
-    `${baseUrl}/?action=active&challengeId=${encodeURIComponent(challengeId)}&t=${Date.now()}`
+    `${baseUrl}/?action=active&challengeId=${encodeURIComponent(challengeId)}&t=${Date.now()}`,
+    { headers: await getAuthHeaders(false) }
   )
 
   const data = await readJson(response)

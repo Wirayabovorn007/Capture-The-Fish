@@ -1,861 +1,147 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { RefreshCw, Search, ShieldBan, ShieldCheck, Users } from "lucide-react"
+import Navbar from "../../components/admin/Navbar"
+import { getUsers, suspendUser, unsuspendUser, type ManagedUser, type AccountStatus } from "../../services/userApi"
 
-type UserStatus = "active" | "suspended"
-
-type User = {
-  id: number
-  username: string
-  email: string
-  fish: number
-  points: number
-  completedChallenges: number
-  flagsSubmitted: number
-  status: UserStatus
-  joinedAt: string
-  lastActive: string
+function formatDate(value: string | null) {
+  if (!value) return "ยังไม่เคยใช้งาน"
+  return new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date(value))
 }
 
-const initialUsers: User[] = [
-  {
-    id: 1,
-    username: "cyberfox",
-    email: "cyberfox@example.com",
-    fish: 1280,
-    points: 4250,
-    completedChallenges: 18,
-    flagsSubmitted: 31,
-    status: "active",
-    joinedAt: "12 มิ.ย. 2026",
-    lastActive: "วันนี้ 14:32",
-  },
-  {
-    id: 2,
-    username: "rootkit",
-    email: "rootkit@example.com",
-    fish: 950,
-    points: 3820,
-    completedChallenges: 15,
-    flagsSubmitted: 27,
-    status: "active",
-    joinedAt: "10 มิ.ย. 2026",
-    lastActive: "วันนี้ 13:18",
-  },
-  {
-    id: 3,
-    username: "packetcat",
-    email: "packetcat@example.com",
-    fish: 740,
-    points: 2940,
-    completedChallenges: 11,
-    flagsSubmitted: 24,
-    status: "active",
-    joinedAt: "8 มิ.ย. 2026",
-    lastActive: "วันนี้ 11:45",
-  },
-  {
-    id: 4,
-    username: "nullbyte",
-    email: "nullbyte@example.com",
-    fish: 420,
-    points: 1760,
-    completedChallenges: 7,
-    flagsSubmitted: 19,
-    status: "suspended",
-    joinedAt: "4 มิ.ย. 2026",
-    lastActive: "เมื่อวาน 19:20",
-  },
-  {
-    id: 5,
-    username: "shellfish",
-    email: "shellfish@example.com",
-    fish: 310,
-    points: 1240,
-    completedChallenges: 5,
-    flagsSubmitted: 13,
-    status: "active",
-    joinedAt: "1 มิ.ย. 2026",
-    lastActive: "เมื่อวาน 17:03",
-  },
-]
-
 export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
-  const [userSearch, setUserSearch] = useState("")
-  const [userStatusFilter, setUserStatusFilter] =
-    useState<"all" | UserStatus>("all")
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [users, setUsers] = useState<ManagedUser[]>([])
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | AccountStatus>("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [selected, setSelected] = useState<ManagedUser | null>(null)
+  const [changingId, setChangingId] = useState<string | null>(null)
 
-  const filteredUsers = useMemo(() => {
-    const query = userSearch.trim().toLowerCase()
-
-    return users.filter((user) => {
-      const matchesSearch =
-        !query ||
-        user.username.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
-
-      const matchesStatus =
-        userStatusFilter === "all" ||
-        user.status === userStatusFilter
-
-      return matchesSearch && matchesStatus
-    })
-  }, [users, userSearch, userStatusFilter])
-
-  const selectedUser = selectedUserId
-    ? users.find((user) => user.id === selectedUserId) ?? null
-    : null
-
-  const handleToggleUserStatus = (userId: number) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              status:
-                user.status === "active"
-                  ? "suspended"
-                  : "active",
-            }
-          : user,
-      ),
-    )
+  const loadUsers = async () => {
+    try {
+      setLoading(true)
+      setError("")
+      const data = await getUsers()
+      setUsers(data)
+      if (selected) setSelected(data.find((u) => u.id === selected.id) ?? null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "โหลดข้อมูลผู้ใช้ไม่สำเร็จ")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleCloseUserDetails = () => {
-    setSelectedUserId(null)
+  useEffect(() => { void loadUsers() }, [])
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return users.filter((user) => {
+      const matchesSearch = !q || user.username.toLowerCase().includes(q) || user.email.toLowerCase().includes(q)
+      const matchesStatus = statusFilter === "all" || user.accountStatus === statusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [users, search, statusFilter])
+
+  const onlineCount = users.filter((u) => u.isOnline).length
+  const suspendedCount = users.filter((u) => u.accountStatus === "suspended").length
+  const totalFish = users.reduce((sum, u) => sum + u.fish, 0)
+
+  const toggleStatus = async (user: ManagedUser) => {
+    try {
+      setChangingId(user.id)
+      setError("")
+      if (user.accountStatus === "active") await suspendUser(user)
+      else await unsuspendUser(user)
+      await loadUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "เปลี่ยนสถานะบัญชีไม่สำเร็จ")
+    } finally {
+      setChangingId(null)
+    }
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* User Overview */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-[#e5e1df] bg-white p-5">
-            <p className="text-sm text-[#77716e]">
-              ผู้ใช้ทั้งหมด
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-[#403a38]">
-              {users.length}
-            </p>
+    <div className="min-h-screen bg-[#f8f8f8] text-[#26211f]">
+      <Navbar />
+      <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#B01414]">ADMIN</p>
+            <h1 className="text-3xl font-bold">User Management</h1>
+            <p className="mt-1 text-sm text-gray-500">จัดการบัญชีและดูสถิติผู้เล่นจาก Cognito และ DynamoDB</p>
           </div>
+          <button onClick={() => void loadUsers()} disabled={loading} className="flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-semibold hover:border-[#B01414] disabled:opacity-50">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> รีเฟรช
+          </button>
+        </div>
 
-          <div className="rounded-2xl border border-[#e5e1df] bg-white p-5">
-            <p className="text-sm text-[#77716e]">
-              ผู้ใช้งานอยู่
-            </p>
+        {error && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-            <p className="mt-2 text-3xl font-bold text-green-600">
-              {
-                users.filter(
-                  (user) => user.status === "active",
-                ).length
-              }
-            </p>
-          </div>
+        <section className="mt-7 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Summary title="ผู้ใช้ทั้งหมด" value={users.length} />
+          <Summary title="ออนไลน์" value={onlineCount} />
+          <Summary title="ถูกระงับ" value={suspendedCount} />
+          <Summary title="Fish ทั้งหมด" value={totalFish} />
+        </section>
 
-          <div className="rounded-2xl border border-[#e5e1df] bg-white p-5">
-            <p className="text-sm text-[#77716e]">
-              ถูกระงับ
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-red-600">
-              {
-                users.filter(
-                  (user) => user.status === "suspended",
-                ).length
-              }
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[#e5e1df] bg-white p-5">
-            <p className="text-sm text-[#77716e]">
-              Fish ทั้งหมด
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-[#b01414]">
-              {users
-                .reduce(
-                  (total, user) => total + user.fish,
-                  0,
-                )
-                .toLocaleString()}
-            </p>
+        <section className="mt-7 rounded-xl border bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ค้นหา Username หรือ Email" className="w-full rounded-lg border py-2.5 pl-10 pr-3 outline-none focus:border-[#B01414]" />
+            </div>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | AccountStatus)} className="rounded-lg border bg-white px-3 py-2.5 outline-none focus:border-[#B01414]">
+              <option value="all">ทุกสถานะบัญชี</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
           </div>
         </section>
 
-        {/* User List */}
-        <section className="overflow-hidden rounded-2xl border border-[#e5e1df] bg-white">
-          {/* Header */}
-          <div className="border-b border-[#eeeae8] p-6 sm:p-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
-                  User Management
-                </p>
-
-                <h2 className="mt-2 text-2xl font-bold text-[#403a38]">
-                  ผู้ใช้งานทั้งหมด
-                </h2>
-
-                <p className="mt-1 text-sm text-[#77716e]">
-                  ค้นหา ตรวจสอบ และจัดการบัญชีผู้เล่น
-                </p>
-              </div>
-            </div>
-
-            {/* Search + Filter */}
-            <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_200px]">
-              <div className="relative">
-                <svg
-                  className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#999390]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
-                </svg>
-
-                <input
-                  type="text"
-                  value={userSearch}
-                  onChange={(event) =>
-                    setUserSearch(event.target.value)
-                  }
-                  placeholder="ค้นหาจาก Username หรือ Email..."
-                  className="
-                    h-12 w-full
-                    rounded-xl
-                    border
-                    border-[#d8d2cf]
-                    bg-[#faf9f8]
-                    pl-12 pr-4
-                    text-sm
-                    text-[#403a38]
-                    outline-none
-                    transition-all
-                    placeholder:text-[#aaa4a1]
-                    focus:border-[#b01414]
-                    focus:bg-white
-                    focus:ring-2
-                    focus:ring-[#b01414]/10
-                  "
-                />
-              </div>
-
-              <select
-                value={userStatusFilter}
-                onChange={(event) =>
-                  setUserStatusFilter(
-                    event.target.value as
-                      | "all"
-                      | UserStatus,
-                  )
-                }
-                className="
-                  h-12 w-full
-                  rounded-xl
-                  border
-                  border-[#d8d2cf]
-                  bg-[#faf9f8]
-                  px-4
-                  text-sm
-                  text-[#403a38]
-                  outline-none
-                  transition-all
-                  focus:border-[#b01414]
-                  focus:bg-white
-                  focus:ring-2
-                  focus:ring-[#b01414]/10
-                "
-              >
-                <option value="all">
-                  สถานะทั้งหมด
-                </option>
-
-                <option value="active">
-                  ใช้งานอยู่
-                </option>
-
-                <option value="suspended">
-                  ถูกระงับ
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {/* Result Count */}
-          <div className="border-b border-[#eeeae8] bg-[#faf9f8] px-6 py-3 sm:px-8">
-            <p className="text-sm text-[#77716e]">
-              พบ{" "}
-              <span className="font-semibold text-[#403a38]">
-                {filteredUsers.length}
-              </span>{" "}
-              ผู้ใช้
-            </p>
-          </div>
-
-          {/* Desktop Table */}
-          <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#eeeae8] bg-[#faf9f8]">
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    ผู้ใช้งาน
-                  </th>
-
-                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    Fish
-                  </th>
-
-                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    คะแนน
-                  </th>
-
-                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    สำเร็จ
-                  </th>
-
-                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    Flags
-                  </th>
-
-                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    สถานะ
-                  </th>
-
-                  <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-[#999390]">
-                    จัดการ
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-[#eeeae8]">
-                {filteredUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="transition-colors hover:bg-[#faf9f8]"
-                  >
-                    {/* User */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#b01414]/10 text-sm font-bold text-[#b01414]">
-                          {user.username
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="font-semibold text-[#403a38]">
-                            {user.username}
-                          </p>
-
-                          <p className="mt-0.5 text-xs text-[#999390]">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Fish */}
-                    <td className="px-4 py-5">
-                      <span className="font-semibold text-[#b01414]">
-                        {user.fish.toLocaleString()}
-                      </span>
-                    </td>
-
-                    {/* Points */}
-                    <td className="px-4 py-5">
-                      <span className="font-semibold text-[#403a38]">
-                        {user.points.toLocaleString()}
-                      </span>
-                    </td>
-
-                    {/* Completed */}
-                    <td className="px-4 py-5 text-sm text-[#77716e]">
-                      {user.completedChallenges}
-                    </td>
-
-                    {/* Flags */}
-                    <td className="px-4 py-5 text-sm text-[#77716e]">
-                      {user.flagsSubmitted}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-5">
-                      {user.status === "active" ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                          ใช้งานอยู่
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                          ถูกระงับ
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-5">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedUserId(user.id)
-                          }
-                          className="
-                            rounded-lg
-                            border
-                            border-[#d8d2cf]
-                            bg-white
-                            px-3 py-2
-                            text-xs
-                            font-semibold
-                            text-[#403a38]
-                            transition-all
-                            hover:border-[#b01414]
-                            hover:text-[#b01414]
-                          "
-                        >
-                          ดูรายละเอียด
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleToggleUserStatus(user.id)
-                          }
-                          className={`
-                            rounded-lg
-                            border
-                            px-3 py-2
-                            text-xs
-                            font-semibold
-                            transition-all
-                            ${
-                              user.status === "active"
-                                ? "border-red-200 bg-white text-red-600 hover:bg-red-50"
-                                : "border-green-200 bg-white text-green-600 hover:bg-green-50"
-                            }
-                          `}
-                        >
-                          {user.status === "active"
-                            ? "ระงับ"
-                            : "เปิดใช้งาน"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="divide-y divide-[#eeeae8] lg:hidden">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#b01414]/10 text-sm font-bold text-[#b01414]">
-                      {user.username
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="font-semibold text-[#403a38]">
-                        {user.username}
-                      </p>
-
-                      <p className="truncate text-xs text-[#999390]">
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
-
-                  {user.status === "active" ? (
-                    <span className="shrink-0 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                      ใช้งานอยู่
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-                      ถูกระงับ
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="rounded-xl bg-[#faf9f8] p-3">
-                    <p className="text-xs text-[#999390]">
-                      Fish
-                    </p>
-
-                    <p className="mt-1 font-bold text-[#b01414]">
-                      {user.fish.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#faf9f8] p-3">
-                    <p className="text-xs text-[#999390]">
-                      คะแนน
-                    </p>
-
-                    <p className="mt-1 font-bold text-[#403a38]">
-                      {user.points.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#faf9f8] p-3">
-                    <p className="text-xs text-[#999390]">
-                      สำเร็จ
-                    </p>
-
-                    <p className="mt-1 font-bold text-[#403a38]">
-                      {user.completedChallenges}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#faf9f8] p-3">
-                    <p className="text-xs text-[#999390]">
-                      Flags
-                    </p>
-
-                    <p className="mt-1 font-bold text-[#403a38]">
-                      {user.flagsSubmitted}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedUserId(user.id)
-                    }
-                    className="
-                      flex-1
-                      rounded-lg
-                      border
-                      border-[#d8d2cf]
-                      bg-white
-                      px-3 py-2
-                      text-xs
-                      font-semibold
-                      text-[#403a38]
-                      transition-all
-                      hover:border-[#b01414]
-                      hover:text-[#b01414]
-                    "
-                  >
-                    ดูรายละเอียด
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleToggleUserStatus(user.id)
-                    }
-                    className={`
-                      flex-1
-                      rounded-lg
-                      border
-                      px-3 py-2
-                      text-xs
-                      font-semibold
-                      transition-all
-                      ${
-                        user.status === "active"
-                          ? "border-red-200 bg-white text-red-600 hover:bg-red-50"
-                          : "border-green-200 bg-white text-green-600 hover:bg-green-50"
-                      }
-                    `}
-                  >
-                    {user.status === "active"
-                      ? "ระงับบัญชี"
-                      : "เปิดใช้งาน"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Empty */}
-          {filteredUsers.length === 0 && (
-            <div className="p-12 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f3f1ef]">
-                🔍
-              </div>
-
-              <h3 className="mt-4 font-semibold text-[#403a38]">
-                ไม่พบผู้ใช้งาน
-              </h3>
-
-              <p className="mt-1 text-sm text-[#999390]">
-                ลองเปลี่ยนคำค้นหาหรือตัวกรอง
-              </p>
+        <section className="mt-5 overflow-hidden rounded-xl border bg-white shadow-sm">
+          {loading && users.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">กำลังโหลดผู้ใช้...</div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">ไม่พบผู้ใช้</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-sm">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr><th className="px-5 py-4">ผู้ใช้</th><th className="px-4 py-4">Fish</th><th className="px-4 py-4">คะแนน</th><th className="px-4 py-4">สำเร็จ</th><th className="px-4 py-4">Flags</th><th className="px-4 py-4">ออนไลน์</th><th className="px-4 py-4">บัญชี</th><th className="px-4 py-4">จัดการ</th></tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-5 py-4"><button onClick={() => setSelected(user)} className="text-left"><div className="font-bold">{user.username}</div><div className="text-xs text-gray-500">{user.email}</div></button></td>
+                      <td className="px-4 py-4">{user.fish}</td><td className="px-4 py-4">{user.points}</td><td className="px-4 py-4">{user.completedChallenges}</td><td className="px-4 py-4">{user.flagsSubmitted}</td>
+                      <td className="px-4 py-4"><span className={`inline-flex items-center gap-2 ${user.isOnline ? "text-green-700" : "text-gray-500"}`}><span className={`h-2.5 w-2.5 rounded-full ${user.isOnline ? "bg-green-500" : "bg-gray-300"}`} />{user.isOnline ? "Online" : "Offline"}</span></td>
+                      <td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${user.accountStatus === "active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>{user.accountStatus}</span></td>
+                      <td className="px-4 py-4"><button onClick={() => void toggleStatus(user)} disabled={changingId === user.id} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 ${user.accountStatus === "active" ? "bg-[#B01414]" : "bg-green-700"}`}>{user.accountStatus === "active" ? <ShieldBan className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}{changingId === user.id ? "กำลังบันทึก..." : user.accountStatus === "active" ? "ระงับ" : "ปลดระงับ"}</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </section>
-      </div>
+      </main>
 
-      {/* User Detail Modal */}
-      {selectedUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              handleCloseUserDetails()
-            }
-          }}
-        >
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-            {/* Modal Header */}
-            <div className="border-b border-[#eeeae8] px-6 py-5 sm:px-8">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#b01414]/10 text-xl font-bold text-[#b01414]">
-                    {selectedUser.username
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
-
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-xl font-bold text-[#403a38]">
-                        {selectedUser.username}
-                      </h2>
-
-                      {selectedUser.status === "active" ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                          ใช้งานอยู่
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                          ถูกระงับ
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="mt-1 text-sm text-[#77716e]">
-                      {selectedUser.email}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleCloseUserDetails}
-                  aria-label="ปิด"
-                  className="
-                    flex
-                    h-9
-                    w-9
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-lg
-                    text-[#77716e]
-                    transition-colors
-                    hover:bg-[#f5f3f2]
-                    hover:text-[#403a38]
-                  "
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      d="M18 6 6 18"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="m6 6 12 12"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="max-h-[70vh] overflow-y-auto px-6 py-6 sm:px-8">
-              {/* Account Information */}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
-                  Account Information
-                </p>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-[#faf9f8] p-4">
-                    <p className="text-xs text-[#999390]">
-                      User ID
-                    </p>
-
-                    <p className="mt-1 font-semibold text-[#403a38]">
-                      #{selectedUser.id}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#faf9f8] p-4">
-                    <p className="text-xs text-[#999390]">
-                      Email
-                    </p>
-
-                    <p className="mt-1 break-all font-semibold text-[#403a38]">
-                      {selectedUser.email}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#faf9f8] p-4">
-                    <p className="text-xs text-[#999390]">
-                      วันที่สมัคร
-                    </p>
-
-                    <p className="mt-1 font-semibold text-[#403a38]">
-                      {selectedUser.joinedAt}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#faf9f8] p-4">
-                    <p className="text-xs text-[#999390]">
-                      Active ล่าสุด
-                    </p>
-
-                    <p className="mt-1 font-semibold text-[#403a38]">
-                      {selectedUser.lastActive}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Statistics */}
-              <div className="mt-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
-                  Player Statistics
-                </p>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-[#eeeae8] p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-[#77716e]">
-                        Fish
-                      </p>
-
-                      <span className="text-lg"></span>
-                    </div>
-
-                    <p className="mt-2 text-2xl font-bold text-[#b01414]">
-                      {selectedUser.fish.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-[#eeeae8] p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-[#77716e]">
-                        คะแนน
-                      </p>
-
-                      <span className="text-lg"></span>
-                    </div>
-
-                    <p className="mt-2 text-2xl font-bold text-[#403a38]">
-                      {selectedUser.points.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-[#eeeae8] p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-[#77716e]">
-                        Challenge ที่สำเร็จ
-                      </p>
-
-                      <span className="text-lg"></span>
-                    </div>
-
-                    <p className="mt-2 text-2xl font-bold text-[#403a38]">
-                      {selectedUser.completedChallenges}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-[#eeeae8] p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-[#77716e]">
-                        Flags ที่ส่ง
-                      </p>
-
-                      <span className="text-lg"></span>
-                    </div>
-
-                    <p className="mt-2 text-2xl font-bold text-[#403a38]">
-                      {selectedUser.flagsSubmitted}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex flex-col-reverse gap-3 border-t border-[#eeeae8] bg-[#faf9f8] px-6 py-4 sm:flex-row sm:justify-end sm:px-8">
-              <button
-                type="button"
-                onClick={handleCloseUserDetails}
-                className="
-                  rounded-xl
-                  border
-                  border-[#d8d2cf]
-                  bg-white
-                  px-5
-                  py-2.5
-                  text-sm
-                  font-semibold
-                  text-[#403a38]
-                  transition-all
-                  hover:border-[#b01414]
-                  hover:text-[#b01414]
-                "
-              >
-                ปิด
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  handleToggleUserStatus(selectedUser.id)
-                }}
-                className={`
-                  rounded-xl
-                  px-5
-                  py-2.5
-                  text-sm
-                  font-semibold
-                  transition-all
-                  ${
-                    selectedUser.status === "active"
-                      ? "bg-red-600 text-white hover:bg-red-700"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  }
-                `}
-              >
-                {selectedUser.status === "active"
-                  ? "ระงับบัญชี"
-                  : "เปิดใช้งานบัญชี"}
-              </button>
-            </div>
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={() => setSelected(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between"><div><p className="text-sm text-[#B01414]">รายละเอียดผู้ใช้</p><h2 className="text-2xl font-bold">{selected.username}</h2><p className="text-sm text-gray-500">{selected.email}</p></div><button onClick={() => setSelected(null)} className="text-xl text-gray-400">×</button></div>
+            <div className="mt-6 grid grid-cols-2 gap-4 text-sm"><Detail label="User ID" value={selected.id} /><Detail label="สร้างบัญชี" value={formatDate(selected.createdAt)} /><Detail label="Active ล่าสุด" value={formatDate(selected.lastActiveAt)} /><Detail label="สถานะออนไลน์" value={selected.isOnline ? "Online" : "Offline"} /><Detail label="Fish" value={String(selected.fish)} /><Detail label="คะแนน" value={String(selected.points)} /><Detail label="Challenge ที่สำเร็จ" value={String(selected.completedChallenges)} /><Detail label="Flags ที่ส่งถูก" value={String(selected.flagsSubmitted)} /></div>
+            <button onClick={() => void toggleStatus(selected)} disabled={changingId === selected.id} className={`mt-6 w-full rounded-lg py-3 font-semibold text-white disabled:opacity-50 ${selected.accountStatus === "active" ? "bg-[#B01414]" : "bg-green-700"}`}>{selected.accountStatus === "active" ? "ระงับบัญชีนี้" : "ปลดระงับบัญชีนี้"}</button>
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
+
+function Summary({ title, value }: { title: string; value: number }) { return <div className="rounded-xl border bg-white p-5 shadow-sm"><div className="flex items-center gap-2 text-sm text-gray-500"><Users className="h-4 w-4" />{title}</div><p className="mt-2 text-3xl font-bold">{value}</p></div> }
+function Detail({ label, value }: { label: string; value: string }) { return <div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">{label}</p><p className="mt-1 break-all font-semibold">{value}</p></div> }
