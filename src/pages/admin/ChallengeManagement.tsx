@@ -15,6 +15,8 @@ type DockerContainer = {
   name: string
   image: string
   port: string
+  accessType: "none" | "web" | "terminal"
+  buttonLabel: string
 }
 
 type ChallengeForm = {
@@ -55,6 +57,8 @@ function createEmptyContainer(): DockerContainer {
     name: "",
     image: "",
     port: "80",
+    accessType: "none",
+    buttonLabel: "",
   }
 }
 
@@ -124,6 +128,8 @@ export default function ChallengeManagement() {
     containers: (item.containers ?? []).map(
       (container, index) => ({
         ...container,
+        accessType: container.accessType ?? "none",
+        buttonLabel: container.buttonLabel ?? "",
         id: Date.now() + index + Math.random(),
       })
     ),
@@ -380,10 +386,12 @@ export default function ChallengeManagement() {
       hint: challenge.hint.trim(),
       flag: challenge.flag.trim(),
       containers: challenge.containers.map(
-        ({ name, image, port }) => ({
+        ({ name, image, port, accessType, buttonLabel }) => ({
           name: name.trim(),
           image: image.trim(),
           port: port.trim(),
+          accessType,
+          buttonLabel: buttonLabel.trim(),
         })
       ),
     }
@@ -900,6 +908,37 @@ export default function ChallengeManagement() {
                                     className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
                                   />
 
+                                </div>
+
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-[#77716e]">Player Access</label>
+                                    <select
+                                      value={container.accessType}
+                                      onChange={(event) =>
+                                        updateContainer(container.id, "accessType", event.target.value as DockerContainer["accessType"])
+                                      }
+                                      className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
+                                    >
+                                      <option value="none">Internal only</option>
+                                      <option value="web">Web Application</option>
+                                      <option value="terminal">Web Terminal</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-[#77716e]">Button Label</label>
+                                    <input
+                                      type="text"
+                                      value={container.buttonLabel}
+                                      disabled={container.accessType === "none"}
+                                      onChange={(event) =>
+                                        updateContainer(container.id, "buttonLabel", event.target.value)
+                                      }
+                                      placeholder={container.accessType === "terminal" ? "Open Terminal" : "Open Website"}
+                                      className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414] disabled:bg-[#f1efed] disabled:text-[#aaa4a1]"
+                                    />
+                                  </div>
                                 </div>
 
                               </div>

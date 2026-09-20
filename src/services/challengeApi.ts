@@ -79,25 +79,25 @@ export async function spawnChallenge(challengeId: string): Promise<SpawnChalleng
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=spawn&challengeId=${encodeURIComponent(challengeId)}`, { method: "POST" })
   const data = await readJson(response)
-  if (!data.taskArn) throw new Error(data.error || "ไม่สามารถเริ่ม Challenge ได้")
-  return { status: data.status, taskArn: data.taskArn }
+  if (!data.sessionId) throw new Error(data.error || "ไม่สามารถเริ่ม Challenge ได้")
+  return { status: data.status, sessionId: data.sessionId }
 }
 
-export async function getChallengeStatus(challengeId: string, taskArn: string): Promise<ChallengeStatusResponse> {
+export async function getChallengeStatus(challengeId: string, sessionId: string): Promise<ChallengeStatusResponse> {
   const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=status&challengeId=${encodeURIComponent(challengeId)}&taskArn=${encodeURIComponent(taskArn)}&t=${Date.now()}`)
+  const response = await fetch(`${baseUrl}/?action=status&challengeId=${encodeURIComponent(challengeId)}&sessionId=${encodeURIComponent(sessionId)}&t=${Date.now()}`)
   const data = await readJson(response)
   return {
     status: data.status ?? "UNKNOWN",
-    domain: data.domain ?? null,
+    sessionId: data.sessionId ?? sessionId,
     containers: data.containers ?? [],
     reason: data.reason,
   }
 }
 
-export async function terminateChallenge(taskArn: string) {
+export async function terminateChallenge(sessionId: string) {
   const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=terminate&taskArn=${encodeURIComponent(taskArn)}`, { method: "POST" })
+  const response = await fetch(`${baseUrl}/?action=terminate&sessionId=${encodeURIComponent(sessionId)}`, { method: "POST" })
   const data = await readJson(response)
   if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถหยุด Challenge ได้")
 }
@@ -112,4 +112,20 @@ export async function submitFlag(challengeId: string, flag: string): Promise<Sub
   const data = await readJson(response)
   if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถตรวจสอบ Flag ได้")
   return { correct: Boolean(data.correct) }
+}
+
+export async function getActiveChallenge(challengeId: string) {
+  const baseUrl = await getApiUrl()
+
+  const response = await fetch(
+    `${baseUrl}/?action=active&challengeId=${encodeURIComponent(challengeId)}&t=${Date.now()}`
+  )
+
+  const data = await readJson(response)
+
+  return {
+    status: data.status ?? "SUCCESS",
+    hasActive: Boolean(data.hasActive),
+    sessionId: data.sessionId as string | undefined,
+  }
 }

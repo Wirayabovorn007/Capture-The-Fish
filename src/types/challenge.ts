@@ -1,7 +1,11 @@
+export type ContainerAccessType = "none" | "web" | "terminal"
+
 export type DockerContainer = {
   name: string
   image: string
   port: string
+  accessType: ContainerAccessType
+  buttonLabel?: string
 }
 
 export type Challenge = {
@@ -18,17 +22,20 @@ export type Challenge = {
 
 export type RuntimeContainer = {
   name: string
-  url: string
+  privateIp: string
+  accessType: ContainerAccessType
+  buttonLabel?: string
+  url?: string | null
 }
 
 export type SpawnChallengeResponse = {
   status: string
-  taskArn: string
+  sessionId: string
 }
 
 export type ChallengeStatusResponse = {
   status: string
-  domain?: string | null
+  sessionId: string
   containers: RuntimeContainer[]
   reason?: string
 }
