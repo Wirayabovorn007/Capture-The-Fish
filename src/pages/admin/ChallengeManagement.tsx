@@ -15,6 +15,8 @@ type DockerContainer = {
   name: string
   image: string
   port: string
+  accessType: "none" | "web" | "terminal"
+  buttonLabel: string
 }
 
 type ChallengeForm = {
@@ -25,6 +27,7 @@ type ChallengeForm = {
   description: string
   objective: string
   hint: string
+  flag: string    
   containers: DockerContainer[]
 }
 
@@ -54,6 +57,8 @@ function createEmptyContainer(): DockerContainer {
     name: "",
     image: "",
     port: "80",
+    accessType: "none",
+    buttonLabel: "",
   }
 }
 
@@ -66,6 +71,7 @@ function createEmptyChallenge(): ChallengeForm {
     description: "",
     objective: "",
     hint: "",
+    flag: "",
     containers: [createEmptyContainer()],
   }
 }
@@ -122,6 +128,8 @@ export default function ChallengeManagement() {
     containers: (item.containers ?? []).map(
       (container, index) => ({
         ...container,
+        accessType: container.accessType ?? "none",
+        buttonLabel: container.buttonLabel ?? "",
         id: Date.now() + index + Math.random(),
       })
     ),
@@ -250,6 +258,7 @@ export default function ChallengeManagement() {
       description: selectedChallenge.description,
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
+      flag: "",
       containers: selectedChallenge.containers.map(
         (container) => ({
           ...container,
@@ -345,6 +354,11 @@ export default function ChallengeManagement() {
       return
     }
 
+    if (!isEditing && !challenge.flag.trim()) {
+      setMessage("กรุณากรอก Flag ของโจทย์")
+      return
+    }
+
     const invalidContainer =
       challenge.containers.some(
         (container) =>
@@ -364,17 +378,20 @@ export default function ChallengeManagement() {
 
     const payload: ApiChallenge = {
       title: challenge.title.trim(),
-      challengeId: challenge.challengeId.trim(),
+      challengeId: isEditing ? editingId! : challenge.challengeId.trim(),
       category: challenge.category,
       difficulty: challenge.difficulty,
       description: challenge.description.trim(),
       objective: challenge.objective.trim(),
       hint: challenge.hint.trim(),
+      flag: challenge.flag.trim(),
       containers: challenge.containers.map(
-        ({ name, image, port }) => ({
+        ({ name, image, port, accessType, buttonLabel }) => ({
           name: name.trim(),
           image: image.trim(),
           port: port.trim(),
+          accessType,
+          buttonLabel: buttonLabel.trim(),
         })
       ),
     }
@@ -736,6 +753,29 @@ export default function ChallengeManagement() {
 
                       </div>
 
+                      <div className="mt-6">
+                        <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                          Flag
+                          {!isEditing && <span className="ml-1 text-[#b01414]">*</span>}
+                        </label>
+
+                        <input
+                          type="text"
+                          value={challenge.flag}
+                          onChange={(event) =>
+                            updateChallengeField("flag", event.target.value)
+                          }
+                          placeholder="เช่น flag{salmon_secret}"
+                          className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 font-mono text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:ring-2 focus:ring-[#b01414]/10"
+                        />
+
+                        <p className="mt-2 text-xs text-[#999390]">
+                          {isEditing
+                            ? "ปล่อยว่างหากไม่ต้องการเปลี่ยน Flag เดิม"
+                            : "Flag จะถูกใช้ตรวจคำตอบของผู้เล่นและไม่แสดงในหน้า Challenge"}
+                        </p>
+                      </div>
+
                       {/* Containers */}
 
                       <div className="mt-10">
@@ -868,6 +908,37 @@ export default function ChallengeManagement() {
                                     className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
                                   />
 
+                                </div>
+
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-[#77716e]">Player Access</label>
+                                    <select
+                                      value={container.accessType}
+                                      onChange={(event) =>
+                                        updateContainer(container.id, "accessType", event.target.value as DockerContainer["accessType"])
+                                      }
+                                      className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
+                                    >
+                                      <option value="none">Internal only</option>
+                                      <option value="web">Web Application</option>
+                                      <option value="terminal">Web Terminal</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-[#77716e]">Button Label</label>
+                                    <input
+                                      type="text"
+                                      value={container.buttonLabel}
+                                      disabled={container.accessType === "none"}
+                                      onChange={(event) =>
+                                        updateContainer(container.id, "buttonLabel", event.target.value)
+                                      }
+                                      placeholder={container.accessType === "terminal" ? "Open Terminal" : "Open Website"}
+                                      className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414] disabled:bg-[#f1efed] disabled:text-[#aaa4a1]"
+                                    />
+                                  </div>
                                 </div>
 
                               </div>
