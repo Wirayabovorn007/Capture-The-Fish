@@ -53,7 +53,7 @@ interface CountUpStatProps {
 function CountUpStat({ end, suffix = "+", start, duration }: CountUpStatProps) {
 	const value = useCountUp(end, start, duration)
 	return (
-		<p className="text-white text-4xl font-bold">
+		<p className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold">
 			{formatNumber(value)}
 			{suffix}
 		</p>
@@ -86,35 +86,35 @@ export default function Statistic() {
 		<>
 			<div
 				ref={sectionRef}
-				className="bg-[#B01414] text-white flex gap-14 my-10 py-6 justify-center"
+				className="bg-[#B01414] text-white flex flex-wrap gap-x-8 gap-y-6 sm:gap-x-10 lg:gap-14 my-10 py-6 px-4 justify-center"
 			>
-				<div className="flex gap-4 items-center">
-					<img src={Wing} alt="" className="h-10" />
+				<div className="flex gap-3 sm:gap-4 items-center">
+					<img src={Wing} alt="" className="h-8 sm:h-9 lg:h-10" />
 					<div>
 						<CountUpStat end={9} start={inView} />
 						<span className="text-sm">โจทย์ท้าทาย</span>
 					</div>
 				</div>
-				<span className="hidden h-auto w-px bg-white md:block" />
-				<div className="flex gap-4 items-center">
-					<img src={People} alt="" className="h-10 " />
+				<span className="hidden h-auto w-px bg-white lg:block" />
+				<div className="flex gap-3 sm:gap-4 items-center">
+					<img src={People} alt="" className="h-8 sm:h-9 lg:h-10 " />
 					<div>
 						<CountUpStat end={2450} start={inView} />
 						<span className="text-sm">ผู้เล่นทั่วประเทศ</span>
 					</div>
 				</div>
-				<span className="hidden h-auto w-px bg-white md:block" />
-				<div className="flex gap-4 items-center">
-					<img src={Fish} alt="" className="h-10 " />
+				<span className="hidden h-auto w-px bg-white lg:block" />
+				<div className="flex gap-3 sm:gap-4 items-center">
+					<img src={Fish} alt="" className="h-8 sm:h-9 lg:h-10 " />
 					<div>
 						<CountUpStat end={900} start={inView} />
 						<span className="text-sm">ปลาที่สะสมแล้ว</span>
 					</div>
 				</div>
-				<span className="hidden h-auto w-px bg-white md:block" />
+				<span className="hidden h-auto w-px bg-white lg:block" />
 				<div>
-					<div className="flex gap-4 items-center">
-						<img src={Timer} alt="" className="h-10" />
+					<div className="flex gap-3 sm:gap-4 items-center">
+						<img src={Timer} alt="" className="h-8 sm:h-9 lg:h-10" />
 						<div>
 							<CountUpStat end={15000} start={inView} duration={2000} />
 							<span className="text-sm">ชั่วโมงการเล่นรวม</span>

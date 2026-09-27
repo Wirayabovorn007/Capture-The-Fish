@@ -1,6 +1,6 @@
 export default function CybersecurityCTA() {
   return (
-    <section className="relative overflow-hidden bg-[#A61B1B] py-20 sm:py-24">
+    <section className="relative mt-10 overflow-hidden bg-[#A61B1B] py-16 sm:py-20 lg:py-24">
       {/* faint grid lines */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.15]"
@@ -14,25 +14,25 @@ export default function CybersecurityCTA() {
       {/* giant background number */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-4 top-1/2 -translate-y-1/2 select-none  text-[16rem] leading-none text-white/10 sm:text-[20rem]"
+        className="pointer-events-none absolute -left-4 top-1/2 -translate-y-1/2 select-none text-[7rem] leading-none text-white/10 sm:text-[12rem] lg:text-[16rem] xl:text-[20rem]"
       >
         03
       </span>
 
-      <div className="relative mx-40 sm:px-10">
-        <h2 className=" text-4xl font-bold leading-tight text-white sm:text-5xl">
+      <div className="relative px-6 sm:px-10 lg:mx-40">
+        <h2 className=" text-3xl sm:text-4xl font-bold leading-tight text-white lg:text-5xl">
           Cybersecurity ที่ผู้เรียนรัก
         </h2>
 
-        <p className="mt-6  text-[15px] leading-relaxed text-white/90 sm:text-base">
+        <p className="mt-4 sm:mt-6 text-sm leading-relaxed text-white/90 sm:text-[15px] lg:text-base">
           ออกแบบมาเพื่อกระตุ้นการมีส่วนร่วมของผู้เรียนผ่านการฝึกอบรมด้านความปลอดภัยทางไซเบอร์ที่เน้นการปฏิบัติจริงตามสถานการณ์ที่เกิดขึ้นจริง ซึ่งช่วยสร้างความมั่นใจ ตอกย้ำความรู้ทางทฤษฎี และสนับสนุนผลลัพธ์การเรียนรู้ในระยะยาว
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-4">
+        <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
           <a href="/story">
             <button
               type="button"
-              className=" bg-white px-6 py-3 text-sm font-semibold text-[#A61B1B] transition-colors hover:bg-white/90"
+              className=" bg-white px-5 py-2.5 sm:px-6 sm:py-3 text-sm font-semibold text-[#A61B1B] transition-colors hover:bg-white/90"
             >
               จับปลาเลย
             </button>
@@ -40,14 +40,14 @@ export default function CybersecurityCTA() {
           <a href="/competition">
           <button
             type="button"
-            className="border border-white/70 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            className="border border-white/70 px-5 py-2.5 sm:px-6 sm:py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
           >
             ดูโจทย์ทั้งหมด
           </button>
           </a>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
+        <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-x-6 sm:gap-x-8 gap-y-3">
           <div className="flex items-center gap-2 text-sm text-white/90">
             <svg
               aria-hidden="true"

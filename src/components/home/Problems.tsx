@@ -255,7 +255,7 @@ export default function ProblemSlider() {
         {/* =====================================================
             Category Tabs
         ====================================================== */}
-        <div className="mb-7 flex flex-wrap items-center gap-3">
+               <div className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3">
           {tabs.map((tab) => {
             const active = activeTab === tab.value;
 
@@ -265,11 +265,11 @@ export default function ProblemSlider() {
                 type="button"
                 onClick={() => handleTabChange(tab.value)}
                 className={`
-                  min-w-[165px]
+                  min-w-[110px] sm:min-w-[140px] lg:min-w-[165px]
                   border
-                  px-8
-                  py-3
-                  text-sm
+                  px-4 sm:px-6 lg:px-8
+                  py-2 sm:py-2.5 lg:py-3
+                  text-xs sm:text-sm
                   font-medium
                   transition-all
                   duration-200
@@ -295,7 +295,7 @@ export default function ProblemSlider() {
         {/* =====================================================
             Slider Container
         ====================================================== */}
-        <div
+              <div
           className="
             relative
             overflow-hidden
@@ -303,8 +303,8 @@ export default function ProblemSlider() {
             border
             border-gray-200
             bg-white
-            px-7
-            py-8
+            px-4 sm:px-5 lg:px-7
+            py-5 sm:py-6 lg:py-8
             shadow-sm
           "
         >
@@ -471,14 +471,14 @@ function ProblemCard({
     <article
       className="
         flex
-        h-[350px]
+        h-[300px] sm:h-[320px] lg:h-[350px]
         flex-col
         overflow-hidden
         rounded-xl
         border
         border-gray-200
         bg-white
-        p-4
+        p-3 sm:p-4
         transition-all
         duration-300
         hover:-translate-y-1
@@ -520,14 +520,14 @@ function ProblemCard({
           flex-col
           px-1
           pb-2
-          pt-5
+          pt-3 sm:pt-4 lg:pt-5
         "
       >
         {/* Difficulty */}
         <div
           className={`
             mb-2
-            text-sm
+            text-xs sm:text-sm
             font-medium
             ${difficultyColor[problem.difficulty]}
           `}
@@ -539,10 +539,11 @@ function ProblemCard({
         <h3
           className="
             mb-2
-            text-[24px]
+            text-lg sm:text-xl lg:text-[24px]
             font-bold
             leading-tight
             text-gray-800
+            line-clamp-2
           "
         >
           {problem.title}
@@ -562,9 +563,9 @@ function ProblemCard({
             w-fit
             rounded-md
             bg-[#B01414]
-            px-10
-            py-3
-            text-sm
+            px-6 sm:px-8 lg:px-10
+            py-2 sm:py-2.5 lg:py-3
+            text-xs sm:text-sm
             font-semibold
             text-white
             transition-all
