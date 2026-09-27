@@ -100,11 +100,12 @@ export default function Leaderboard() {
             select-none
             whitespace-nowrap
             
-            text-[26rem]
+            text-[14rem]
             font-bold
             leading-none
             text-white/[0.04]
-            sm:text-[32rem]
+            sm:text-[26rem]
+            lg:text-[32rem]
           "
         >
           123
@@ -285,7 +286,9 @@ export default function Leaderboard() {
         className="
           relative
           z-10
-          mt-[400px]
+          mt-[600px]
+          sm:mt-[460px]
+          lg:mt-[400px]
           min-h-screen
           px-4
           pb-24
@@ -347,20 +350,23 @@ export default function Leaderboard() {
                 items-center
               "
             >
-              <div className="-mb-12 z-10">
-                <Avatar size="h-28 w-28 sm:h-32 sm:w-32" />
+              <div className="-mb-8 sm:-mb-12 z-10">
+                <Avatar size="h-14 w-14 sm:h-28 sm:w-28 lg:h-32 lg:w-32" />
               </div>
 
               <div
                 className="
                   flex
-                  h-[280px]
+                  h-[200px]
+                  sm:h-[260px]
+                  lg:h-[280px]
                   w-full
                   flex-col
                   items-center
                   justify-end
                   bg-[#444]
-                  pb-12
+                  pb-8
+                  sm:pb-12
                   text-white
                   transition-all
                   duration-300
@@ -372,7 +378,9 @@ export default function Leaderboard() {
                 <span
                   className="
                     
-                    text-7xl
+                    text-4xl
+                    sm:text-6xl
+                    lg:text-7xl
                     font-bold
                     leading-none
                     transition-transform
@@ -383,15 +391,15 @@ export default function Leaderboard() {
                   2
                 </span>
 
-                <span className="mt-3 text-sm">
+                <span className="mt-3 text-xs sm:text-sm">
                   {second.fish.toLocaleString()}
                 </span>
 
-                <span className="mt-1 text-xs text-gray-200">
+                <span className="mt-1 text-[10px] sm:text-xs text-gray-200">
                   จำนวนปลา
                 </span>
 
-                <span className="mt-1  text-lg font-bold">
+                <span className="mt-1 text-sm sm:text-lg font-bold truncate max-w-full px-1">
                   {second.name}
                 </span>
               </div>
@@ -409,20 +417,23 @@ export default function Leaderboard() {
                 items-center
               "
             >
-              <div className="-mb-12 z-10">
-                <Avatar size="h-28 w-28 sm:h-32 sm:w-32" />
+              <div className="-mb-8 sm:-mb-12 z-10">
+                <Avatar size="h-14 w-14 sm:h-28 sm:w-28 lg:h-32 lg:w-32" />
               </div>
 
               <div
                 className="
                   flex
-                  h-[340px]
+                  h-[240px]
+                  sm:h-[300px]
+                  lg:h-[340px]
                   w-full
                   flex-col
                   items-center
                   justify-end
                   bg-[#b01414]
-                  pb-12
+                  pb-8
+                  sm:pb-12
                   text-white
                   transition-all
                   duration-300
@@ -434,7 +445,9 @@ export default function Leaderboard() {
                 <span
                   className="
                     
-                    text-8xl
+                    text-5xl
+                    sm:text-7xl
+                    lg:text-8xl
                     font-bold
                     leading-none
                     transition-transform
@@ -445,15 +458,15 @@ export default function Leaderboard() {
                   1
                 </span>
 
-                <span className="mt-3 text-sm">
+                <span className="mt-3 text-xs sm:text-sm">
                   {first.fish.toLocaleString()}
                 </span>
 
-                <span className="mt-1 text-xs">
+                <span className="mt-1 text-[10px] sm:text-xs">
                   จำนวนปลา
                 </span>
 
-                <span className="mt-1  text-lg font-bold">
+                <span className="mt-1 text-sm sm:text-lg font-bold truncate max-w-full px-1">
                   {first.name}
                 </span>
               </div>
@@ -471,20 +484,23 @@ export default function Leaderboard() {
                 items-center
               "
             >
-              <div className="-mb-12 z-10">
-                <Avatar size="h-28 w-28 sm:h-32 sm:w-32" />
+              <div className="-mb-8 sm:-mb-12 z-10">
+                <Avatar size="h-14 w-14 sm:h-28 sm:w-28 lg:h-32 lg:w-32" />
               </div>
 
               <div
                 className="
                   flex
-                  h-[280px]
+                  h-[200px]
+                  sm:h-[260px]
+                  lg:h-[280px]
                   w-full
                   flex-col
                   items-center
                   justify-end
                   bg-[#444]
-                  pb-12
+                  pb-8
+                  sm:pb-12
                   text-white
                   transition-all
                   duration-300
@@ -496,7 +512,9 @@ export default function Leaderboard() {
                 <span
                   className="
                     
-                    text-7xl
+                    text-4xl
+                    sm:text-6xl
+                    lg:text-7xl
                     font-bold
                     leading-none
                     transition-transform
@@ -507,15 +525,15 @@ export default function Leaderboard() {
                   3
                 </span>
 
-                <span className="mt-3 text-sm">
+                <span className="mt-3 text-xs sm:text-sm">
                   {third.fish.toLocaleString()}
                 </span>
 
-                <span className="mt-1 text-xs text-gray-200">
+                <span className="mt-1 text-[10px] sm:text-xs text-gray-200">
                   จำนวนปลา
                 </span>
 
-                <span className="mt-1  text-lg font-bold">
+                <span className="mt-1 text-sm sm:text-lg font-bold truncate max-w-full px-1">
                   {third.name}
                 </span>
               </div>
@@ -527,6 +545,7 @@ export default function Leaderboard() {
           {/* ================= TABLE ================= */}
           <div
             className="
+              mt-6
               min-h-[420px]
               overflow-hidden
               rounded-xl
@@ -543,16 +562,18 @@ export default function Leaderboard() {
             <div
               className="
                 grid
-                grid-cols-[45px_1fr_140px]
+                grid-cols-[35px_1fr_100px]
                 border-b
                 border-gray-200
-                px-5
-                py-4
+                px-4
+                py-3
                 
-                text-sm
+                text-xs
                 text-[#b01414]
                 sm:grid-cols-[60px_1fr_160px]
                 sm:px-6
+                sm:py-4
+                sm:text-sm
               "
             >
               <span>No.</span>
@@ -572,18 +593,20 @@ export default function Leaderboard() {
                   group
                   grid
                   cursor-pointer
-                  grid-cols-[45px_1fr_140px]
+                  grid-cols-[35px_1fr_100px]
                   items-center
-                  px-5
-                  py-4
+                  px-4
+                  py-3
                   
-                  text-sm
+                  text-xs
                   text-[#b01414]
                   transition-all
                   duration-200
                   hover:bg-[#fff5f5]
                   sm:grid-cols-[60px_1fr_160px]
                   sm:px-6
+                  sm:py-4
+                  sm:text-sm
                 "
               >
                 {/* Rank */}
@@ -598,11 +621,12 @@ export default function Leaderboard() {
                 </span>
 
                 {/* Username */}
-                <div className="flex items-center gap-3">
-                  <Avatar size="h-10 w-10" />
+                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                  <Avatar size="h-8 w-8 sm:h-10 sm:w-10" />
 
                   <span
                     className="
+                      truncate
                       transition-all
                       duration-200
                       group-hover:translate-x-1
