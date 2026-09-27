@@ -357,12 +357,9 @@ export default function Story() {
         ====================================================== */
 
         @media (max-width: 1023px) {
-          .story-rail,
-          .story-rail-dark,
           .story-node,
           .story-node-dark,
-          .story-connector,
-          .story-final-line {
+          .story-connector {
             display: none;
           }
         }
@@ -373,7 +370,7 @@ export default function Story() {
             ACT I
         ====================================================== */}
 
-        <section className="relative  px-5 pb-32 pt-20 sm:px-8 lg:px-16">
+        <section className="relative  px-5 pb-20 pt-16 sm:pb-32 sm:pt-20 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-[1100px]">
 
             {/* ================= Intro ================= */}
@@ -388,12 +385,15 @@ export default function Story() {
                   pointer-events-none
                   absolute
                   right-[-10px]
-                  top-[90px]
+                  top-[40px]
                   select-none
-                  text-[200px]
+                  text-[70px]
                   leading-none
                   text-[#EFC7C7]
+                  sm:top-[90px]
                   sm:right-0
+                  sm:text-[140px]
+                  lg:text-[200px]
                 "
               >
                 01
@@ -403,7 +403,7 @@ export default function Story() {
 
                 {/* Breadcrumb */}
 
-                <p className="mb-4 text-[#403a38]">
+                <p className="mb-3 sm:mb-4 text-sm sm:text-base text-[#403a38]">
                   ให้การ{" "}
                   <span className="text-[#B01414]">
                     Cybersecurity
@@ -416,7 +416,9 @@ export default function Story() {
                 <h1
                   className="
                     max-w-[900px]
-                    text-7xl
+                    text-4xl
+                    sm:text-5xl
+                    lg:text-7xl
                     font-bold
                     leading-[1.1]
                     tracking-tight
@@ -434,8 +436,11 @@ export default function Story() {
 
                 <div
                   className="
-                    mt-5
+                    mt-4
+                    sm:mt-5
                     max-w-[850px]
+                    text-sm
+                    sm:text-base
                     leading-[1.7]
                     text-[#403a38]
                   "
@@ -456,32 +461,35 @@ export default function Story() {
 
             {/* ================= ACT I TIMELINE ================= */}
 
-            <div className="relative mt-10 sm:mt-16">
+            <div className="relative mt-8 sm:mt-10 lg:mt-16">
 
               {/* Center vertical timeline */}
 
               <div
                 aria-hidden="true"
-                className="story-rail hidden lg:block"
+                className="story-rail block"
               />
 
               {/* Act I title */}
 
               <div
                 className="
-                  absolute
-                  right-0
-                  top-[-25px]
-                  z-10
-                  text-lg
+                  static
+                  mb-4
+                  text-base
                   text-[#403a38]
-                  sm:text-xl
+                  sm:absolute
+                  sm:right-0
+                  sm:top-[-25px]
+                  sm:mb-0
+                  sm:text-lg
+                  lg:text-xl
                 "
               >
                 Act I – Echoes from the Deep
               </div>
 
-              <div className="relative flex flex-col gap-12 pt-20 lg:gap-0">
+              <div className="relative flex flex-col gap-8 sm:gap-12 pt-4 sm:pt-20 lg:gap-0">
                 {actOneCards.map((card, index) => (
                   <StoryTimelineCard
                     key={`act1-${index}`}
@@ -498,7 +506,7 @@ export default function Story() {
             ACT II
         ====================================================== */}
 
-        <section className="relative overflow-hidden bg-[#1E1E1E] px-5 pb-40 pt-36 text-white sm:px-8 lg:px-16">
+        <section className="relative overflow-hidden bg-[#1E1E1E] px-5 pb-24 pt-24 sm:pb-40 sm:pt-36 text-white sm:px-8 lg:px-16">
 
           {/* Diagonal white transition */}
 
@@ -526,7 +534,7 @@ export default function Story() {
 
             {/* ================= Act II Header ================= */}
 
-            <div className="relative min-h-[230px]">
+            <div className="relative min-h-[130px] sm:min-h-[230px]">
 
               {/* Large 02 */}
 
@@ -538,7 +546,9 @@ export default function Story() {
                   left-0
                   top-0
                   select-none
-                  text-[200px]
+                  text-[70px]
+                  sm:text-[140px]
+                  lg:text-[200px]
                   leading-none
                   text-white/[0.28]
                 "
@@ -546,10 +556,11 @@ export default function Story() {
                 02
               </div>
 
-              <div className="relative z-10 pt-32 sm:pt-36">
+              <div className="relative z-10 pt-20 sm:pt-32 lg:pt-36">
                 <h2
                   className="
-                    text-xl
+                    text-base
+                    sm:text-xl
                     text-white
                   "
                 >
@@ -566,10 +577,10 @@ export default function Story() {
 
               <div
                 aria-hidden="true"
-                className="story-rail-dark hidden lg:block"
+                className="story-rail-dark block"
               />
 
-              <div className="relative flex flex-col gap-12 lg:gap-0">
+              <div className="relative flex flex-col gap-8 sm:gap-12 lg:gap-0">
                 {actTwoCards.map((card, index) => (
                   <StoryTimelineCard
                     key={`act2-${index}`}
@@ -616,6 +627,7 @@ function StoryTimelineCard({
         relative
         flex
         w-full
+        justify-center
         lg:min-h-[290px]
         ${isLeft ? "lg:justify-start" : "lg:justify-end"}
       `}
