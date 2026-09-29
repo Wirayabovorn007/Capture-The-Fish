@@ -12,7 +12,7 @@ type FloatingItem = {
   // Desktop positioning
   desktopClassName?: string;
 
-  // Mobile positioning
+  // Mobile/tablet positioning
   mobileClassName?: string;
 };
 
@@ -31,29 +31,25 @@ const sections: FeatureSection[] = [
         text: "Web exploitation",
         desktopClassName:
           "left-[4%] top-[17%] w-[310px] rotate-[1deg]",
-        mobileClassName:
-          "self-end w-full max-w-[420px] rotate-[1deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[1deg]",
       },
       {
         text: "Networking",
         desktopClassName:
           "left-[10%] top-[39%] w-[300px] rotate-[1deg]",
-        mobileClassName:
-          "self-start ml-2 w-[300px] rotate-[1deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[1deg]",
       },
       {
         text: "Cryptography",
         desktopClassName:
           "left-[25%] top-[57%] w-[300px] rotate-[-1deg]",
-        mobileClassName:
-          "self-end mr-6 w-[300px] rotate-[-1deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[-1deg]",
       },
       {
         text: "Forensics",
         desktopClassName:
           "left-[15%] top-[76%] w-[290px] rotate-[-2deg]",
-        mobileClassName:
-          "self-start ml-12 w-[290px] rotate-[-2deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[-2deg]",
       },
     ],
   },
@@ -67,24 +63,21 @@ const sections: FeatureSection[] = [
         text: "Easy  -  ง่ายมาก",
         desktopClassName:
           "left-[16%] top-[17%] w-[285px] border-green-300",
-        mobileClassName:
-          "self-end w-full max-w-[360px] border-green-300",
+        mobileClassName: "w-full max-w-[360px] border-green-300",
       },
       {
         emoji: "🥺",
         text: "Medium  -  ชิวอยู่พี่",
         desktopClassName:
           "left-[38%] top-[39%] w-[300px] border-red-200",
-        mobileClassName:
-          "self-start ml-2 w-full max-w-[380px] border-red-200",
+        mobileClassName: "w-full max-w-[380px] border-red-200",
       },
       {
         emoji: "😭",
         text: "Hard  -  ร้องขอชีวิต",
         desktopClassName:
           "left-[18%] top-[60%] w-[285px] border-red-400",
-        mobileClassName:
-          "self-end mr-4 w-full max-w-[360px] border-red-400",
+        mobileClassName: "w-full max-w-[360px] border-red-400",
       },
     ],
   },
@@ -97,29 +90,25 @@ const sections: FeatureSection[] = [
         text: "ปลาหมอกดำ",
         desktopClassName:
           "left-[30%] top-[17%] w-[310px] rotate-[1deg]",
-        mobileClassName:
-          "self-end w-full max-w-[420px] rotate-[1deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[1deg]",
       },
       {
         text: "โลมา",
         desktopClassName:
           "left-[52%] top-[39%] w-[210px] rotate-[2deg]",
-        mobileClassName:
-          "self-start ml-8 w-[260px] rotate-[2deg]",
+        mobileClassName: "w-full max-w-[4200px] rotate-[2deg]",
       },
       {
         text: "ฉลาม",
         desktopClassName:
           "left-[42%] top-[57%] w-[230px] rotate-[-1deg]",
-        mobileClassName:
-          "self-end mr-10 w-[280px] rotate-[-1deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[-1deg]",
       },
       {
         text: "ปิรันยา",
         desktopClassName:
           "left-[47%] top-[74%] w-[240px] rotate-[-2deg]",
-        mobileClassName:
-          "self-start ml-14 w-[290px] rotate-[-2deg]",
+        mobileClassName: "w-full max-w-[420px] rotate-[-2deg]",
       },
     ],
   },
@@ -130,9 +119,8 @@ export default function ProblemFeatures() {
     <section
       className="
         w-full
-        overflow-hidden
         py-12
-        md:py-16
+        xl:py-16
       "
     >
       <div
@@ -142,11 +130,12 @@ export default function ProblemFeatures() {
           w-full
           max-w-[1200px]
           grid-cols-1
-          gap-20
+          gap-12
+          sm:gap-20
           px-5
           sm:px-8
-          md:grid-cols-3
-          md:gap-8
+          xl:grid-cols-3
+          xl:gap-8
           lg:px-6
         "
       >
@@ -182,7 +171,7 @@ function FeatureColumn({
         relative
         min-w-0
 
-        md:h-[390px]
+        xl:h-[390px]
       "
     >
       {/* =========================
@@ -216,13 +205,13 @@ function FeatureColumn({
           <h2
             className="
               whitespace-nowrap
-              text-[26px]
+              text-[22px]
               font-bold
               leading-none
               text-[#3B3535]
-              sm:text-[28px]
-              md:text-[25px]
-              lg:text-[28px]
+              sm:text-[26px]
+              lg:text-[27px]
+              xl:text-[28px]
             "
           >
             {title}
@@ -254,8 +243,8 @@ function FeatureColumn({
           items-center
           gap-4
 
-          md:mt-0
-          md:block
+          xl:mt-0
+          xl:block
         "
       >
         {items.map((item) => (
@@ -283,12 +272,12 @@ function FeatureColumn({
               hover:-translate-y-1
               hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)]
 
-              /* Mobile */
+              /* Mobile / Tablet (incl. iPad Mini 768x1024) */
               ${item.mobileClassName ?? ""}
 
-              /* Desktop */
-              md:absolute
-              md:${getDesktopPosition(item)}
+              /* Desktop (>=1280px) */
+              xl:absolute
+              ${getDesktopPosition(item)}
             `}
           >
             {/* Emoji / Check */}
@@ -319,11 +308,12 @@ function FeatureColumn({
             <span
               className="
                 whitespace-nowrap
-                text-[18px]
+                text-[16px]
+                sm:text-[18px]
                 font-semibold
                 leading-none
                 text-[#3B3535]
-                md:text-[17px]
+                xl:text-[17px]
               "
             >
               {item.text}
@@ -338,47 +328,47 @@ function FeatureColumn({
 /*
  * IMPORTANT:
  *
- * We explicitly map every desktop class here.
- * This prevents Tailwind from having to understand:
- *
- *     md:${item.className}
- *
- * which is unreliable because it is dynamically constructed.
+ * We explicitly map every desktop class here, each already
+ * prefixed with xl: individually. This prevents Tailwind's JIT
+ * from missing the breakpoint on anything but the first token,
+ * and stops these values leaking into the mobile/tablet layout
+ * — which now includes the full iPad Mini range (768x1024,
+ * both orientations) using the safe stacked/centered layout.
  */
 function getDesktopPosition(item: FloatingItem) {
   const positions: Record<string, string> = {
     "Web exploitation":
-      "left-[4%] top-[17%] w-[310px] rotate-[1deg]",
+      "xl:left-[4%] xl:top-[17%] xl:w-[310px] xl:rotate-[1deg]",
 
     Networking:
-      "left-[10%] top-[39%] w-[300px] rotate-[1deg]",
+      "xl:left-[10%] xl:top-[39%] xl:w-[300px] xl:rotate-[1deg]",
 
     Cryptography:
-      "left-[25%] top-[57%] w-[300px] rotate-[-1deg]",
+      "xl:left-[25%] xl:top-[57%] xl:w-[300px] xl:rotate-[-1deg]",
 
     Forensics:
-      "left-[15%] top-[76%] w-[290px] rotate-[-2deg]",
+      "xl:left-[15%] xl:top-[76%] xl:w-[290px] xl:rotate-[-2deg]",
 
     "Easy  -  ง่ายมาก":
-      "left-[16%] top-[17%] w-[285px] border-green-300",
+      "xl:left-[16%] xl:top-[17%] xl:w-[285px] xl:border-green-300",
 
     "Medium  -  ชิวอยู่พี่":
-      "left-[38%] top-[39%] w-[300px] border-red-200",
+      "xl:left-[38%] xl:top-[39%] xl:w-[300px] xl:border-red-200",
 
     "Hard  -  ร้องขอชีวิต":
-      "left-[18%] top-[60%] w-[285px] border-red-400",
+      "xl:left-[18%] xl:top-[60%] xl:w-[285px] xl:border-red-400",
 
     ปลาหมอกดำ:
-      "left-[30%] top-[17%] w-[310px] rotate-[1deg]",
+      "xl:left-[30%] xl:top-[17%] xl:w-[310px] xl:rotate-[1deg]",
 
     โลมา:
-      "left-[52%] top-[39%] w-[210px] rotate-[2deg]",
+      "xl:left-[52%] xl:top-[39%] xl:w-[210px] xl:rotate-[2deg]",
 
     ฉลาม:
-      "left-[42%] top-[57%] w-[230px] rotate-[-1deg]",
+      "xl:left-[42%] xl:top-[57%] xl:w-[230px] xl:rotate-[-1deg]",
 
     ปิรันยา:
-      "left-[47%] top-[74%] w-[240px] rotate-[-2deg]",
+      "xl:left-[47%] xl:top-[74%] xl:w-[240px] xl:rotate-[-2deg]",
   };
 
   return positions[item.text] ?? "";
