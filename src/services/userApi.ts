@@ -6,10 +6,14 @@ export type ManagedUser = {
   id: string
   username: string
   email: string
+
   fish: number
   points: number
+
   completedChallenges: number
   flagsSubmitted: number
+  failedFlagsSubmitted: number
+
   accountStatus: AccountStatus
   isOnline: boolean
   createdAt: string | null

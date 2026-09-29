@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCurrentUser, fetchUserAttributes, signOut } from "aws-amplify/auth";
+import { getCurrentUser, fetchUserAttributes, fetchAuthSession, signOut } from "aws-amplify/auth";
 import logo from "../assets/home/Logo.png";
 import comp from "../assets/home/Goal.png";
 import story from "../assets/home/Storytelling.png";
@@ -21,6 +21,7 @@ export default function Navbar() {
     } | null>(null);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         checkUser();
@@ -30,6 +31,15 @@ export default function Navbar() {
         try {
             const currentUser = await getCurrentUser();
             const attributes = await fetchUserAttributes();
+            const session = await fetchAuthSession();
+
+            const groups =
+                session.tokens?.accessToken?.payload?.["cognito:groups"];
+
+            const admin =
+                Array.isArray(groups) && groups.includes("Admins");
+
+            setIsAdmin(admin);
 
             setUser({
                 username:
@@ -39,6 +49,7 @@ export default function Navbar() {
             });
         } catch {
             setUser(null);
+            setIsAdmin(false);
         }
     };
 
@@ -56,10 +67,14 @@ export default function Navbar() {
         setIsMobileMenuOpen(false);
     };
 
+    const profileHref = isAdmin
+        ? "/admin/dashboard"
+        : "/profile";
+
     return (
         <nav className="sticky top-0 z-50 my-4 w-full px-3 sm:px-4">
             <div
-    className="
+                className="
         relative mx-auto w-full max-w-6xl
         overflow-visible rounded-3xl
         border border-white/20
@@ -71,7 +86,7 @@ export default function Navbar() {
         md:px-8
         lg:px-12
     "
->
+            >
                 {/* Glass effects */}
                 <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.12] via-transparent to-transparent" />
                 <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-white/40" />
@@ -193,7 +208,7 @@ export default function Navbar() {
 
                                     {/* User Info */}
                                     <a
-                                        href="/profile"
+                                        href={profileHref}
                                         className="
                                             hidden cursor-pointer text-right
                                             group/nav
@@ -211,7 +226,7 @@ export default function Navbar() {
 
                                     {/* Profile */}
                                     <a
-                                        href="/profile"
+                                        href={profileHref}
                                         className="
                                             flex h-9 w-9 items-center justify-center
                                             overflow-hidden rounded-full
@@ -231,8 +246,8 @@ export default function Navbar() {
                                         ) : (
                                             user.username
                                                 ? user.username
-                                                      .charAt(0)
-                                                      .toUpperCase()
+                                                    .charAt(0)
+                                                    .toUpperCase()
                                                 : "U"
                                         )}
                                     </a>
@@ -288,10 +303,9 @@ export default function Navbar() {
                                 className={`
                                     h-[2px] w-full rounded-full bg-current
                                     transition-all duration-300
-                                    ${
-                                        isMobileMenuOpen
-                                            ? "translate-y-[7px] rotate-45"
-                                            : ""
+                                    ${isMobileMenuOpen
+                                        ? "translate-y-[7px] rotate-45"
+                                        : ""
                                     }
                                 `}
                             />
@@ -300,10 +314,9 @@ export default function Navbar() {
                                 className={`
                                     h-[2px] w-full rounded-full bg-current
                                     transition-all duration-300
-                                    ${
-                                        isMobileMenuOpen
-                                            ? "scale-x-0 opacity-0"
-                                            : ""
+                                    ${isMobileMenuOpen
+                                        ? "scale-x-0 opacity-0"
+                                        : ""
                                     }
                                 `}
                             />
@@ -312,10 +325,9 @@ export default function Navbar() {
                                 className={`
                                     h-[2px] w-full rounded-full bg-current
                                     transition-all duration-300
-                                    ${
-                                        isMobileMenuOpen
-                                            ? "-translate-y-[7px] -rotate-45"
-                                            : ""
+                                    ${isMobileMenuOpen
+                                        ? "-translate-y-[7px] -rotate-45"
+                                        : ""
                                     }
                                 `}
                             />
@@ -328,10 +340,9 @@ export default function Navbar() {
                     className={`
                         relative overflow-hidden transition-all duration-300 ease-in-out
                         md:hidden
-                        ${
-                            isMobileMenuOpen
-                                ? "mt-3 max-h-[500px] opacity-100"
-                                : "max-h-0 opacity-0"
+                        ${isMobileMenuOpen
+                            ? "mt-3 max-h-[500px] opacity-100"
+                            : "max-h-0 opacity-0"
                         }
                     `}
                 >
@@ -391,7 +402,7 @@ export default function Navbar() {
                             {user ? (
                                 <div className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5">
                                     <a
-                                        href="/profile"
+                                        href={profileHref}
                                         onClick={handleMobileLinkClick}
                                         className="flex min-w-0 items-center gap-3"
                                     >
@@ -414,8 +425,8 @@ export default function Navbar() {
                                             ) : (
                                                 user.username
                                                     ? user.username
-                                                          .charAt(0)
-                                                          .toUpperCase()
+                                                        .charAt(0)
+                                                        .toUpperCase()
                                                     : "U"
                                             )}
                                         </div>
