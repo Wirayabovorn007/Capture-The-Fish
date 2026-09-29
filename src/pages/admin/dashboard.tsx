@@ -1,38 +1,13 @@
+import { useEffect, useMemo, useState } from "react"
 import Navbar from "../../components/admin/Navbar"
 import Reveal from "../../components/effects/Reveal"
+import { getUsers, type ManagedUser } from "../../services/userApi"
+import { getChallenges } from "../../services/challengeApi"
+import type { Challenge } from "../../types/challenge"
 
-const leaderboard = [
-  {
-    rank: 1,
-    username: "hacker_one",
-    challenges: 24,
-    points: 4820,
-  },
-  {
-    rank: 2,
-    username: "cyberfox",
-    challenges: 21,
-    points: 4210,
-  },
-  {
-    rank: 3,
-    username: "root_user",
-    challenges: 19,
-    points: 3980,
-  },
-  {
-    rank: 4,
-    username: "bytehunter",
-    challenges: 17,
-    points: 3640,
-  },
-  {
-    rank: 5,
-    username: "shadow",
-    challenges: 15,
-    points: 3210,
-  },
-]
+type DashboardChallenge = Challenge & {
+  solved?: number
+}
 
 const submissionData = [
   320,
@@ -51,84 +26,6 @@ const submissionData = [
   870,
 ]
 
-/*
- * =========================================
- * Challenges
- * =========================================
- *
- * ตัวอย่างข้อมูล Challenge
- *
- * ภายหลังสามารถเปลี่ยนเป็นข้อมูลจาก API ได้
- */
-
-const challenges = [
-  {
-    id: 1,
-    challengeId: "phishing-in-the-dark",
-    title: "Phishing in the Dark",
-    category: "Web Security",
-    difficulty: "Easy",
-    points: 100,
-    solved: 428,
-    description:
-      "ค้นหาและวิเคราะห์ช่องโหว่จากเว็บไซต์ที่ถูกสร้างขึ้นเพื่อจำลองสถานการณ์ Phishing",
-  },
-  {
-    id: 2,
-    challengeId: "hidden-message",
-    title: "Hidden Message",
-    category: "Cryptography",
-    difficulty: "Medium",
-    points: 250,
-    solved: 216,
-    description:
-      "ค้นหาข้อความที่ถูกซ่อนอยู่และถอดรหัสเพื่อค้นหา Flag ที่ถูกต้อง",
-  },
-  {
-    id: 3,
-    challengeId: "digital-evidence",
-    title: "Digital Evidence",
-    category: "Forensics",
-    difficulty: "Medium",
-    points: 300,
-    solved: 184,
-    description:
-      "วิเคราะห์ข้อมูล Digital Evidence เพื่อค้นหาเบาะแสที่นำไปสู่ Flag",
-  },
-  {
-    id: 4,
-    challengeId: "broken-auth",
-    title: "Broken Authentication",
-    category: "Web Security",
-    difficulty: "Hard",
-    points: 500,
-    solved: 96,
-    description:
-      "ค้นหาจุดอ่อนของระบบ Authentication และเข้าถึงพื้นที่ที่ถูกป้องกัน",
-  },
-  {
-    id: 5,
-    challengeId: "memory-hunter",
-    title: "Memory Hunter",
-    category: "Forensics",
-    difficulty: "Hard",
-    points: 450,
-    solved: 72,
-    description:
-      "วิเคราะห์ Memory Dump เพื่อค้นหาหลักฐานและข้อมูลสำคัญที่ถูกซ่อนอยู่",
-  },
-  {
-    id: 6,
-    challengeId: "reverse-me",
-    title: "Reverse Me",
-    category: "Reverse Engineering",
-    difficulty: "Hard",
-    points: 600,
-    solved: 58,
-    description:
-      "Reverse Engineering โปรแกรมเพื่อค้นหา Logic และ Flag ที่ซ่อนอยู่",
-  },
-]
 
 function StatCard({
   title,
@@ -173,24 +70,22 @@ function SubmissionChart() {
         paddingX +
         (index /
           (submissionData.length - 1)) *
-          (width - paddingX * 2)
+        (width - paddingX * 2)
 
       const y =
         height -
         paddingY -
         ((value - min) /
           (max - min)) *
-          (height - paddingY * 2)
+        (height - paddingY * 2)
 
       return `${x},${y}`
     })
     .join(" ")
 
-  const areaPoints = `${paddingX},${
-    height - paddingY
-  } ${points} ${
-    width - paddingX
-  },${height - paddingY}`
+  const areaPoints = `${paddingX},${height - paddingY
+    } ${points} ${width - paddingX
+    },${height - paddingY}`
 
   return (
     <div className="mt-6">
@@ -206,7 +101,7 @@ function SubmissionChart() {
               const y =
                 paddingY +
                 (line / 4) *
-                  (height - paddingY * 2)
+                (height - paddingY * 2)
 
               return (
                 <line
@@ -249,16 +144,16 @@ function SubmissionChart() {
                 (index /
                   (submissionData.length -
                     1)) *
-                  (width -
-                    paddingX * 2)
+                (width -
+                  paddingX * 2)
 
               const y =
                 height -
                 paddingY -
                 ((value - min) /
                   (max - min)) *
-                  (height -
-                    paddingY * 2)
+                (height -
+                  paddingY * 2)
 
               return (
                 <circle
@@ -290,13 +185,13 @@ function SubmissionChart() {
 function ChallengeCard({
   challenge,
 }: {
-  challenge: (typeof challenges)[number]
+  challenge: DashboardChallenge
 }) {
   const difficultyClass =
     challenge.difficulty === "Easy"
       ? "bg-green-50 text-green-700"
       : challenge.difficulty ===
-          "Medium"
+        "Medium"
         ? "bg-yellow-50 text-yellow-700"
         : "bg-red-50 text-red-700"
 
@@ -347,7 +242,7 @@ function ChallengeCard({
           </p>
 
           <p className="mt-1 font-bold text-[#403a38]">
-            {challenge.points.toLocaleString()}
+            0
           </p>
         </div>
 
@@ -357,7 +252,7 @@ function ChallengeCard({
           </p>
 
           <p className="mt-1 font-bold text-[#403a38]">
-            {challenge.solved.toLocaleString()} คน
+            {(challenge.solved ?? 0).toLocaleString()} คน
           </p>
         </div>
 
@@ -366,7 +261,7 @@ function ChallengeCard({
       {/* Button */}
 
       <a
-        href={`/challenge?id=${challenge.id}`}
+        href={`/challenge?id=${encodeURIComponent(challenge.challengeId)}`}
         className="mt-6 flex h-11 items-center justify-center rounded-xl bg-[#b01414] px-4 text-sm font-semibold text-white transition-all hover:bg-[#961010] group-hover:shadow-md"
       >
         ดูโจทย์
@@ -389,6 +284,70 @@ function ChallengeCard({
 }
 
 export default function AdminDashboard() {
+  const [users, setUsers] = useState<ManagedUser[]>([])
+  const [challenges, setChallenges] = useState<DashboardChallenge[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true)
+        setError("")
+
+        const [userData, challengeData] = await Promise.all([
+          getUsers(),
+          getChallenges(),
+        ])
+
+        setUsers(userData)
+        setChallenges(challengeData as DashboardChallenge[])
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "ไม่สามารถโหลดข้อมูล Dashboard ได้",
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadDashboard()
+  }, [])
+
+  const totalUsers = users.length
+  const totalCompletedChallenges = users.reduce(
+    (sum, user) => sum + user.completedChallenges,
+    0,
+  )
+  const successfulFlags = users.reduce(
+    (sum, user) => sum + user.flagsSubmitted,
+    0,
+  )
+  const failedFlags = users.reduce(
+    (sum, user) => sum + user.failedFlagsSubmitted,
+    0,
+  )
+  const totalFlagSubmissions = successfulFlags + failedFlags
+
+  const leaderboard = useMemo(
+    () =>
+      [...users]
+        .sort(
+          (a, b) =>
+            b.completedChallenges - a.completedChallenges ||
+            a.username.localeCompare(b.username),
+        )
+        .slice(0, 5)
+        .map((user, index) => ({
+          rank: index + 1,
+          username: user.username,
+          challenges: user.completedChallenges,
+          points: 0,
+        })),
+    [users],
+  )
   return (
     <>
       <Navbar />
@@ -415,6 +374,12 @@ export default function AdminDashboard() {
               </p>
             </div>
 
+            {error && (
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
             {/* =========================================
                 Stats
             ========================================= */}
@@ -423,31 +388,31 @@ export default function AdminDashboard() {
 
               <StatCard
                 title="ผู้ใช้งานทั้งหมด"
-                value="1,284"
+                value={loading ? "..." : totalUsers.toLocaleString()}
                 description="จำนวนผู้ใช้งานในระบบทั้งหมด"
               />
 
               <StatCard
                 title="Challenge ที่ทำสำเร็จ"
-                value="8,492"
+                value={loading ? "..." : totalCompletedChallenges.toLocaleString()}
                 description="จำนวน Challenge ที่ผู้เล่นทำสำเร็จทั้งหมด"
               />
 
               <StatCard
                 title="ส่ง Flag ทั้งหมด"
-                value="24,381"
+                value={loading ? "..." : totalFlagSubmissions.toLocaleString()}
                 description="จำนวนการส่ง Flag จากผู้เล่นทั้งหมด"
               />
 
               <StatCard
                 title="Fish / คะแนนที่ได้รับ"
-                value="48,920"
-                description="คะแนนรวมที่ผู้เล่นได้รับจากการทำ Challenge"
+                value="0"
+                description="ระบบ Fish และคะแนนยังไม่เปิดใช้งาน"
               />
 
               <StatCard
                 title="การส่ง Flag ไม่สำเร็จ"
-                value="12,743"
+                value={loading ? "..." : failedFlags.toLocaleString()}
                 description="จำนวน Flag ที่ส่งไม่ถูกต้อง"
               />
 
@@ -539,12 +504,11 @@ export default function AdminDashboard() {
                           <td className="px-6 py-5">
 
                             <span
-                              className={`font-bold ${
-                                user.rank ===
-                                1
+                              className={`font-bold ${user.rank ===
+                                  1
                                   ? "text-[#b01414]"
                                   : "text-[#77716e]"
-                              }`}
+                                }`}
                             >
                               {user.rank}
                             </span>
@@ -650,7 +614,7 @@ export default function AdminDashboard() {
                   (challenge) => (
                     <ChallengeCard
                       key={
-                        challenge.id
+                        challenge.challengeId
                       }
                       challenge={
                         challenge
