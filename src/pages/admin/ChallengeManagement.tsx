@@ -8,7 +8,13 @@ import {
   updateChallenge as updateChallengeApi,
 } from "../../services/challengeApi"
 
-import type { Challenge as ApiChallenge } from "../../types/challenge"
+import type { Challenge as BaseApiChallenge } from "../../types/challenge"
+import { getAuthHeaders } from "../../utils/auth"
+
+type FishRarity = "common" | "rare" | "legendary"
+
+type FishReward = { name: string; imageUrl: string; amount: number; rarity: FishRarity }
+type ApiChallenge = BaseApiChallenge & { fishReward?: FishReward }
 
 type DockerContainer = {
   id: number
@@ -27,7 +33,11 @@ type ChallengeForm = {
   description: string
   objective: string
   hint: string
-  flag: string    
+  flag: string
+  fishName: string
+  fishImageUrl: string
+  fishAmount: number
+  fishRarity: FishRarity
   containers: DockerContainer[]
 }
 
@@ -72,6 +82,10 @@ function createEmptyChallenge(): ChallengeForm {
     objective: "",
     hint: "",
     flag: "",
+    fishName: "",
+    fishImageUrl: "",
+    fishAmount: 1,
+    fishRarity: "common",
     containers: [createEmptyContainer()],
   }
 }
@@ -110,6 +124,9 @@ export default function ChallengeManagement() {
     useState("")
 
   const [isSaving, setIsSaving] =
+    useState(false)
+
+  const [isUploadingFish, setIsUploadingFish] =
     useState(false)
 
   const [message, setMessage] =
@@ -259,6 +276,10 @@ export default function ChallengeManagement() {
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
       flag: "",
+      fishName: selectedChallenge.fishReward?.name ?? "",
+      fishImageUrl: selectedChallenge.fishReward?.imageUrl ?? "",
+      fishAmount: selectedChallenge.fishReward?.amount ?? 1,
+      fishRarity: selectedChallenge.fishReward?.rarity ?? "common",
       containers: selectedChallenge.containers.map(
         (container) => ({
           ...container,
@@ -333,6 +354,27 @@ export default function ChallengeManagement() {
     setShowForm(false)
   }
 
+  const handleFishImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) { setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น"); return }
+    try {
+      setIsUploadingFish(true); setMessage("")
+      const configResponse = await fetch("/config.json")
+      if (!configResponse.ok) throw new Error("โหลด config.json ไม่สำเร็จ")
+      const config = await configResponse.json()
+      if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json")
+      const presignResponse = await fetch(`${config.ALB_URL}/?action=upload_fish_image`, {
+        method: "POST", headers: await getAuthHeaders(),
+        body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+      })
+      const presignData = await presignResponse.json()
+      if (!presignResponse.ok || presignData.status !== "SUCCESS") throw new Error(presignData.error || "ไม่สามารถเตรียมการอัปโหลดรูปปลาได้")
+      const uploadResponse = await fetch(presignData.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+      if (!uploadResponse.ok) throw new Error("ไม่สามารถอัปโหลดรูปปลาไปยัง S3 ได้")
+      setChallenge((prev) => ({ ...prev, fishImageUrl: presignData.imageUrl }))
+    } catch (error) { setMessage(error instanceof Error ? error.message : "อัปโหลดรูปปลาไม่สำเร็จ") }
+    finally { setIsUploadingFish(false) }
+  }
+
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
   ) => {
@@ -358,6 +400,11 @@ export default function ChallengeManagement() {
       setMessage("กรุณากรอก Flag ของโจทย์")
       return
     }
+
+    if ((challenge.fishName.trim() || challenge.fishImageUrl) && (!challenge.fishName.trim() || !challenge.fishImageUrl)) {
+      setMessage("กรุณากรอกชื่อปลาและอัปโหลดรูปปลาให้ครบ"); return
+    }
+    if (challenge.fishAmount < 1) { setMessage("จำนวนปลาต้องอย่างน้อย 1 ตัว"); return }
 
     const invalidContainer =
       challenge.containers.some(
@@ -385,6 +432,10 @@ export default function ChallengeManagement() {
       objective: challenge.objective.trim(),
       hint: challenge.hint.trim(),
       flag: challenge.flag.trim(),
+      fishReward: challenge.fishName.trim() || challenge.fishImageUrl ? {
+        name: challenge.fishName.trim(), imageUrl: challenge.fishImageUrl,
+        amount: Math.max(1, Number(challenge.fishAmount) || 1), rarity: challenge.fishRarity,
+      } : undefined,
       containers: challenge.containers.map(
         ({ name, image, port, accessType, buttonLabel }) => ({
           name: name.trim(),
@@ -774,6 +825,18 @@ export default function ChallengeManagement() {
                             ? "ปล่อยว่างหากไม่ต้องการเปลี่ยน Flag เดิม"
                             : "Flag จะถูกใช้ตรวจคำตอบของผู้เล่นและไม่แสดงในหน้า Challenge"}
                         </p>
+                      </div>
+
+                      {/* Fish Reward */}
+                      <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5 sm:p-6">
+                        <div className="mb-5"><h3 className="text-lg font-bold text-[#403a38]">Fish Reward</h3><p className="mt-1 text-xs text-[#999390]">กำหนดปลาที่แสดงเป็นรางวัลของ Challenge (ยังไม่แจกปลาเมื่อส่ง Flag ถูก)</p></div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ชื่อปลา</label><input type="text" value={challenge.fishName} onChange={(e) => setChallenge((prev) => ({ ...prev, fishName: e.target.value }))} placeholder="เช่น Golden Fish" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: Math.max(1, Number(e.target.value) || 1) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ความแรร์</label><select value={challenge.fishRarity} onChange={(e) => setChallenge((prev) => ({ ...prev, fishRarity: e.target.value as FishRarity }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]"><option value="common">ทั่วไป</option><option value="rare">หายาก</option><option value="legendary">ตำนาน</option></select></div>
+                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">รูปปลา</label><input type="file" accept="image/*" disabled={isUploadingFish} onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFishImageUpload(file) }} className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm" /><p className="mt-2 text-xs text-[#999390]">{isUploadingFish ? "กำลังอัปโหลดรูป..." : "รูปจะถูกอัปโหลดไปยัง S3"}</p></div>
+                        </div>
+                        {challenge.fishImageUrl && <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4"><img src={challenge.fishImageUrl} alt={challenge.fishName || "Fish preview"} className="h-24 w-24 rounded-xl object-contain" /><div><p className="font-bold text-[#403a38]">{challenge.fishName || "ยังไม่ได้ตั้งชื่อปลา"}</p><p className="mt-1 text-sm text-[#77716e]">จำนวน ×{challenge.fishAmount}</p><p className="mt-1 text-sm text-[#77716e]">{challenge.fishRarity === "legendary" ? "หายากสุดๆ" : challenge.fishRarity === "rare" ? "หายาก" : "ทั่วไป"}</p></div></div>}
                       </div>
 
                       {/* Containers */}

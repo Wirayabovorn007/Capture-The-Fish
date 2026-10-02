@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
 import { RefreshCw, Search, ShieldBan, ShieldCheck, Users } from "lucide-react"
-import Navbar from "../../components/admin/Navbar"
 import { getUsers, suspendUser, unsuspendUser, type ManagedUser, type AccountStatus } from "../../services/userApi"
 
 function formatDate(value: string | null) {
@@ -66,7 +65,6 @@ export default function UserManagement() {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8] text-[#26211f]">
-      <Navbar />
       <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
