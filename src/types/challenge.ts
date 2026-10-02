@@ -3,6 +3,7 @@ export type ContainerAccessType = "none" | "web" | "terminal";
 export type FishRarity = "common" | "rare" | "legendary";
 
 export type FishReward = {
+  fishId?: string;
   name: string;
   imageUrl: string;
   amount: number;
@@ -52,4 +53,7 @@ export type ChallengeStatusResponse = {
 
 export type SubmitFlagResponse = {
   correct: boolean;
+  firstSolve: boolean;
+  reward: FishReward | null;
+  totalFish: number;
 };

@@ -7,6 +7,7 @@ import type { Challenge } from "../../types/challenge"
 
 type DashboardChallenge = Challenge & {
   solved?: number
+  fishAwarded?: number
 }
 
 const submissionData = [
@@ -242,7 +243,7 @@ function ChallengeCard({
           </p>
 
           <p className="mt-1 font-bold text-[#403a38]">
-            0
+            {(challenge.fishAwarded ?? 0).toLocaleString()}
           </p>
         </div>
 
@@ -261,7 +262,7 @@ function ChallengeCard({
       {/* Button */}
 
       <a
-        href={`/challenge?id=${encodeURIComponent(challenge.challengeId)}`}
+        href={`/admin/challenge?id=${encodeURIComponent(challenge.challengeId)}`}
         className="mt-6 flex h-11 items-center justify-center rounded-xl bg-[#b01414] px-4 text-sm font-semibold text-white transition-all hover:bg-[#961010] group-hover:shadow-md"
       >
         ดูโจทย์
@@ -330,6 +331,7 @@ export default function AdminDashboard() {
     0,
   )
   const totalFlagSubmissions = successfulFlags + failedFlags
+  const totalFish = users.reduce((sum, user) => sum + (user.fish ?? 0), 0)
 
   const leaderboard = useMemo(
     () =>
@@ -344,7 +346,7 @@ export default function AdminDashboard() {
           rank: index + 1,
           username: user.username,
           challenges: user.completedChallenges,
-          points: 0,
+          points: user.fish ?? 0,
         })),
     [users],
   )
@@ -406,8 +408,8 @@ export default function AdminDashboard() {
 
               <StatCard
                 title="Fish / คะแนนที่ได้รับ"
-                value="0"
-                description="ระบบ Fish และคะแนนยังไม่เปิดใช้งาน"
+                value={loading ? "..." : totalFish.toLocaleString()}
+                description="จำนวนปลาทั้งหมดที่ผู้เล่นทุกคนได้รับ"
               />
 
               <StatCard
@@ -586,7 +588,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <a
-                  href="/competition"
+                  href="/admin/challenges"
                   className="inline-flex items-center text-sm font-semibold text-[#b01414] transition-colors hover:text-[#961010]"
                 >
                   ดูโจทย์ทั้งหมด

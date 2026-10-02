@@ -37,6 +37,7 @@ export default function App() {
           <Route path="/story" element={<Story />} />
 
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/challenge" element={<AdminRoute><Challenge_detail /></AdminRoute>} />
           <Route path="/admin/management" element={<AdminRoute><Management /></AdminRoute>} />
           <Route path="/admin/challenges" element={<AdminRoute><ChallengeManagement /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />

@@ -112,7 +112,12 @@ export async function submitFlag(challengeId: string, flag: string): Promise<Sub
   })
   const data = await readJson(response)
   if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถตรวจสอบ Flag ได้")
-  return { correct: Boolean(data.correct) }
+  return {
+    correct: Boolean(data.correct),
+    firstSolve: Boolean(data.firstSolve),
+    reward: data.reward ?? null,
+    totalFish: Number(data.totalFish ?? 0),
+  }
 }
 
 export async function getActiveChallenge(challengeId: string) {

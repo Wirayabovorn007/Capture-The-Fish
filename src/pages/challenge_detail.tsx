@@ -4,21 +4,20 @@ import {
   useState,
 } from "react"
 
-import { useSearchParams } from "react-router-dom"
+import { useLocation, useSearchParams } from "react-router-dom"
 
 import TaskSetup from "../components/competition/Setup_task"
 import Task from "../components/competition/Task"
 
 import Navbar from "../components/Navbar"
+import AdminNavbar from "../components/admin/Navbar"
 import Footer from "../components/Footer"
+import FlagSuccessPopup from "../components/popup/FlagSuccessPopup"
 
 import { getChallenge } from "../services/challengeApi"
-import type { Challenge as BaseChallenge } from "../types/challenge"
+import type { Challenge as BaseChallenge, FishReward, SubmitFlagResponse } from "../types/challenge"
 
-type FishRarity = "common" | "rare" | "legendary"
-type Challenge = BaseChallenge & {
-  fishReward?: { name: string; imageUrl: string; amount: number; rarity: FishRarity }
-}
+type Challenge = BaseChallenge
 
 /* =============================================================
    Challenge Detail
@@ -28,6 +27,9 @@ export default function Challenge_detail() {
   const heroRef = useRef<HTMLDivElement>(null)
 
   const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const isAdminView = location.pathname.startsWith("/admin/")
+  const PageNavbar = isAdminView ? AdminNavbar : Navbar
   const challengeId = searchParams.get("id")
 
   const [challenge, setChallenge] =
@@ -38,6 +40,25 @@ export default function Challenge_detail() {
 
   const [error, setError] =
     useState("")
+
+  const [showSuccessPopup, setShowSuccessPopup] =
+    useState(false)
+
+  const [earnedReward, setEarnedReward] =
+    useState<FishReward | undefined>(undefined)
+
+  const [firstSolve, setFirstSolve] =
+    useState(false)
+
+  const [totalFish, setTotalFish] =
+    useState(0)
+
+  const handleFlagSuccess = (response: SubmitFlagResponse) => {
+    setEarnedReward(response.reward ?? undefined)
+    setFirstSolve(response.firstSolve)
+    setTotalFish(response.totalFish)
+    setShowSuccessPopup(true)
+  }
 
   /* =============================================================
      Load Challenge
@@ -82,7 +103,7 @@ export default function Challenge_detail() {
   if (loading) {
     return (
       <>
-        <Navbar />
+        <PageNavbar />
 
         <div className="flex min-h-screen items-center justify-center">
           <p>กำลังโหลด Challenge...</p>
@@ -98,7 +119,7 @@ export default function Challenge_detail() {
   if (error || !challenge) {
     return (
       <>
-        <Navbar />
+        <PageNavbar />
 
         <div className="flex min-h-screen items-center justify-center">
           <p className="text-red-600">
@@ -113,7 +134,7 @@ export default function Challenge_detail() {
     <>
       <div className="absolute w-full">
 
-        <Navbar />
+        <PageNavbar />
 
         {/* =====================================================
             Hero
@@ -258,10 +279,21 @@ export default function Challenge_detail() {
 
         <section>
           <TaskSetup challengeId={challenge.challengeId} />
-          <Task challengeId={challenge.challengeId} />
+          <Task
+            challengeId={challenge.challengeId}
+            onFlagSuccess={handleFlagSuccess}
+          />
         </section>
 
         <Footer />
+
+        <FlagSuccessPopup
+          open={showSuccessPopup}
+          fishReward={earnedReward}
+          firstSolve={firstSolve}
+          totalFish={totalFish}
+          onClose={() => setShowSuccessPopup(false)}
+        />
 
       </div>
     </>

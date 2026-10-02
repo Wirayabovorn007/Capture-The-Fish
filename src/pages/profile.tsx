@@ -5,11 +5,18 @@ import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 import Reveal from "../components/effects/Reveal"
+import { getMyProfileStats } from "../services/userApi"
 
 export default function Profile() {
   const [username, setUsername] = useState("Loading...")
   const [email, setEmail] = useState("")
   const [profileImage, setProfileImage] = useState("")
+  const [fish, setFish] = useState(0)
+  const [easyCompleted, setEasyCompleted] = useState(0)
+  const [mediumCompleted, setMediumCompleted] = useState(0)
+  const [hardCompleted, setHardCompleted] = useState(0)
+  const [completedChallenges, setCompletedChallenges] = useState(0)
+  const [totalChallenges, setTotalChallenges] = useState(0)
 
   useEffect(() => {
     loadProfile()
@@ -25,6 +32,14 @@ export default function Profile() {
       if (attributes.picture) {
         setProfileImage(attributes.picture)
       }
+
+      const stats = await getMyProfileStats()
+      setFish(stats.fish)
+      setEasyCompleted(stats.difficulty.easy)
+      setMediumCompleted(stats.difficulty.medium)
+      setHardCompleted(stats.difficulty.hard)
+      setCompletedChallenges(stats.completedChallenges)
+      setTotalChallenges(stats.totalChallenges)
     } catch (error) {
       console.error("Not authenticated or error loading profile", error)
     }
@@ -78,11 +93,11 @@ export default function Profile() {
                   <div className="mt-3 flex gap-10">
                     <div>
                       <p className="text-xs text-gray-500">อันดับ</p>
-                      <p className="text-3xl font-bold text-black">123</p>
+                      <p className="text-3xl font-bold text-black">-</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">จำนวนปลา</p>
-                      <p className="text-3xl font-bold text-black">1</p>
+                      <p className="text-3xl font-bold text-black">{fish}</p>
                     </div>
                   </div>
                 </div>
@@ -91,14 +106,14 @@ export default function Profile() {
               {/* Challenge Stats */}
               <div className="flex items-center justify-between gap-8">
                 <div className="space-y-2 text-sm">
-                  <StatRow dot="bg-green-500" label="ง่าย" count="1" />
-                  <StatRow dot="bg-orange-500" label="ปานกลาง" count="1" />
-                  <StatRow dot="bg-[#B01414]" label="ยาก" count="1" />
+                  <StatRow dot="bg-green-500" label="ง่าย" count={easyCompleted} />
+                  <StatRow dot="bg-orange-500" label="ปานกลาง" count={mediumCompleted} />
+                  <StatRow dot="bg-[#B01414]" label="ยาก" count={hardCompleted} />
                 </div>
 
                 <div className="text-center">
                   <p className="text-xs text-gray-600">เคลียร์โจทย์</p>
-                  <p className="text-3xl font-bold text-black">4<span className="text-xl">/10</span></p>
+                  <p className="text-3xl font-bold text-black">{completedChallenges}<span className="text-xl">/{totalChallenges}</span></p>
                 </div>
               </div>
             </section>
