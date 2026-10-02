@@ -3,6 +3,7 @@ import Timer from "../../assets/home/Timer.png"
 import Fish from "../../assets/home/Fish.png"
 import People from "../../assets/home/People.png"
 import Wing from "../../assets/home/Laurel Wreath.png"
+import { getPublicStatistics, type PublicStatistics } from "../../services/userApi"
 
 /**
  * Animates a number from 0 -> end once `start` becomes true.
@@ -10,11 +11,8 @@ import Wing from "../../assets/home/Laurel Wreath.png"
  */
 function useCountUp(end: number, start: boolean, duration = 1500) {
 	const [value, setValue] = useState(0)
-	const startedRef = useRef(false)
-
 	useEffect(() => {
-		if (!start || startedRef.current) return
-		startedRef.current = true
+		if (!start) return
 
 		let rafId: number
 		const startTime = performance.now()
@@ -62,7 +60,32 @@ function CountUpStat({ end, suffix = "+", start, duration }: CountUpStatProps) {
 
 export default function Statistic() {
 	const [inView, setInView] = useState(false)
+	const [stats, setStats] = useState<PublicStatistics>({
+		totalChallenges: 0,
+		totalPlayers: 0,
+		totalFish: 0,
+		totalPlayHours: 0,
+		totalOnlineSeconds: 0,
+	})
 	const sectionRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		let disposed = false
+
+		const loadStatistics = async () => {
+			try {
+				const data = await getPublicStatistics()
+				if (!disposed) setStats(data)
+			} catch (error) {
+				console.error("Failed to load public statistics:", error)
+			}
+		}
+
+		void loadStatistics()
+		return () => {
+			disposed = true
+		}
+	}, [])
 
 	useEffect(() => {
 		const el = sectionRef.current
@@ -91,7 +114,7 @@ export default function Statistic() {
 				<div className="flex gap-3 sm:gap-4 items-center">
 					<img src={Wing} alt="" className="h-8 sm:h-9 lg:h-10" />
 					<div>
-						<CountUpStat end={9} start={inView} />
+						<CountUpStat end={stats.totalChallenges} start={inView} />
 						<span className="text-sm">โจทย์ท้าทาย</span>
 					</div>
 				</div>
@@ -99,7 +122,7 @@ export default function Statistic() {
 				<div className="flex gap-3 sm:gap-4 items-center">
 					<img src={People} alt="" className="h-8 sm:h-9 lg:h-10 " />
 					<div>
-						<CountUpStat end={2450} start={inView} />
+						<CountUpStat end={stats.totalPlayers} start={inView} />
 						<span className="text-sm">ผู้เล่นทั่วประเทศ</span>
 					</div>
 				</div>
@@ -107,7 +130,7 @@ export default function Statistic() {
 				<div className="flex gap-3 sm:gap-4 items-center">
 					<img src={Fish} alt="" className="h-8 sm:h-9 lg:h-10 " />
 					<div>
-						<CountUpStat end={900} start={inView} />
+						<CountUpStat end={stats.totalFish} start={inView} />
 						<span className="text-sm">ปลาที่สะสมแล้ว</span>
 					</div>
 				</div>
@@ -116,7 +139,7 @@ export default function Statistic() {
 					<div className="flex gap-3 sm:gap-4 items-center">
 						<img src={Timer} alt="" className="h-8 sm:h-9 lg:h-10" />
 						<div>
-							<CountUpStat end={15000} start={inView} duration={2000} />
+							<CountUpStat end={stats.totalPlayHours} start={inView} duration={2000} />
 							<span className="text-sm">ชั่วโมงการเล่นรวม</span>
 						</div>
 					</div>
