@@ -131,3 +131,48 @@ export async function getActiveChallenge(challengeId: string) {
     sessionId: data.sessionId as string | undefined,
   }
 }
+
+export async function uploadFishImage(
+  file: File,
+): Promise<string> {
+  const baseUrl = await getApiUrl()
+
+  const response = await fetch(
+    `${baseUrl}/?action=upload_fish_image`,
+    {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type,
+      }),
+    },
+  )
+
+  const data = await readJson(response)
+
+  if (data.status !== "SUCCESS") {
+    throw new Error(
+      data.error || "ไม่สามารถอัปโหลดรูปปลาได้",
+    )
+  }
+
+  const uploadResponse = await fetch(
+    data.uploadUrl,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+      },
+      body: file,
+    },
+  )
+
+  if (!uploadResponse.ok) {
+    throw new Error(
+      "ไม่สามารถอัปโหลดรูปปลาไปยัง S3 ได้",
+    )
+  }
+
+  return data.imageUrl
+}

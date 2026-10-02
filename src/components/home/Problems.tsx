@@ -1,52 +1,37 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Lock, Orbit, Swords } from "lucide-react";
+import { getChallenges } from "../../services/challengeApi";
+import type { Challenge } from "../../types/challenge";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
+type Variant = "matrix" | "lock" | "knife";
+
 type Problem = {
-  id: number;
+  id: string;
   title: string;
   difficulty: Difficulty;
-  category: "beginner" | "intermediate" | "expert";
-  image: string;
+  category: string;
+  level: "beginner" | "intermediate" | "expert";
+  description: string;
 };
 
-const problems: Problem[] = [
-  {
-    id: 1,
-    title: "Cybersecurity 101",
-    difficulty: "Easy",
-    category: "beginner",
-    image: "/images/cybersecurity-101.png",
-  },
-  {
-    id: 2,
-    title: "W1SEman",
-    difficulty: "Medium",
-    category: "intermediate",
-    image: "/images/w1seman.png",
-  },
-  {
-    id: 3,
-    title: "Endpoint investigation",
-    difficulty: "Hard",
-    category: "expert",
-    image: "/images/endpoint-investigation.png",
-  },
-  {
-    id: 4,
-    title: "Network Analysis",
-    difficulty: "Medium",
-    category: "intermediate",
-    image: "/images/network-analysis.png",
-  },
-  {
-    id: 5,
-    title: "Web Security",
-    difficulty: "Easy",
-    category: "beginner",
-    image: "/images/web-security.png",
-  },
-];
+function toProblem(challenge: Challenge): Problem {
+  const difficulty = challenge.difficulty as Difficulty;
+  return {
+    id: challenge.challengeId,
+    title: challenge.title,
+    difficulty,
+    category: challenge.category,
+    level:
+      difficulty === "Easy"
+        ? "beginner"
+        : difficulty === "Medium"
+          ? "intermediate"
+          : "expert",
+    description: challenge.description,
+  };
+}
 
 const tabs = [
   {
@@ -73,8 +58,37 @@ const difficultyColor: Record<Difficulty, string> = {
   Hard: "text-red-600",
 };
 
+const variantBg: Record<Variant, string> = {
+  matrix: "bg-gradient-to-br from-emerald-900 via-emerald-700 to-black",
+  lock: "bg-gradient-to-br from-violet-900 via-purple-600 to-purple-900",
+  knife: "bg-gradient-to-br from-red-800 via-red-600 to-red-900",
+};
+
+const variantIcon: Record<Variant, React.ElementType> = {
+  matrix: Orbit,
+  lock: Lock,
+  knife: Swords,
+};
+
+function getVariant(category: string): Variant {
+  const value = category.toLowerCase();
+
+  if (value.includes("web") || value.includes("osint")) {
+    return "matrix";
+  }
+
+  if (value.includes("crypto") || value.includes("forensic")) {
+    return "lock";
+  }
+
+  return "knife";
+}
+
 export default function ProblemSlider() {
   const [activeTab, setActiveTab] = useState("all");
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [page, setPage] = useState(0);
 
   const [slideDirection, setSlideDirection] = useState<
@@ -83,6 +97,25 @@ export default function ProblemSlider() {
 
  
   const [animationKey, setAnimationKey] = useState(0);
+
+  useEffect(() => {
+    const loadProblems = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const challenges = await getChallenges();
+        setProblems(challenges.map(toProblem));
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "ไม่สามารถโหลด Challenge ได้"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadProblems();
+  }, []);
 
   const activeTabIndex = tabs.findIndex(
     (tab) => tab.value === activeTab
@@ -95,9 +128,9 @@ export default function ProblemSlider() {
     }
 
     return problems.filter(
-      (problem) => problem.category === activeTab
+      (problem) => problem.level === activeTab
     );
-  }, [activeTab]);
+  }, [activeTab, problems]);
 
   /**
    * Number of cards visible at desktop size.
@@ -359,22 +392,36 @@ export default function ProblemSlider() {
                   : "problem-slide-left"
               }
             >
-              <div
-                className="
-                  grid
-                  grid-cols-1
-                  gap-5
-                  md:grid-cols-2
-                  lg:grid-cols-3
-                "
-              >
-                {visibleProblems.map((problem) => (
-                  <ProblemCard
-                    key={problem.id}
-                    problem={problem}
-                  />
-                ))}
-              </div>
+              {loading ? (
+                <div className="py-10 text-center text-sm text-gray-500">
+                  กำลังโหลด Challenge...
+                </div>
+              ) : error ? (
+                <div className="py-10 text-center text-sm text-red-600">
+                  {error}
+                </div>
+              ) : visibleProblems.length === 0 ? (
+                <div className="py-10 text-center text-sm text-gray-500">
+                  ไม่พบ Challenge
+                </div>
+              ) : (
+                <div
+                  className="
+                    grid
+                    grid-cols-1
+                    gap-5
+                    md:grid-cols-2
+                    lg:grid-cols-3
+                  "
+                >
+                  {visibleProblems.map((problem) => (
+                    <ProblemCard
+                      key={problem.id}
+                      problem={problem}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* =================================================
@@ -467,9 +514,13 @@ function ProblemCard({
 }: {
   problem: Problem;
 }) {
+  const variant = getVariant(problem.category);
+  const Icon = variantIcon[variant];
+
   return (
     <article
       className="
+        group
         flex
         h-[300px] sm:h-[320px] lg:h-[350px]
         flex-col
@@ -482,37 +533,28 @@ function ProblemCard({
         transition-all
         duration-300
         hover:-translate-y-1
+        hover:shadow-md
       "
     >
-      {/* =====================================================
-          Image
-      ====================================================== */}
+      {/* Challenge visual - same style as Competition page */}
       <div
-        className="
+        className={`
+          flex
           aspect-[2.15/1]
           shrink-0
+          items-center
+          justify-center
           overflow-hidden
           rounded-lg
-          bg-gray-100
-        "
+          ${variantBg[variant]}
+        `}
       >
-        <img
-          src={problem.image}
-          alt={problem.title}
-          className="
-            h-full
-            w-full
-            object-cover
-            transition-transform
-            duration-500
-            hover:scale-[1.03]
-          "
+        <Icon
+          className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
+          strokeWidth={1.5}
         />
       </div>
 
-      {/* =====================================================
-          Card Content
-      ====================================================== */}
       <div
         className="
           flex
@@ -523,60 +565,48 @@ function ProblemCard({
           pt-3 sm:pt-4 lg:pt-5
         "
       >
-        {/* Difficulty */}
-        <div
-          className={`
-            mb-2
-            text-xs sm:text-sm
-            font-medium
-            ${difficultyColor[problem.difficulty]}
-          `}
-        >
-          {problem.difficulty}
+        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+          <span className={`font-medium ${difficultyColor[problem.difficulty]}`}>
+            {problem.difficulty}
+          </span>
+
+          <span className="text-gray-300">|</span>
+
+          <span className="text-gray-400">{problem.category}</span>
         </div>
 
-        {/* Title */}
-        <h3
-          className="
-            mb-2
-            text-lg sm:text-xl lg:text-[24px]
-            font-bold
-            leading-tight
-            text-gray-800
-            line-clamp-2
-          "
-        >
+        <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-tight text-gray-800 sm:text-xl lg:text-[24px]">
           {problem.title}
         </h3>
 
-        {/* =================================================
-            Button
+        <p className="mb-4 line-clamp-2 text-sm leading-6 text-gray-500">
+          {problem.description}
+        </p>
 
-            mt-auto pushes this to the bottom regardless
-            of the title/content height.
-        ================================================== */}
-      <a href={`/challenge?id=${problem.id}`}>
-        <button
-          type="button"
-          className="
-            mt-auto
-            w-fit
-            rounded-md
-            bg-[#B01414]
-            px-6 sm:px-8 lg:px-10
-            py-2 sm:py-2.5 lg:py-3
-            text-xs sm:text-sm
-            font-semibold
-            text-white
-            transition-all
-            duration-200
-            hover:bg-[#8F1010]
-            active:scale-95
-          "
+        <a
+          href={`/challenge?id=${encodeURIComponent(problem.id)}`}
+          className="mt-auto w-fit"
         >
-          ออกล่า
-        </button>
-      </a>
+          <button
+            type="button"
+            className="
+              w-fit
+              rounded-md
+              bg-[#B01414]
+              px-6 sm:px-8 lg:px-10
+              py-2 sm:py-2.5 lg:py-3
+              text-xs sm:text-sm
+              font-semibold
+              text-white
+              transition-all
+              duration-200
+              hover:bg-[#8F1010]
+              active:scale-95
+            "
+          >
+            ออกล่า
+          </button>
+        </a>
       </div>
     </article>
   );

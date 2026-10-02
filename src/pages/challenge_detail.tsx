@@ -13,7 +13,12 @@ import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 
 import { getChallenge } from "../services/challengeApi"
-import type { Challenge } from "../types/challenge"
+import type { Challenge as BaseChallenge } from "../types/challenge"
+
+type FishRarity = "common" | "rare" | "legendary"
+type Challenge = BaseChallenge & {
+  fishReward?: { name: string; imageUrl: string; amount: number; rarity: FishRarity }
+}
 
 /* =============================================================
    Challenge Detail
@@ -215,6 +220,23 @@ export default function Challenge_detail() {
 				<p>ยังไม่มี Hint</p>
 			)}
 			</div>
+
+          {/* Fish Reward */}
+          {challenge.fishReward && (
+            <div>
+              <h1 className="font-bold text-xl">Fish Reward</h1>
+              <div className="mt-4 flex max-w-xl items-center gap-5 rounded-2xl border border-[#e5e1df] bg-white p-5 shadow-sm">
+                <img src={challenge.fishReward.imageUrl} alt={challenge.fishReward.name} className="h-28 w-28 rounded-xl object-contain" />
+                <div>
+                  <p className="text-xl font-bold text-[#403a38]">{challenge.fishReward.name}</p>
+                  <p className="mt-2 text-sm text-[#77716e]">จำนวน ×{challenge.fishReward.amount}</p>
+                  <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${challenge.fishReward.rarity === "legendary" ? "bg-purple-100 text-purple-700" : challenge.fishReward.rarity === "rare" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-700"}`}>
+                    {challenge.fishReward.rarity === "legendary" ? "ตำนาน" : challenge.fishReward.rarity === "rare" ? "หายาก" : "ทั่วไป"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Flag Format - Static */}
 
