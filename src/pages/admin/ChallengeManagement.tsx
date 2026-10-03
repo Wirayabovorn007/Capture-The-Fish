@@ -5,10 +5,11 @@ import {
   createChallenge,
   deleteChallenge,
   getChallenges,
+  getFishes,
   updateChallenge as updateChallengeApi,
 } from "../../services/challengeApi"
 
-import type { Challenge as BaseApiChallenge } from "../../types/challenge"
+import type { Challenge as BaseApiChallenge, Fish } from "../../types/challenge"
 import { getAuthHeaders } from "../../utils/auth"
 
 type FishRarity = "common" | "rare" | "legendary"
@@ -34,6 +35,8 @@ type ChallengeForm = {
   objective: string
   hint: string
   flag: string
+  fishMode: "new" | "existing"
+  selectedFishId: string
   fishName: string
   fishImageUrl: string
   fishAmount: number
@@ -82,6 +85,8 @@ function createEmptyChallenge(): ChallengeForm {
     objective: "",
     hint: "",
     flag: "",
+    fishMode: "new",
+    selectedFishId: "",
     fishName: "",
     fishImageUrl: "",
     fishAmount: 1,
@@ -107,6 +112,8 @@ function createChallengeId(title: string) {
 export default function ChallengeManagement() {
   const [challenges, setChallenges] =
     useState<Challenge[]>([])
+
+  const [fishes, setFishes] = useState<Fish[]>([])
 
   const [isLoading, setIsLoading] =
     useState(true)
@@ -168,8 +175,18 @@ export default function ChallengeManagement() {
     }
   }
 
+  const loadFishes = async () => {
+    try {
+      const data = await getFishes()
+      setFishes(data)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "ไม่สามารถโหลดรายการปลาได้")
+    }
+  }
+
   useEffect(() => {
     void loadChallenges()
+    void loadFishes()
   }, [])
 
   const isEditing = editingId !== null
@@ -276,6 +293,8 @@ export default function ChallengeManagement() {
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
       flag: "",
+      fishMode: selectedChallenge.fishReward?.fishId ? "existing" : "new",
+      selectedFishId: selectedChallenge.fishReward?.fishId ?? "",
       fishName: selectedChallenge.fishReward?.name ?? "",
       fishImageUrl: selectedChallenge.fishReward?.imageUrl ?? "",
       fishAmount: selectedChallenge.fishReward?.amount ?? 1,
@@ -332,6 +351,7 @@ export default function ChallengeManagement() {
 
       setDeletingChallenge(null)
       await loadChallenges()
+      await loadFishes()
 
       setMessage(
         `ลบโจทย์ "${challengeToDelete.title}" สำเร็จ`
@@ -401,7 +421,10 @@ export default function ChallengeManagement() {
       return
     }
 
-    if ((challenge.fishName.trim() || challenge.fishImageUrl) && (!challenge.fishName.trim() || !challenge.fishImageUrl)) {
+    if (challenge.fishMode === "existing" && !challenge.selectedFishId) {
+      setMessage("กรุณาเลือกปลาที่มีอยู่ในระบบ"); return
+    }
+    if (challenge.fishMode === "new" && (!challenge.fishName.trim() || !challenge.fishImageUrl)) {
       setMessage("กรุณากรอกชื่อปลาและอัปโหลดรูปปลาให้ครบ"); return
     }
     if (challenge.fishAmount < 1) { setMessage("จำนวนปลาต้องอย่างน้อย 1 ตัว"); return }
@@ -432,10 +455,14 @@ export default function ChallengeManagement() {
       objective: challenge.objective.trim(),
       hint: challenge.hint.trim(),
       flag: challenge.flag.trim(),
-      fishReward: challenge.fishName.trim() || challenge.fishImageUrl ? {
+      fishReward: challenge.fishMode === "existing" ? {
+        fishId: challenge.selectedFishId,
+        name: "", imageUrl: "", rarity: "common",
+        amount: Math.max(1, Number(challenge.fishAmount) || 1),
+      } : {
         name: challenge.fishName.trim(), imageUrl: challenge.fishImageUrl,
         amount: Math.max(1, Number(challenge.fishAmount) || 1), rarity: challenge.fishRarity,
-      } : undefined,
+      },
       containers: challenge.containers.map(
         ({ name, image, port, accessType, buttonLabel }) => ({
           name: name.trim(),
@@ -461,6 +488,7 @@ export default function ChallengeManagement() {
       setShowForm(false)
 
       await loadChallenges()
+      await loadFishes()
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -829,14 +857,66 @@ export default function ChallengeManagement() {
 
                       {/* Fish Reward */}
                       <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5 sm:p-6">
-                        <div className="mb-5"><h3 className="text-lg font-bold text-[#403a38]">Fish Reward</h3><p className="mt-1 text-xs text-[#999390]">กำหนดปลาที่แสดงเป็นรางวัลของ Challenge (ยังไม่แจกปลาเมื่อส่ง Flag ถูก)</p></div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ชื่อปลา</label><input type="text" value={challenge.fishName} onChange={(e) => setChallenge((prev) => ({ ...prev, fishName: e.target.value }))} placeholder="เช่น Golden Fish" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: Math.max(1, Number(e.target.value) || 1) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ความแรร์</label><select value={challenge.fishRarity} onChange={(e) => setChallenge((prev) => ({ ...prev, fishRarity: e.target.value as FishRarity }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]"><option value="common">ทั่วไป</option><option value="rare">หายาก</option><option value="legendary">ตำนาน</option></select></div>
-                          <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">รูปปลา</label><input type="file" accept="image/*" disabled={isUploadingFish} onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFishImageUpload(file) }} className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm" /><p className="mt-2 text-xs text-[#999390]">{isUploadingFish ? "กำลังอัปโหลดรูป..." : "รูปจะถูกอัปโหลดไปยัง S3"}</p></div>
+                        <div className="mb-5">
+                          <h3 className="text-lg font-bold text-[#403a38]">Fish Reward</h3>
+                          <p className="mt-1 text-xs text-[#999390]">เลือกใช้ปลาที่มีอยู่แล้ว หรือสร้างปลาชนิดใหม่สำหรับ Challenge นี้</p>
                         </div>
-                        {challenge.fishImageUrl && <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4"><img src={challenge.fishImageUrl} alt={challenge.fishName || "Fish preview"} className="h-24 w-24 rounded-xl object-contain" /><div><p className="font-bold text-[#403a38]">{challenge.fishName || "ยังไม่ได้ตั้งชื่อปลา"}</p><p className="mt-1 text-sm text-[#77716e]">จำนวน ×{challenge.fishAmount}</p><p className="mt-1 text-sm text-[#77716e]">{challenge.fishRarity === "legendary" ? "หายากสุดๆ" : challenge.fishRarity === "rare" ? "หายาก" : "ทั่วไป"}</p></div></div>}
+
+                        <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-xl border border-[#d8d2cf] bg-white p-1">
+                          <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, fishMode: "new", selectedFishId: "" }))}
+                            className={`h-11 rounded-lg text-sm font-semibold transition-all ${challenge.fishMode === "new" ? "bg-[#b01414] text-white shadow-sm" : "text-[#77716e] hover:bg-[#f5f2f1]"}`}>
+                            + สร้างปลาใหม่
+                          </button>
+                          <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, fishMode: "existing" }))}
+                            className={`h-11 rounded-lg text-sm font-semibold transition-all ${challenge.fishMode === "existing" ? "bg-[#b01414] text-white shadow-sm" : "text-[#77716e] hover:bg-[#f5f2f1]"}`}>
+                            ใช้ปลาที่มีอยู่
+                          </button>
+                        </div>
+
+                        {challenge.fishMode === "new" ? (
+                          <div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ชื่อปลา</label><input type="text" value={challenge.fishName} onChange={(e) => setChallenge((prev) => ({ ...prev, fishName: e.target.value }))} placeholder="เช่น Golden Fish" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: Math.max(1, Number(e.target.value) || 1) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ความแรร์</label><select value={challenge.fishRarity} onChange={(e) => setChallenge((prev) => ({ ...prev, fishRarity: e.target.value as FishRarity }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]"><option value="common">ทั่วไป</option><option value="rare">หายาก</option><option value="legendary">ตำนาน</option></select></div>
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">รูปปลา</label><input type="file" accept="image/*" disabled={isUploadingFish} onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFishImageUpload(file) }} className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm" /><p className="mt-2 text-xs text-[#999390]">{isUploadingFish ? "กำลังอัปโหลดรูป..." : "รูปจะถูกอัปโหลดไปยัง S3"}</p></div>
+                            </div>
+                            {challenge.fishImageUrl && <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4"><img src={challenge.fishImageUrl} alt={challenge.fishName || "Fish preview"} className="h-24 w-24 rounded-xl object-contain" /><div><p className="font-bold text-[#403a38]">{challenge.fishName || "ยังไม่ได้ตั้งชื่อปลา"}</p><p className="mt-1 text-sm text-[#77716e]">จำนวน ×{challenge.fishAmount}</p><p className="mt-1 text-sm text-[#77716e]">{challenge.fishRarity === "legendary" ? "ตำนาน" : challenge.fishRarity === "rare" ? "หายาก" : "ทั่วไป"}</p></div></div>}
+                          </div>
+                        ) : (
+                          <div>
+                            {fishes.length === 0 ? (
+                              <div className="rounded-xl border border-dashed border-[#d8d2cf] bg-white p-6 text-center text-sm text-[#77716e]">ยังไม่มีปลาในระบบ กรุณาเลือก “สร้างปลาใหม่” ก่อน</div>
+                            ) : (
+                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {fishes.map((fish) => {
+                                  const selected = challenge.selectedFishId === fish.fishId
+                                  return <button key={fish.fishId} type="button" onClick={() => setChallenge((prev) => ({ ...prev, selectedFishId: fish.fishId }))}
+                                    className={`relative flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                                      fish.rarity === "legendary"
+                                        ? "border-amber-400 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-[0_0_18px_rgba(245,158,11,0.18)] hover:border-amber-500 hover:shadow-[0_0_24px_rgba(245,158,11,0.28)]"
+                                        : fish.rarity === "rare"
+                                          ? "border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-[0_0_14px_rgba(59,130,246,0.12)] hover:border-blue-400"
+                                          : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50"
+                                    } ${selected ? "ring-2 ring-[#b01414] ring-offset-2" : ""}`}>
+                                    {selected && <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#b01414] text-[11px] font-bold text-white shadow-sm">✓</span>}
+                                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border ${fish.rarity === "legendary" ? "border-amber-300 bg-amber-100/70" : fish.rarity === "rare" ? "border-blue-200 bg-blue-100/70" : "border-slate-200 bg-slate-50"}`}>
+                                      <img src={fish.imageUrl} alt={fish.name} className="h-14 w-14 object-contain" />
+                                    </div>
+                                    <div className="min-w-0 pr-5">
+                                      <p className="truncate text-sm font-bold text-[#403a38]">{fish.name}</p>
+                                      <span className={`mt-1.5 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${fish.rarity === "legendary" ? "border-amber-300 bg-amber-100 text-amber-800" : fish.rarity === "rare" ? "border-blue-200 bg-blue-100 text-blue-700" : "border-slate-200 bg-slate-100 text-slate-600"}`}>
+                                        {fish.rarity === "legendary" ? "ตำนาน" : fish.rarity === "rare" ? "หายาก" : "ทั่วไป"}
+                                      </span>
+                                      {selected && <p className="mt-1.5 text-xs font-semibold text-[#b01414]">เลือกแล้ว</p>}
+                                    </div>
+                                  </button>
+                                })}
+                              </div>
+                            )}
+                            <div className="mt-5 max-w-xs"><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: Math.max(1, Number(e.target.value) || 1) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Containers */}

@@ -4,6 +4,7 @@ import type {
   ChallengeStatusResponse,
   SpawnChallengeResponse,
   SubmitFlagResponse,
+  Fish,
 } from "../types/challenge"
 
 let apiUrl = ""
@@ -27,6 +28,17 @@ async function readJson(response: Response) {
     throw new Error(data.error || "เกิดข้อผิดพลาดจากระบบ")
   }
   return data
+}
+
+
+export async function getFishes(): Promise<Fish[]> {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=list_fishes&t=${Date.now()}`, {
+    headers: await getAuthHeaders(false),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "โหลดรายการปลาไม่สำเร็จ")
+  return data.fishes ?? []
 }
 
 export async function getChallenges(): Promise<Challenge[]> {
