@@ -11,6 +11,7 @@ import { Link } from "react-router-dom"
 import Reveal from "../effects/Reveal"
 
 import { getChallenges } from "../../services/challengeApi"
+import { getMyProfileStats } from "../../services/userApi"
 import type { Challenge } from "../../types/challenge"
 
 type Difficulty = "Easy" | "Medium" | "Hard"
@@ -170,11 +171,7 @@ export default function Content() {
 	const [error, setError] =
 		useState("")
 
-	/*
-	 * ระบบประวัติการผ่าน Challenge
-	 * ยังไม่ได้ทำ จึงให้เป็น 0 ก่อน
-	 */
-	const wonCount = 0
+	const [wonCount, setWonCount] = useState(0)
 
 	const totalCount =
 		challenges.length
@@ -226,7 +223,17 @@ export default function Content() {
 				}
 			}
 
+		const loadProfile = async () => {
+			try {
+				const profile = await getMyProfileStats()
+				setWonCount(Number(profile.completedChallenges ?? 0))
+			} catch (error) {
+				console.error("Unable to load challenge progress", error)
+			}
+		}
+
 		void loadChallenges()
+		void loadProfile()
 	}, [])
 
 	/* ==============================
@@ -548,10 +555,18 @@ function ChallengeCard({
 			<div
 				className={`flex aspect-[2.1/1] items-center justify-center overflow-hidden rounded-lg ${variantBg[variant]}`}
 			>
-				<Icon
-					className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
-					strokeWidth={1.5}
-				/>
+				{challenge.thumbnailUrl ? (
+					<img
+						src={challenge.thumbnailUrl}
+						alt={`${challenge.title} thumbnail`}
+						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+					/>
+				) : (
+					<Icon
+						className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
+						strokeWidth={1.5}
+					/>
+				)}
 			</div>
 
 			<div className="pt-5">

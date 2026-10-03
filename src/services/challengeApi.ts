@@ -193,3 +193,22 @@ export async function uploadFishImage(
 
   return data.imageUrl
 }
+
+export async function uploadChallengeThumbnail(file: File): Promise<string> {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=upload_challenge_thumbnail`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถอัปโหลด Thumbnail ได้")
+
+  const uploadResponse = await fetch(data.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  })
+  if (!uploadResponse.ok) throw new Error("ไม่สามารถอัปโหลด Thumbnail ไปยัง S3 ได้")
+  return data.imageUrl
+}

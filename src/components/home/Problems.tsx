@@ -14,6 +14,7 @@ type Problem = {
   category: string;
   level: "beginner" | "intermediate" | "expert";
   description: string;
+  thumbnailUrl?: string;
 };
 
 function toProblem(challenge: Challenge): Problem {
@@ -30,6 +31,7 @@ function toProblem(challenge: Challenge): Problem {
           ? "intermediate"
           : "expert",
     description: challenge.description,
+    thumbnailUrl: challenge.thumbnailUrl,
   };
 }
 
@@ -549,10 +551,18 @@ function ProblemCard({
           ${variantBg[variant]}
         `}
       >
-        <Icon
-          className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
-          strokeWidth={1.5}
-        />
+        {problem.thumbnailUrl ? (
+          <img
+            src={problem.thumbnailUrl}
+            alt={problem.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <Icon
+            className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
+            strokeWidth={1.5}
+          />
+        )}
       </div>
 
       <div

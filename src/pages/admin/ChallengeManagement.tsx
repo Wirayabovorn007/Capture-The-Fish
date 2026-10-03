@@ -6,6 +6,7 @@ import {
   deleteChallenge,
   getChallenges,
   getFishes,
+  uploadChallengeThumbnail,
   updateChallenge as updateChallengeApi,
 } from "../../services/challengeApi"
 
@@ -32,6 +33,7 @@ type ChallengeForm = {
   category: string
   difficulty: string
   description: string
+  thumbnailUrl: string
   objective: string
   hint: string
   flag: string
@@ -82,6 +84,7 @@ function createEmptyChallenge(): ChallengeForm {
     category: "Web Security",
     difficulty: "Easy",
     description: "",
+    thumbnailUrl: "",
     objective: "",
     hint: "",
     flag: "",
@@ -134,6 +137,9 @@ export default function ChallengeManagement() {
     useState(false)
 
   const [isUploadingFish, setIsUploadingFish] =
+    useState(false)
+
+  const [isUploadingThumbnail, setIsUploadingThumbnail] =
     useState(false)
 
   const [message, setMessage] =
@@ -290,6 +296,7 @@ export default function ChallengeManagement() {
       category: selectedChallenge.category,
       difficulty: selectedChallenge.difficulty,
       description: selectedChallenge.description,
+      thumbnailUrl: selectedChallenge.thumbnailUrl ?? "",
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
       flag: "",
@@ -374,6 +381,23 @@ export default function ChallengeManagement() {
     setShowForm(false)
   }
 
+  const handleThumbnailUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น")
+      return
+    }
+    try {
+      setIsUploadingThumbnail(true)
+      setMessage("")
+      const imageUrl = await uploadChallengeThumbnail(file)
+      setChallenge((prev) => ({ ...prev, thumbnailUrl: imageUrl }))
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "อัปโหลด Thumbnail ไม่สำเร็จ")
+    } finally {
+      setIsUploadingThumbnail(false)
+    }
+  }
+
   const handleFishImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) { setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น"); return }
     try {
@@ -452,6 +476,7 @@ export default function ChallengeManagement() {
       category: challenge.category,
       difficulty: challenge.difficulty,
       description: challenge.description.trim(),
+      thumbnailUrl: challenge.thumbnailUrl,
       objective: challenge.objective.trim(),
       hint: challenge.hint.trim(),
       flag: challenge.flag.trim(),
@@ -756,6 +781,48 @@ export default function ChallengeManagement() {
                               focus:ring-[#b01414]/10
                             "
                           />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                            Thumbnail
+                          </label>
+
+                          <div className="rounded-xl border border-[#e7e3e1] bg-[#faf9f8] p-4">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={isUploadingThumbnail}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0]
+                                if (file) void handleThumbnailUpload(file)
+                              }}
+                              className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm"
+                            />
+                            <p className="mt-2 text-xs text-[#999390]">
+                              {isUploadingThumbnail ? "กำลังอัปโหลด Thumbnail..." : "รูป Thumbnail จะถูกอัปโหลดไปยัง S3"}
+                            </p>
+
+                            {challenge.thumbnailUrl && (
+                              <div className="mt-4 overflow-hidden rounded-xl border border-[#e7e3e1] bg-white">
+                                <img
+                                  src={challenge.thumbnailUrl}
+                                  alt="Challenge thumbnail preview"
+                                  className="aspect-video w-full object-cover"
+                                />
+                                <div className="flex items-center justify-between gap-3 p-3">
+                                  <span className="truncate text-xs text-[#77716e]">Thumbnail ปัจจุบัน</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setChallenge((prev) => ({ ...prev, thumbnailUrl: "" }))}
+                                    className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
+                                  >
+                                    ลบรูป
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div>
