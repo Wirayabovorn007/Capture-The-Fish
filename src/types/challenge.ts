@@ -32,6 +32,7 @@ export type Challenge = {
   category: string;
   difficulty: string;
   description: string;
+  thumbnailUrl?: string;
   objective: string;
   hint: string;
   containers: DockerContainer[];

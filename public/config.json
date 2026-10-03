@@ -1,6 +1,6 @@
 {
-  "ALB_URL": "https://clatz2fikhsqer2vu453lwxinu0qvzqs.lambda-url.us-east-1.on.aws",
-  "USER_POOL_ID": "us-east-1_hgaxxopu3",
-  "CLIENT_ID": "2p6co98i0kp9po107ru8ipmmj2",
+  "ALB_URL": "https://s6erzk2vz4nwlp3mnveixnohxe0mbwch.lambda-url.us-east-1.on.aws",
+  "USER_POOL_ID": "us-east-1_hwIpohxLc",
+  "CLIENT_ID": "7k5p4pe5v7f6vvf9gl3bonu6b3",
   "IMAGE_BUCKET": "ctf-images-bucket-350600952414"
 }
