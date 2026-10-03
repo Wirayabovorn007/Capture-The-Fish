@@ -9,6 +9,7 @@ import ManageProfile from "./pages/manage_profile"
 import Contact from "./pages/contact"
 import Leaderboard from "./pages/leaderboard"
 import Story from "./pages/story"
+import FishCollection from "./pages/fishcollection"
 
 import AdminDashboard from "./pages/admin/dashboard"
 import Management from "./pages/admin/management"
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/contact" element={<UserRoute><Contact /></UserRoute>} />
           <Route path="/leaderboard" element={<UserRoute><Leaderboard /></UserRoute>} />
           <Route path="/story" element={<UserRoute><Story /></UserRoute>} />
+          <Route path="/collection" element={ <FishCollection />} />
 
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
