@@ -2,6 +2,14 @@ export type ContainerAccessType = "none" | "web" | "terminal";
 
 export type FishRarity = "common" | "rare" | "legendary";
 
+export type Fish = {
+  fishId: string;
+  name: string;
+  imageUrl: string;
+  rarity: FishRarity;
+  createdAt?: string;
+};
+
 export type FishReward = {
   fishId?: string;
   name: string;
