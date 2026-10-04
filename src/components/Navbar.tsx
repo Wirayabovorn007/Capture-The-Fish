@@ -9,6 +9,7 @@ import contact from "../assets/home/Envelope.png";
 const navLinks = [
     { icon: comp, label: "แข่งขัน", href: "/competition" },
     { icon: story, label: "เนื้อเรื่อง", href: "/story" },
+    { icon: story, label: "Fish Collection", href: "/collection" },
     { icon: leaderboard, label: "ตารางคะแนน", href: "/leaderboard" },
     { icon: contact, label: "ติดต่อเรา", href: "/contact" },
 ];

@@ -1,14 +1,5 @@
 import { X } from "lucide-react"
-
-type FishRarity = "common" | "rare" | "legendary"
-
-type FishReward = {
-  fishId?: string
-  name: string
-  imageUrl: string
-  amount: number
-  rarity: FishRarity
-}
+import type { FishReward, FishRarity } from "../../types/challenge"
 
 type FlagSuccessPopupProps = {
   open: boolean
@@ -19,15 +10,15 @@ type FlagSuccessPopupProps = {
 }
 
 const rarityLabel: Record<FishRarity, string> = {
-  common: "ทั่วไป",
-  rare: "หายาก",
-  legendary: "หายากระดับตำนาน",
+  common: "COMMON",
+  rare: "RARE",
+  ultimate: "ULTIMATE",
 }
 
 const rarityClass: Record<FishRarity, string> = {
   common: "bg-slate-100 text-slate-700",
-  rare: "bg-amber-100 text-amber-700",
-  legendary: "bg-purple-100 text-purple-700",
+  rare: "bg-blue-100 text-blue-700",
+  ultimate: "bg-red-100 text-red-700",
 }
 
 export default function FlagSuccessPopup({

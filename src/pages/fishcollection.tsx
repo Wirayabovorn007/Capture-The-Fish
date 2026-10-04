@@ -3,162 +3,43 @@ import Footer from "../components/Footer";
 import Reveal from "../components/effects/Reveal";
 
 
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getAuthHeaders } from "../utils/auth";
 
 const RED = "#B01414";
 
-const fishes = [
-  {
-    id: 1,
-    name: "Kraken",
-    rarity: "ultimate",
-    quantity: 1,
-    image: "/images/fish/kraken.png",
-    description:
-      "สิ่งมีชีวิตใต้ทะเลลึกที่ปรากฏตัวในพื้นที่ที่ไม่มีใครกล้าเข้าใกล้",
-    points: 1000,
-  },
-  {
-    id: 2,
-    name: "Blow fish",
-    rarity: "common",
-    quantity: 4,
-    image: "/images/fish/blow-fish.png",
-    description:
-      "ปลาตัวเล็กที่สามารถพองตัวเพื่อป้องกันตัวเองจากอันตราย",
-    points: 100,
-  },
-  {
-    id: 3,
-    name: "Shell",
-    rarity: "common",
-    quantity: 8,
-    image: "/images/fish/shell.png",
-    description:
-      "สิ่งมีชีวิตแห่งชายฝั่งที่ซ่อนตัวอยู่ตามโขดหินและพื้นทราย",
-    points: 100,
-  },
-  {
-    id: 4,
-    name: "Salmon",
-    rarity: "common",
-    quantity: 7,
-    image: "/images/fish/salmon.png",
-    description:
-      "ปลาที่เดินทางกลับสู่ต้นกำเนิดผ่านสายน้ำที่ไหลเชี่ยว",
-    points: 100,
-  },
-  {
-    id: 5,
-    name: "Whale",
-    rarity: "rare",
-    quantity: 0,
-    image: "/images/fish/whale.png",
-    description:
-      "ยักษ์ใหญ่แห่งมหาสมุทรที่เคลื่อนตัวอย่างสง่างามในทะเลเปิด",
-    points: 300,
-  },
-  {
-    id: 6,
-    name: "squid",
-    rarity: "rare",
-    quantity: 2,
-    image: "/images/fish/squid.png",
-    description:
-      "นักล่าแห่งความมืดที่ซ่อนตัวอยู่ในมหาสมุทรลึก",
-    points: 300,
-  },
-  {
-    id: 7,
-    name: "Snakehead fish",
-    rarity: "common",
-    quantity: 3,
-    image: "/images/fish/snakehead-fish.png",
-    description:
-      "ปลาน้ำจืดที่สามารถเอาชีวิตรอดในสภาพแวดล้อมที่หลากหลาย",
-    points: 100,
-  },
-  {
-    id: 8,
-    name: "Black-chinned tilapia",
-    rarity: "common",
-    quantity: 5,
-    image: "/images/fish/black-chinned-tilapia.png",
-    description:
-      "ปลาน้ำจืดที่พบได้ในแหล่งน้ำเขตร้อนและสามารถปรับตัวได้ดี",
-    points: 100,
-  },
-  {
-    id: 9,
-    name: "pufferfish",
-    rarity: "rare",
-    quantity: 0,
-    image: "/images/fish/pufferfish.png",
-    description:
-      "ปลาที่มีวิธีป้องกันตัวอันเป็นเอกลักษณ์และเต็มไปด้วยพิษ",
-    points: 300,
-  },
-  {
-    id: 10,
-    name: "great shark",
-    rarity: "rare",
-    quantity: 1,
-    image: "/images/fish/great-shark.png",
-    description:
-      "นักล่าที่อยู่บนสุดของห่วงโซ่อาหารแห่งท้องทะเล",
-    points: 300,
-  },
-  {
-    id: 11,
-    name: "Megalodon",
-    rarity: "ultimate",
-    quantity: 0,
-    image: "/images/fish/megalodon.png",
-    description:
-      "นักล่าโบราณขนาดมหึมาที่ครั้งหนึ่งเคยครองมหาสมุทร",
-    points: 1000,
-  },
-  {
-    id: 12,
-    name: "Mermaids",
-    rarity: "ultimate",
-    quantity: 0,
-    image: "/images/fish/mermaids.png",
-    description:
-      "สิ่งมีชีวิตในตำนานที่ถูกพบเห็นเพียงไม่กี่ครั้งในประวัติศาสตร์",
-    points: 1000,
-  },
-  {
-    id: 13,
-    name: "killer whale",
-    rarity: "ultimate",
-    quantity: 0,
-    image: "/images/fish/killer-whale.png",
-    description:
-      "นักล่าที่ฉลาดและทรงพลัง สามารถล่าร่วมกันเป็นฝูงได้",
-    points: 1000,
-  },
-  {
-    id: 14,
-    name: "orca",
-    rarity: "rare",
-    quantity: 3,
-    image: "/images/fish/orca.png",
-    description:
-      "นักล่าแห่งท้องทะเลที่มีพลังและความฉลาดเหนือกว่าปลาทั่วไป",
-    points: 300,
-  },
-  {
-    id: 15,
-    name: "King of Nagas",
-    rarity: "ultimate",
-    quantity: 0,
-    image: "/images/fish/king-of-nagas.png",
-    description:
-      "ราชาแห่งสายน้ำ สิ่งมีชีวิตลึกลับที่ถูกกล่าวขานในตำนาน",
-    points: 1000,
-  },
-];
+type FishRarity = "common" | "rare" | "ultimate";
+type Fish = {
+  id: string;
+  name: string;
+  rarity: FishRarity;
+  quantity: number;
+  image: string;
+  description: string;
+  points: number;
+};
+
+type CatalogFish = {
+  fishId: string;
+  name: string;
+  imageUrl: string;
+  rarity: FishRarity;
+  description?: string;
+  xp?: number;
+};
+
+type InventoryFish = {
+  fishId: string;
+  amount: number;
+};
+
+async function getApiUrl() {
+  const response = await fetch("/config.json");
+  if (!response.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
+  const config = await response.json();
+  if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
+  return config.ALB_URL as string;
+}
 
 const rarityConfig = {
   common: {
@@ -192,7 +73,7 @@ const rarityConfig = {
 |--------------------------------------------------------------------------
 */
 
-function FishImage({ fish }) {
+function FishImage({ fish }: { fish: Fish }) {
   const config = rarityConfig[fish.rarity];
   const discovered = fish.quantity > 0;
 
@@ -237,7 +118,7 @@ function FishImage({ fish }) {
 |--------------------------------------------------------------------------
 */
 
-function RarityBadge({ rarity }) {
+function RarityBadge({ rarity }: { rarity: FishRarity }) {
   const config = rarityConfig[rarity];
 
   return (
@@ -257,7 +138,7 @@ function RarityBadge({ rarity }) {
 |--------------------------------------------------------------------------
 */
 
-function FishCard({ fish }) {
+function FishCard({ fish }: { fish: Fish }) {
   const config = rarityConfig[fish.rarity];
   const discovered = fish.quantity > 0;
 
@@ -356,6 +237,46 @@ function FishCard({ fish }) {
 export default function FishCollection() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [fishes, setFishes] = useState<Fish[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const baseUrl = await getApiUrl();
+        const headers = await getAuthHeaders(false);
+        const [catalogResponse, inventoryResponse] = await Promise.all([
+          fetch(`${baseUrl}/?action=list_fishes&t=${Date.now()}`, { headers }),
+          fetch(`${baseUrl}/?action=get_my_inventory&t=${Date.now()}`, { headers }),
+        ]);
+        const catalogData = await catalogResponse.json();
+        const inventoryData = await inventoryResponse.json();
+        if (!catalogResponse.ok) throw new Error(catalogData.error || "โหลดรายการปลาไม่สำเร็จ");
+        if (!inventoryResponse.ok) throw new Error(inventoryData.error || "โหลดคลังปลาไม่สำเร็จ");
+        const inventory = new Map<string, number>(
+          (inventoryData.inventory ?? []).map((item: InventoryFish) => [item.fishId, Number(item.amount ?? 0)])
+        );
+        const realFishes: Fish[] = (catalogData.fishes ?? []).map((fish: CatalogFish) => ({
+          id: fish.fishId,
+          name: fish.name,
+          rarity: fish.rarity,
+          quantity: inventory.get(fish.fishId) ?? 0,
+          image: fish.imageUrl,
+          description: fish.description || "ยังไม่มีคำอธิบายปลา",
+          points: Number(fish.xp ?? 0),
+        }));
+        setFishes(realFishes);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "โหลด Fish Collection ไม่สำเร็จ");
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
+  }, []);
 
   // จำนวนประเภทปลาที่ค้นพบแล้ว
   const discoveredTypes = fishes.filter(
@@ -367,6 +288,15 @@ export default function FishCollection() {
     (total, fish) => total + fish.quantity,
     0
   );
+
+  const totalSystemXp = fishes.reduce((total, fish) => total + fish.points, 0);
+  const collectedXp = fishes.reduce(
+    (total, fish) => total + (fish.quantity > 0 ? fish.points : 0),
+    0
+  );
+  const collectionPercent = totalSystemXp > 0
+    ? Math.min(100, Math.round((collectedXp / totalSystemXp) * 100))
+    : 0;
 
   const filteredFish = useMemo(() => {
     return fishes.filter((fish) => {
@@ -380,7 +310,15 @@ export default function FishCollection() {
 
       return matchesRarity && matchesSearch;
     });
-  }, [activeFilter, search]);
+  }, [fishes, activeFilter, search]);
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="flex min-h-screen items-center justify-center text-red-600">{error}</div>;
+  }
 
   return (
    <>
@@ -430,16 +368,14 @@ export default function FishCollection() {
               className="h-full bg-[#B01414] transition-all duration-500"
               style={{
                 width: `${
-                  (discoveredTypes / fishes.length) * 100
+                  collectionPercent
                 }%`,
               }}
             />
           </div>
 
           <span className=" text-xs font-bold text-[#B01414]">
-            {Math.round(
-              (discoveredTypes / fishes.length) * 100
-            )}
+            {collectionPercent}
             %
           </span>
         </div>
@@ -517,9 +453,7 @@ export default function FishCollection() {
 
           <div className="mt-5 flex items-end gap-1">
             <span className="text-4xl font-black tracking-tight text-[#B01414] md:text-5xl">
-              {Math.round(
-                (discoveredTypes / fishes.length) * 100
-              )}
+              {collectionPercent}
             </span>
 
             <span className="mb-1 text-2xl font-bold text-[#B01414]">
@@ -533,7 +467,7 @@ export default function FishCollection() {
                 className="h-full bg-[#B01414] transition-all duration-500"
                 style={{
                   width: `${
-                    (discoveredTypes / fishes.length) * 100
+                    collectionPercent
                   }%`,
                 }}
               />
@@ -559,7 +493,7 @@ export default function FishCollection() {
             className="h-full bg-[#B01414]"
             style={{
               width: `${
-                (discoveredTypes / fishes.length) * 100
+                collectionPercent
               }%`,
             }}
           />
@@ -567,7 +501,7 @@ export default function FishCollection() {
 
         <span className=" text-xs font-bold text-[#B01414]">
           {Math.round(
-            (discoveredTypes / fishes.length) * 100
+            collectionPercent
           )}
           %
         </span>
@@ -645,7 +579,7 @@ export default function FishCollection() {
             </span>
 
             <span className=" text-xs text-gray-500">
-              {discoveredTypes} / {fishes.length} TYPES
+              {collectedXp} / {totalSystemXp} XP
             </span>
           </div>
 
@@ -654,7 +588,7 @@ export default function FishCollection() {
               className="h-full transition-all duration-500"
               style={{
                 width: `${
-                  (discoveredTypes / fishes.length) * 100
+                  collectionPercent
                 }%`,
                 backgroundColor: RED,
               }}

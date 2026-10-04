@@ -4,9 +4,12 @@ import { fetchUserAttributes, updatePassword, updateUserAttributes } from "aws-a
 
 import Reveal from "../components/effects/Reveal"
 import Navbar from "../components/Navbar"
+import AdminNavbar from "../components/admin/Navbar"
+import { isAdmin } from "../utils/auth"
 import Footer from "../components/Footer"
 
 export default function ManageProfile() {
+  const [adminView, setAdminView] = useState(false)
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [profileImage, setProfileImage] = useState("")
@@ -21,6 +24,10 @@ export default function ManageProfile() {
   const [loading, setLoading] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    void isAdmin().then(setAdminView)
+  }, [])
 
   useEffect(() => {
     // โหลด config.json เพื่อดึง Lambda URL
@@ -156,7 +163,7 @@ export default function ManageProfile() {
 
   return (
     <>
-      <Navbar />
+      {adminView ? <AdminNavbar /> : <Navbar />}
 
       <Reveal>
         <main className="min-h-screen px-6 py-10 sm:px-10 lg:px-20">
