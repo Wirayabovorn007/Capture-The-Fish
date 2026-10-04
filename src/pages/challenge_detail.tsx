@@ -61,6 +61,14 @@ export default function Challenge_detail() {
   }
 
   /* =============================================================
+     Scroll to top when opening/changing challenge
+  ============================================================= */
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+  }, [challengeId])
+
+  /* =============================================================
      Load Challenge
   ============================================================= */
 
@@ -158,7 +166,7 @@ export default function Challenge_detail() {
 
           <div
             ref={heroRef}
-            className="relative z-10 mx-auto max-w-6xl"
+            className="relative z-10 mx-auto w-full max-w-6xl"
           >
             <h1 className="text-7xl font-bold text-white sm:text-6xl">
               {challenge.title}
@@ -191,14 +199,14 @@ export default function Challenge_detail() {
             Challenge Information
         ====================================================== */}
 
-        <section className="text-[#3C3232] mx-36 mt-[500px] flex flex-col gap-y-10 mb-64">
+        <section className="mx-auto mb-20 mt-[500px] flex w-full max-w-6xl flex-col gap-y-8 px-6 text-[#3C3232] sm:px-10 lg:px-0">
 
           {/* Description */}
 
           <div>
-            <h1 className="font-bold text-xl">
+            <h2 className="text-xl font-bold">
               Description
-            </h1>
+            </h2>
 
             <p>
               {challenge.description}
@@ -208,9 +216,9 @@ export default function Challenge_detail() {
           {/* Objective */}
 
           <div>
-            <h1 className="font-bold text-xl">
+            <h2 className="text-xl font-bold">
               Objective
-            </h1>
+            </h2>
 
             <p>
               {challenge.objective ||
@@ -221,12 +229,12 @@ export default function Challenge_detail() {
           {/* Hints */}
 
           <div>
-			<h1 className="font-bold text-xl">
+			<h2 className="text-xl font-bold">
 				Hints
-			</h1>
+			</h2>
 
 			{challenge.hint?.trim() ? (
-				<ul className="list-disc pl-6 space-y-2">
+				<ul className="mt-2 list-disc space-y-2 pl-6">
 				{challenge.hint
 					.split(",")
 					.map((hint) => hint.trim())
@@ -238,14 +246,14 @@ export default function Challenge_detail() {
 					))}
 				</ul>
 			) : (
-				<p>ยังไม่มี Hint</p>
+				<p className="mt-2">ยังไม่มี Hint</p>
 			)}
 			</div>
 
           {/* Fish Reward */}
           {challenge.fishReward && (
             <div>
-              <h1 className="font-bold text-xl">Fish Reward</h1>
+              <h2 className="text-xl font-bold">Fish Reward</h2>
               <div className="mt-4 flex max-w-xl items-center gap-5 rounded-2xl border border-[#e5e1df] bg-white p-5 shadow-sm">
                 <img src={challenge.fishReward.imageUrl} alt={challenge.fishReward.name} className="h-28 w-28 rounded-xl object-contain" />
                 <div>
@@ -262,9 +270,9 @@ export default function Challenge_detail() {
           {/* Flag Format - Static */}
 
           <div>
-            <h1 className="font-bold text-xl">
+            <h2 className="text-xl font-bold">
               Flag format
-            </h1>
+            </h2>
 
             <p>
               flag&#123;*****&#125;

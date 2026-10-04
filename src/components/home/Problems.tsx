@@ -585,7 +585,7 @@ function ProblemCard({
           <span className="text-gray-400">{problem.category}</span>
         </div>
 
-        <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-tight text-gray-800 sm:text-xl lg:text-[24px]">
+        <h3 className="mb-2 truncate whitespace-nowrap text-base font-bold leading-tight text-gray-800 sm:text-lg lg:text-xl">
           {problem.title}
         </h3>
 

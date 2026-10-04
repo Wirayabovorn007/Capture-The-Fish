@@ -24,6 +24,11 @@ export default function Login() {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // ทุกครั้งที่เข้าหน้า Login ให้เริ่มจากด้านบนสุดของหน้า
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
   // โหลด Config และตั้งค่า Amplify
   useEffect(() => {
     fetch('/config.json')
@@ -243,7 +248,7 @@ export default function Login() {
       <Navbar />
 
       <Reveal>
-        <main className="flex min-h-screen items-center">
+        <main className="flex min-h-screen items-start pt-28 sm:pt-32">
           <div className="mx-auto w-full max-w-6xl px-6 sm:px-10">
             {viewMode === "login" && (
               /* ================= LOGIN FORM ================= */
