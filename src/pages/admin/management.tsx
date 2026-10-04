@@ -3,8 +3,9 @@ import Navbar from "../../components/admin/Navbar"
 import Reveal from "../../components/effects/Reveal"
 import UserManagement from "./UserManagement"
 import ChallengeManagement from "./ChallengeManagement"
+import StoryManagement from "./StoryManagement"
 
-type ManagementTab = "users" | "challenges"
+type ManagementTab = "users" | "challenges" | "story"
 
 export default function Management() {
   const [activeTab, setActiveTab] =
@@ -66,6 +67,18 @@ export default function Management() {
                 จัดการ Challenge
               </button>
 
+              <button
+                type="button"
+                onClick={() => setActiveTab("story")}
+                className={`px-5 py-3 font-medium transition-colors ${
+                  activeTab === "story"
+                    ? "border-b-2 border-[#b01414] text-[#b01414]"
+                    : "text-[#77716e] hover:text-[#403a38]"
+                }`}
+              >
+                จัดการ Story
+              </button>
+
             </div>
 
             {/* =================================
@@ -82,6 +95,10 @@ export default function Management() {
 
             {activeTab === "challenges" && (
               <ChallengeManagement />
+            )}
+
+            {activeTab === "story" && (
+              <StoryManagement />
             )}
 
           </div>

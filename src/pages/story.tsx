@@ -1,84 +1,56 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { getChallenges } from "../services/challengeApi";
+import { getStory } from "../services/storyApi";
+import type { Challenge } from "../types/challenge";
+import type { StoryConfig } from "../types/story";
 import Footer from "../components/Footer";
 
 type StoryCardProps = {
-  title: string;
-  description: string;
+  challenge: Challenge;
   side: "left" | "right";
   locked?: boolean;
 };
-
-const actOneCards: StoryCardProps[] = [
-  {
-    title: "Cybersecurity 101",
-    description:
-      "เรียนรู้พื้นฐานด้าน Cybersecurity ผ่านภารกิจแรกของการเดินทาง",
-    side: "left",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "สำรวจข้อมูลและค้นหาเบาะแสที่ซ่อนอยู่ในระบบ",
-    side: "right",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "ฝึกวิเคราะห์ข้อมูลและค้นหาสิ่งผิดปกติจากระบบ",
-    side: "left",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "ค้นหาเบาะแสเพิ่มเติมเพื่อเดินทางต่อไปยังภารกิจถัดไป",
-    side: "right",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "ท้าทายตัวเองด้วยโจทย์ที่ซับซ้อนมากขึ้น",
-    side: "left",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "เชื่อมโยงเบาะแสทั้งหมดและค้นหาความจริงที่ซ่อนอยู่",
-    side: "right",
-  },
-];
-
-const actTwoCards: StoryCardProps[] = [
-  {
-    title: "Cybersecurity 101",
-    description:
-      "เข้าสู่ส่วนลึกของระบบและค้นหาสิ่งที่ถูกซ่อนไว้",
-    side: "left",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "เผชิญหน้ากับโจทย์ที่ยากขึ้นและค้นหา Flag ต่อไป",
-    side: "right",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "รวบรวมข้อมูลที่จำเป็นก่อนเข้าสู่บทสรุปของเรื่องราว",
-    side: "left",
-  },
-  {
-    title: "Cybersecurity 101",
-    description:
-      "ไขปริศนาสุดท้ายและเตรียมพร้อมสำหรับสมบัติที่รออยู่",
-    side: "right",
-  },
-];
 
 /* =========================================================
    Main Story
 ========================================================= */
 
 export default function Story() {
+  const [story, setStory] = useState<StoryConfig | null>(null);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getStory(), getChallenges()])
+      .then(([storyData, challengeData]) => {
+        setStory(storyData);
+        setChallenges(challengeData);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const challengeMap = useMemo(
+    () => new Map(challenges.map((challenge) => [challenge.challengeId, challenge])),
+    [challenges]
+  );
+
+  const storyChallenges = (story?.challengeIds ?? [])
+    .map((id) => challengeMap.get(id))
+    .filter((challenge): challenge is Challenge => Boolean(challenge));
+
+  const actOneCards = storyChallenges.slice(0, 6);
+  const actTwoCards = storyChallenges.slice(6, 10);
+
+  if (loading) {
+    return <><Navbar /><main className="min-h-screen pt-40 text-center">กำลังโหลด Story...</main><Footer /></>;
+  }
+
+  if (!story) {
+    return <><Navbar /><main className="min-h-screen pt-40 text-center">ยังไม่ได้ตั้งค่า Story Mode</main><Footer /></>;
+  }
+
   return (
     <>
       <Navbar />
@@ -425,11 +397,7 @@ export default function Story() {
                     text-[#3B3535]
                   "
                 >
-                  The{" "}
-                  <span className="text-[#B01414]">
-                    Deep Sea
-                  </span>{" "}
-                  Incident
+                  {story.title}
                 </h1>
 
                 {/* Description */}
@@ -445,16 +413,7 @@ export default function Story() {
                     text-[#403a38]
                   "
                 >
-                  <p>
-                    ใต้มหาสมุทรแปซิฟิก มีสถานีวิจัยลับแห่งหนึ่งที่ถูกสร้างขึ้นเพื่อเฝ้าติดตามและเก็บข้อมูลสิ่งมีชีวิตในทะเลลึก สถานีแห่งนี้ทำงานร่วมกับระบบคอมพิวเตอร์และเครือข่ายจำนวนมาก เพื่อรวบรวมข้อมูลจากอุปกรณ์ตรวจวัดและสถานีสำรวจที่กระจายอยู่ทั่วมหาสมุทร
-แต่วันหนึ่ง ระบบของสถานีเริ่มเกิดความผิดปกติ
-ข้อมูลบางส่วนถูกแก้ไข ไฟล์สำคัญหายไป และระบบตรวจพบการสื่อสารแปลกประหลาดจากสถานีสำรวจที่ไม่ควรมีการติดต่ออีกแล้ว นักวิจัยจึงเริ่มสงสัยว่าเหตุการณ์ทั้งหมดอาจไม่ได้เกิดจากความผิดพลาดของระบบธรรมดา
-เบาะแสที่กระจัดกระจายอยู่ตามสถานีต่าง ๆ นำไปสู่ความลับบางอย่างที่ถูกซ่อนเอาไว้ ทั้งข้อความเข้ารหัส ข้อมูลที่ถูกซ่อน ระบบเครือข่ายที่ผิดปกติ และร่องรอยของผู้บุกรุกที่พยายามปกปิดตัวตน
-ภารกิจของผู้เล่นคือการสำรวจระบบเหล่านี้ ค้นหาเบาะแส วิเคราะห์ข้อมูล และเปิดเผยความจริงที่ซ่อนอยู่ใต้มหาสมุทร
-ทุกเบาะแสมีความหมาย และทุกสิ่งที่ถูกซ่อนไว้กำลังนำคุณเข้าใกล้ความจริง
-แต่เมื่อคุณตามรอยไปถึงจุดสุดท้าย คุณอาจพบว่า...
-สิ่งที่น่ากลัวที่สุดในมหาสมุทร ไม่ใช่สิ่งที่อยู่ใต้น้ำ
-                  </p>
+                  <p className="whitespace-pre-line">{story.description}</p>
                 </div>
               </div>
             </div>
@@ -486,14 +445,15 @@ export default function Story() {
                   lg:text-xl
                 "
               >
-                Act I – Echoes from the Deep
+                Act I – {story.actOneTitle}
               </div>
 
               <div className="relative flex flex-col gap-8 sm:gap-12 pt-4 sm:pt-20 lg:gap-0">
-                {actOneCards.map((card, index) => (
+                {actOneCards.map((challenge, index) => (
                   <StoryTimelineCard
-                    key={`act1-${index}`}
-                    {...card}
+                    key={challenge.challengeId}
+                    challenge={challenge}
+                    side={index % 2 === 0 ? "left" : "right"}
                     index={index}
                   />
                 ))}
@@ -564,7 +524,7 @@ export default function Story() {
                     text-white
                   "
                 >
-                  Act II – The Abyss Awakens
+                  Act II – {story.actTwoTitle}
                 </h2>
               </div>
             </div>
@@ -581,11 +541,12 @@ export default function Story() {
               />
 
               <div className="relative flex flex-col gap-8 sm:gap-12 lg:gap-0">
-                {actTwoCards.map((card, index) => (
+                {actTwoCards.map((challenge, index) => (
                   <StoryTimelineCard
-                    key={`act2-${index}`}
-                    {...card}
-                    index={index}
+                    key={challenge.challengeId}
+                    challenge={challenge}
+                    side={index % 2 === 0 ? "left" : "right"}
+                    index={index + 6}
                     dark
                   />
                 ))}
@@ -609,8 +570,7 @@ export default function Story() {
 ========================================================= */
 
 function StoryTimelineCard({
-  title,
-  description,
+  challenge,
   side,
   index,
   dark = false,
@@ -619,6 +579,7 @@ function StoryTimelineCard({
   dark?: boolean;
 }) {
   const isLeft = side === "left";
+  const navigate = useNavigate();
 
   return (
     <div
@@ -699,7 +660,7 @@ function StoryTimelineCard({
 
         {/* Image placeholder */}
 
-        <StoryImage />
+        <StoryImage challenge={challenge} />
 
         {/* Card content */}
 
@@ -709,7 +670,7 @@ function StoryTimelineCard({
 
           <div className="flex items-center gap-2 text-[11px]">
             <span className="font-medium text-green-600">
-              Easy
+              {challenge.difficulty}
             </span>
 
             <span className="text-gray-400">
@@ -734,19 +695,20 @@ function StoryTimelineCard({
               group-hover:text-[#B01414]
             "
           >
-            {title}
+            {challenge.title}
           </h3>
 
           {/* Description */}
 
           <p className="mt-1 line-clamp-2 leading-[1.5] text-gray-500">
-            {description}
+            {challenge.description}
           </p>
 
           {/* Button */}
 
           <button
             type="button"
+            onClick={() => navigate( `/challenge?id=${encodeURIComponent(challenge.challengeId)}`)}
             className="
               mt-2
               bg-[#B01414]
@@ -772,7 +734,7 @@ function StoryTimelineCard({
    Card Image
 ========================================================= */
 
-function StoryImage() {
+function StoryImage({ challenge }: { challenge: Challenge }) {
   return (
     <div
       className="
@@ -789,6 +751,9 @@ function StoryImage() {
         group-hover:scale-[1.02]
       "
     >
+      {challenge.thumbnailUrl && (
+        <img src={challenge.thumbnailUrl} alt={challenge.title} className="absolute inset-0 h-full w-full object-cover" />
+      )}
 
       {/* Glow */}
 
