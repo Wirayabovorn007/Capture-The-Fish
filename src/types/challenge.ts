@@ -52,16 +52,36 @@ export type RuntimeContainer = {
   url?: string | null;
 };
 
-export type SpawnChallengeResponse = {
+export type SessionTimerState = "ACTIVE" | "GRACE_PERIOD";
+
+export type SessionTimer = {
+  expiresAt: number;
+  terminateAt: number;
+  serverNow: number;
+  timerState: SessionTimerState;
+};
+
+export type SpawnChallengeResponse = Partial<SessionTimer> & {
   status: string;
   sessionId: string;
 };
 
-export type ChallengeStatusResponse = {
+export type ChallengeStatusResponse = Partial<SessionTimer> & {
   status: string;
   sessionId: string;
   containers: RuntimeContainer[];
   reason?: string;
+};
+
+export type ActiveChallengeResponse = Partial<SessionTimer> & {
+  status: string;
+  hasActive: boolean;
+  sessionId?: string;
+};
+
+export type ExtendChallengeResponse = SessionTimer & {
+  status: string;
+  sessionId: string;
 };
 
 export type SubmitFlagResponse = {

@@ -4,6 +4,8 @@ import type {
   ChallengeStatusResponse,
   SpawnChallengeResponse,
   SubmitFlagResponse,
+  ActiveChallengeResponse,
+  ExtendChallengeResponse,
   Fish,
 } from "../types/challenge"
 
@@ -93,7 +95,14 @@ export async function spawnChallenge(challengeId: string): Promise<SpawnChalleng
   const response = await fetch(`${baseUrl}/?action=spawn&challengeId=${encodeURIComponent(challengeId)}`, { method: "POST", headers: await getAuthHeaders(false) })
   const data = await readJson(response)
   if (!data.sessionId) throw new Error(data.error || "ไม่สามารถเริ่ม Challenge ได้")
-  return { status: data.status, sessionId: data.sessionId }
+  return {
+    status: data.status,
+    sessionId: data.sessionId,
+    expiresAt: data.expiresAt == null ? undefined : Number(data.expiresAt),
+    terminateAt: data.terminateAt == null ? undefined : Number(data.terminateAt),
+    serverNow: data.serverNow == null ? undefined : Number(data.serverNow),
+    timerState: data.timerState,
+  }
 }
 
 export async function getChallengeStatus(challengeId: string, sessionId: string): Promise<ChallengeStatusResponse> {
@@ -105,6 +114,10 @@ export async function getChallengeStatus(challengeId: string, sessionId: string)
     sessionId: data.sessionId ?? sessionId,
     containers: data.containers ?? [],
     reason: data.reason,
+    expiresAt: data.expiresAt == null ? undefined : Number(data.expiresAt),
+    terminateAt: data.terminateAt == null ? undefined : Number(data.terminateAt),
+    serverNow: data.serverNow == null ? undefined : Number(data.serverNow),
+    timerState: data.timerState,
   }
 }
 
@@ -132,7 +145,7 @@ export async function submitFlag(challengeId: string, flag: string): Promise<Sub
   }
 }
 
-export async function getActiveChallenge(challengeId: string) {
+export async function getActiveChallenge(challengeId: string): Promise<ActiveChallengeResponse> {
   const baseUrl = await getApiUrl()
 
   const response = await fetch(
@@ -146,6 +159,28 @@ export async function getActiveChallenge(challengeId: string) {
     status: data.status ?? "SUCCESS",
     hasActive: Boolean(data.hasActive),
     sessionId: data.sessionId as string | undefined,
+    expiresAt: data.expiresAt == null ? undefined : Number(data.expiresAt),
+    terminateAt: data.terminateAt == null ? undefined : Number(data.terminateAt),
+    serverNow: data.serverNow == null ? undefined : Number(data.serverNow),
+    timerState: data.timerState,
+  }
+}
+
+export async function extendChallenge(sessionId: string): Promise<ExtendChallengeResponse> {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=extend_session&sessionId=${encodeURIComponent(sessionId)}`, {
+    method: "POST",
+    headers: await getAuthHeaders(false),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถต่อเวลา Lab ได้")
+  return {
+    status: data.status,
+    sessionId: data.sessionId,
+    expiresAt: Number(data.expiresAt),
+    terminateAt: Number(data.terminateAt),
+    serverNow: Number(data.serverNow),
+    timerState: data.timerState,
   }
 }
 

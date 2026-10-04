@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
 	Search,
 	ChevronDown,
@@ -88,14 +88,11 @@ function useCountUp(
 	duration = 1200
 ) {
 	const [value, setValue] = useState(0)
-	const startedRef = useRef(false)
 
 	useEffect(() => {
-		if (!start || startedRef.current) {
+		if (!start) {
 			return
 		}
-
-		startedRef.current = true
 
 		let rafId: number
 		const startTime = performance.now()
@@ -173,6 +170,13 @@ export default function Content() {
 
 	const [wonCount, setWonCount] = useState(0)
 
+	const [search, setSearch] = useState("")
+	const [categoryFilter, setCategoryFilter] = useState("all")
+	const [difficultyFilter, setDifficultyFilter] = useState("all")
+	const [statusFilter, setStatusFilter] = useState("all")
+	const [solvedChallengeIds, setSolvedChallengeIds] = useState<string[]>([])
+
+
 	const totalCount =
 		challenges.length
 
@@ -194,6 +198,60 @@ export default function Content() {
 			(challenge) =>
 				challenge.difficulty === "Hard"
 		).length
+
+	const categories = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					challenges
+						.map((challenge) => challenge.category)
+						.filter(Boolean)
+				)
+			).sort(),
+		[challenges]
+	)
+
+	const filteredChallenges = useMemo(() => {
+		const keyword = search.trim().toLowerCase()
+
+		return challenges.filter((challenge) => {
+			const matchesSearch =
+				!keyword ||
+				challenge.title.toLowerCase().includes(keyword) ||
+				challenge.category.toLowerCase().includes(keyword) ||
+				challenge.description.toLowerCase().includes(keyword)
+
+			const matchesCategory =
+				categoryFilter === "all" ||
+				challenge.category === categoryFilter
+
+			const matchesDifficulty =
+				difficultyFilter === "all" ||
+				challenge.difficulty === difficultyFilter
+
+			const isSolved = solvedChallengeIds.includes(
+				challenge.challengeId
+			)
+			const matchesStatus =
+				statusFilter === "all" ||
+				(statusFilter === "solved" && isSolved) ||
+				(statusFilter === "unsolved" && !isSolved)
+
+			return (
+				matchesSearch &&
+				matchesCategory &&
+				matchesDifficulty &&
+				matchesStatus
+			)
+		})
+	}, [
+		challenges,
+		search,
+		categoryFilter,
+		difficultyFilter,
+		statusFilter,
+		solvedChallengeIds,
+	])
 
 	/* ==============================
 	   Load Challenges
@@ -227,6 +285,15 @@ export default function Content() {
 			try {
 				const profile = await getMyProfileStats()
 				setWonCount(Number(profile.completedChallenges ?? 0))
+
+				const profileWithSolved = profile as typeof profile & {
+					solvedChallengeIds?: string[]
+				}
+				setSolvedChallengeIds(
+					Array.isArray(profileWithSolved.solvedChallengeIds)
+						? profileWithSolved.solvedChallengeIds
+						: []
+				)
 			} catch (error) {
 				console.error("Unable to load challenge progress", error)
 			}
@@ -437,15 +504,47 @@ export default function Content() {
 
 							<input
 								type="text"
-								placeholder="ค้นหาโจทย์ หมวดหมู่ อื่นๆ"
+								value={search}
+								onChange={(event) => setSearch(event.target.value)}
+								placeholder="ค้นหาชื่อโจทย์ หมวดหมู่ หรือคำอธิบาย"
 								className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
 							/>
 						</div>
 
 						<div className="flex flex-wrap gap-3">
-							<FilterButton label="ประเภท" />
-							<FilterButton label="ความยาก" />
-							<FilterButton label="สถานะ" />
+							<FilterSelect
+								label="ประเภท"
+								value={categoryFilter}
+								onChange={setCategoryFilter}
+								options={[
+									{ value: "all", label: "ทุกประเภท" },
+									...categories.map((category) => ({
+										value: category,
+										label: category,
+									})),
+								]}
+							/>
+							<FilterSelect
+								label="ความยาก"
+								value={difficultyFilter}
+								onChange={setDifficultyFilter}
+								options={[
+									{ value: "all", label: "ทุกระดับ" },
+									{ value: "Easy", label: "Easy" },
+									{ value: "Medium", label: "Medium" },
+									{ value: "Hard", label: "Hard" },
+								]}
+							/>
+							<FilterSelect
+								label="สถานะ"
+								value={statusFilter}
+								onChange={setStatusFilter}
+								options={[
+									{ value: "all", label: "ทุกสถานะ" },
+									{ value: "solved", label: "ชนะแล้ว" },
+									{ value: "unsolved", label: "ยังไม่ชนะ" },
+								]}
+							/>
 						</div>
 
 					</div>
@@ -475,21 +574,19 @@ export default function Content() {
 
 						{!loading &&
 							!error &&
-							challenges.length ===
+							filteredChallenges.length ===
 								0 && (
 								<div className="py-16 text-center text-gray-500">
-									ยังไม่มี
-									Challenge
-									ในระบบ
+									ไม่พบ Challenge ที่ตรงกับการค้นหาหรือตัวกรอง
 								</div>
 							)}
 
 						{!loading &&
 							!error &&
-							challenges.length >
+							filteredChallenges.length >
 								0 && (
 								<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-									{challenges.map(
+									{filteredChallenges.map(
 										(
 											challenge
 										) => (
@@ -517,20 +614,33 @@ export default function Content() {
    Filter Button
 ============================================================= */
 
-function FilterButton({
+function FilterSelect({
 	label,
+	value,
+	onChange,
+	options,
 }: {
 	label: string
+	value: string
+	onChange: (value: string) => void
+	options: Array<{ value: string; label: string }>
 }) {
 	return (
-		<button
-			type="button"
-			className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-3 text-sm text-gray-700 transition-colors duration-200 hover:border-[#B01414] hover:text-[#B01414]"
-		>
-			{label}
-
-			<ChevronDown className="h-4 w-4" />
-		</button>
+		<label className="relative">
+			<span className="sr-only">{label}</span>
+			<select
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				className="appearance-none rounded-md border border-gray-300 bg-white py-3 pl-5 pr-10 text-sm text-gray-700 outline-none transition-colors duration-200 hover:border-[#B01414] focus:border-[#B01414]"
+			>
+				{options.map((option) => (
+					<option key={option.value} value={option.value}>
+						{option.label}
+					</option>
+				))}
+			</select>
+			<ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+		</label>
 	)
 }
 
@@ -593,7 +703,7 @@ function ChallengeCard({
 
 				</div>
 
-				<h3 className="mb-2 text-xl font-bold text-gray-800">
+				<h3 className="mb-2 truncate whitespace-nowrap text-lg font-bold text-gray-800">
 					{challenge.title}
 				</h3>
 
