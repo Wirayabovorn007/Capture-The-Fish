@@ -51,6 +51,16 @@ export async function getChallenges(): Promise<Challenge[]> {
   return data.challenges ?? []
 }
 
+export async function getAdminChallenges(): Promise<Challenge[]> {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=list_admin_challenges&t=${Date.now()}`, {
+    headers: await getAuthHeaders(false),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "โหลด Challenge สำหรับ Admin ไม่สำเร็จ")
+  return data.challenges ?? []
+}
+
 export async function getChallenge(challengeId: string): Promise<Challenge> {
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=get_challenge&challengeId=${encodeURIComponent(challengeId)}`)
@@ -246,4 +256,24 @@ export async function uploadChallengeThumbnail(file: File): Promise<string> {
   })
   if (!uploadResponse.ok) throw new Error("ไม่สามารถอัปโหลด Thumbnail ไปยัง S3 ได้")
   return data.imageUrl
+}
+
+export async function uploadChallengeFile(file: File): Promise<{ fileName: string; fileUrl: string; contentType: string }> {
+  const baseUrl = await getApiUrl()
+  const contentType = file.type || "application/octet-stream"
+  const response = await fetch(`${baseUrl}/?action=upload_challenge_file`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: JSON.stringify({ fileName: file.name, contentType }),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "ไม่สามารถเตรียมการอัปโหลดไฟล์ Challenge ได้")
+
+  const uploadResponse = await fetch(data.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: file,
+  })
+  if (!uploadResponse.ok) throw new Error("ไม่สามารถอัปโหลดไฟล์ Challenge ไปยัง S3 ได้")
+  return { fileName: file.name, fileUrl: data.fileUrl, contentType }
 }
