@@ -251,8 +251,8 @@ export default function Challenge_detail() {
                 <div>
                   <p className="text-xl font-bold text-[#403a38]">{challenge.fishReward.name}</p>
                   <p className="mt-2 text-sm text-[#77716e]">จำนวน ×{challenge.fishReward.amount}</p>
-                  <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${challenge.fishReward.rarity === "legendary" ? "bg-purple-100 text-purple-700" : challenge.fishReward.rarity === "rare" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-700"}`}>
-                    {challenge.fishReward.rarity === "legendary" ? "ตำนาน" : challenge.fishReward.rarity === "rare" ? "หายาก" : "ทั่วไป"}
+                  <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${challenge.fishReward.rarity === "ultimate" ? "bg-red-100 text-red-700" : challenge.fishReward.rarity === "rare" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-700"}`}>
+                    {challenge.fishReward.rarity === "ultimate" ? "ULTIMATE" : challenge.fishReward.rarity === "rare" ? "RARE" : "COMMON"}
                   </span>
                 </div>
               </div>

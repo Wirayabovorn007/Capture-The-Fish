@@ -81,8 +81,10 @@ export type FishInventoryItem = {
   fishId: string
   name: string
   imageUrl: string
-  rarity: "common" | "rare" | "legendary"
+  rarity: "common" | "rare" | "ultimate"
   amount: number
+  description?: string
+  xp?: number
 }
 
 export type MyInventoryResponse = {

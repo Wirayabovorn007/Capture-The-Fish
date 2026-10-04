@@ -13,9 +13,9 @@ import {
 import type { Challenge as BaseApiChallenge, Fish } from "../../types/challenge"
 import { getAuthHeaders } from "../../utils/auth"
 
-type FishRarity = "common" | "rare" | "legendary"
+type FishRarity = "common" | "rare" | "ultimate"
 
-type FishReward = { name: string; imageUrl: string; amount: number; rarity: FishRarity }
+type FishReward = { fishId?: string; name: string; imageUrl: string; amount: number; rarity: FishRarity; description?: string; xp?: number }
 type ApiChallenge = BaseApiChallenge & { fishReward?: FishReward }
 
 type DockerContainer = {
@@ -41,8 +41,10 @@ type ChallengeForm = {
   selectedFishId: string
   fishName: string
   fishImageUrl: string
-  fishAmount: number
+  fishAmount: number | ""
   fishRarity: FishRarity
+  fishDescription: string
+  fishXp: number | ""
   containers: DockerContainer[]
 }
 
@@ -94,6 +96,8 @@ function createEmptyChallenge(): ChallengeForm {
     fishImageUrl: "",
     fishAmount: 1,
     fishRarity: "common",
+    fishDescription: "",
+    fishXp: "",
     containers: [createEmptyContainer()],
   }
 }
@@ -306,6 +310,8 @@ export default function ChallengeManagement() {
       fishImageUrl: selectedChallenge.fishReward?.imageUrl ?? "",
       fishAmount: selectedChallenge.fishReward?.amount ?? 1,
       fishRarity: selectedChallenge.fishReward?.rarity ?? "common",
+      fishDescription: selectedChallenge.fishReward?.description ?? "",
+      fishXp: selectedChallenge.fishReward?.xp ?? 0,
       containers: selectedChallenge.containers.map(
         (container) => ({
           ...container,
@@ -451,7 +457,9 @@ export default function ChallengeManagement() {
     if (challenge.fishMode === "new" && (!challenge.fishName.trim() || !challenge.fishImageUrl)) {
       setMessage("กรุณากรอกชื่อปลาและอัปโหลดรูปปลาให้ครบ"); return
     }
-    if (challenge.fishAmount < 1) { setMessage("จำนวนปลาต้องอย่างน้อย 1 ตัว"); return }
+    if (Number(challenge.fishAmount) < 1) { setMessage("จำนวนปลาต้องอย่างน้อย 1 ตัว"); return }
+    if (challenge.fishMode === "new" && !challenge.fishDescription.trim()) { setMessage("กรุณากรอกคำอธิบายปลา"); return }
+    if (challenge.fishMode === "new" && Number(challenge.fishXp) < 1) { setMessage("XP ของปลาต้องอย่างน้อย 1"); return }
 
     const invalidContainer =
       challenge.containers.some(
@@ -487,6 +495,7 @@ export default function ChallengeManagement() {
       } : {
         name: challenge.fishName.trim(), imageUrl: challenge.fishImageUrl,
         amount: Math.max(1, Number(challenge.fishAmount) || 1), rarity: challenge.fishRarity,
+        description: challenge.fishDescription.trim(), xp: Math.max(1, Number(challenge.fishXp) || 1),
       },
       containers: challenge.containers.map(
         ({ name, image, port, accessType, buttonLabel }) => ({
@@ -944,11 +953,13 @@ export default function ChallengeManagement() {
                           <div>
                             <div className="grid gap-4 md:grid-cols-2">
                               <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ชื่อปลา</label><input type="text" value={challenge.fishName} onChange={(e) => setChallenge((prev) => ({ ...prev, fishName: e.target.value }))} placeholder="เช่น Golden Fish" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: Math.max(1, Number(e.target.value) || 1) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ความแรร์</label><select value={challenge.fishRarity} onChange={(e) => setChallenge((prev) => ({ ...prev, fishRarity: e.target.value as FishRarity }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]"><option value="common">ทั่วไป</option><option value="rare">หายาก</option><option value="legendary">ตำนาน</option></select></div>
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: e.target.value === "" ? "" : Number(e.target.value) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ความแรร์</label><select value={challenge.fishRarity} onChange={(e) => setChallenge((prev) => ({ ...prev, fishRarity: e.target.value as FishRarity }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]"><option value="common">COMMON</option><option value="rare">RARE</option><option value="ultimate">ULTIMATE</option></select></div>
+                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">XP ของปลา</label><input type="number" min="1" value={challenge.fishXp} onChange={(e) => setChallenge((prev) => ({ ...prev, fishXp: e.target.value === "" ? "" : Number(e.target.value) }))} placeholder="เช่น 100" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /><p className="mt-2 text-xs text-[#999390]">ผู้เล่นจะได้รับ XP นี้เมื่อค้นพบปลาชนิดนี้ครั้งแรก</p></div>
+                              <div className="md:col-span-2"><label className="mb-2 block text-sm font-semibold text-[#403a38]">คำอธิบายปลา</label><textarea value={challenge.fishDescription} onChange={(e) => setChallenge((prev) => ({ ...prev, fishDescription: e.target.value }))} rows={3} placeholder="อธิบายลักษณะหรือเรื่องราวของปลา" className="w-full resize-y rounded-xl border border-[#d8d2cf] bg-white px-4 py-3 text-sm outline-none focus:border-[#b01414]" /></div>
                               <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">รูปปลา</label><input type="file" accept="image/*" disabled={isUploadingFish} onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFishImageUpload(file) }} className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm" /><p className="mt-2 text-xs text-[#999390]">{isUploadingFish ? "กำลังอัปโหลดรูป..." : "รูปจะถูกอัปโหลดไปยัง S3"}</p></div>
                             </div>
-                            {challenge.fishImageUrl && <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4"><img src={challenge.fishImageUrl} alt={challenge.fishName || "Fish preview"} className="h-24 w-24 rounded-xl object-contain" /><div><p className="font-bold text-[#403a38]">{challenge.fishName || "ยังไม่ได้ตั้งชื่อปลา"}</p><p className="mt-1 text-sm text-[#77716e]">จำนวน ×{challenge.fishAmount}</p><p className="mt-1 text-sm text-[#77716e]">{challenge.fishRarity === "legendary" ? "ตำนาน" : challenge.fishRarity === "rare" ? "หายาก" : "ทั่วไป"}</p></div></div>}
+                            {challenge.fishImageUrl && <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4"><img src={challenge.fishImageUrl} alt={challenge.fishName || "Fish preview"} className="h-24 w-24 rounded-xl object-contain" /><div><p className="font-bold text-[#403a38]">{challenge.fishName || "ยังไม่ได้ตั้งชื่อปลา"}</p><p className="mt-1 text-sm text-[#77716e]">จำนวน ×{challenge.fishAmount}</p><p className="mt-1 text-sm text-[#77716e]">{challenge.fishRarity === "ultimate" ? "ULTIMATE" : challenge.fishRarity === "rare" ? "RARE" : "COMMON"}</p></div></div>}
                           </div>
                         ) : (
                           <div>
@@ -959,29 +970,26 @@ export default function ChallengeManagement() {
                                 {fishes.map((fish) => {
                                   const selected = challenge.selectedFishId === fish.fishId
                                   return <button key={fish.fishId} type="button" onClick={() => setChallenge((prev) => ({ ...prev, selectedFishId: fish.fishId }))}
-                                    className={`relative flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
-                                      fish.rarity === "legendary"
-                                        ? "border-amber-400 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-[0_0_18px_rgba(245,158,11,0.18)] hover:border-amber-500 hover:shadow-[0_0_24px_rgba(245,158,11,0.28)]"
-                                        : fish.rarity === "rare"
-                                          ? "border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-[0_0_14px_rgba(59,130,246,0.12)] hover:border-blue-400"
-                                          : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50"
-                                    } ${selected ? "ring-2 ring-[#b01414] ring-offset-2" : ""}`}>
+                                    className={`group relative flex items-center gap-3 overflow-hidden border bg-white p-3 text-left transition-all hover:-translate-y-0.5 ${
+                                      fish.rarity === "ultimate" ? "border-[#B01414]/40" : "border-black/10"
+                                    } ${selected ? "ring-2 ring-[#B01414] ring-offset-2" : ""}`}>
                                     {selected && <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#b01414] text-[11px] font-bold text-white shadow-sm">✓</span>}
-                                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border ${fish.rarity === "legendary" ? "border-amber-300 bg-amber-100/70" : fish.rarity === "rare" ? "border-blue-200 bg-blue-100/70" : "border-slate-200 bg-slate-50"}`}>
+                                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border ${fish.rarity === "ultimate" ? "border-red-300 bg-red-50" : fish.rarity === "rare" ? "border-blue-300 bg-blue-50" : "border-gray-300 bg-gray-100"}`}>
                                       <img src={fish.imageUrl} alt={fish.name} className="h-14 w-14 object-contain" />
                                     </div>
                                     <div className="min-w-0 pr-5">
                                       <p className="truncate text-sm font-bold text-[#403a38]">{fish.name}</p>
-                                      <span className={`mt-1.5 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${fish.rarity === "legendary" ? "border-amber-300 bg-amber-100 text-amber-800" : fish.rarity === "rare" ? "border-blue-200 bg-blue-100 text-blue-700" : "border-slate-200 bg-slate-100 text-slate-600"}`}>
-                                        {fish.rarity === "legendary" ? "ตำนาน" : fish.rarity === "rare" ? "หายาก" : "ทั่วไป"}
+                                      <span className={`mt-1.5 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${fish.rarity === "ultimate" ? "border-red-300 bg-red-50 text-[#B01414]" : fish.rarity === "rare" ? "border-blue-300 bg-blue-50 text-[#2563EB]" : "border-gray-300 bg-gray-100 text-[#6B7280]"}`}>
+                                        {fish.rarity === "ultimate" ? "ULTIMATE" : fish.rarity === "rare" ? "RARE" : "COMMON"}
                                       </span>
+                                      <p className="mt-1 text-xs font-semibold text-[#77716e]">{fish.xp ?? 0} XP</p>
                                       {selected && <p className="mt-1.5 text-xs font-semibold text-[#b01414]">เลือกแล้ว</p>}
                                     </div>
                                   </button>
                                 })}
                               </div>
                             )}
-                            <div className="mt-5 max-w-xs"><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: Math.max(1, Number(e.target.value) || 1) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
+                            <div className="mt-5 max-w-xs"><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: e.target.value === "" ? "" : Number(e.target.value) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
                           </div>
                         )}
                       </div>

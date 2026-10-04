@@ -1,12 +1,14 @@
 export type ContainerAccessType = "none" | "web" | "terminal";
 
-export type FishRarity = "common" | "rare" | "legendary";
+export type FishRarity = "common" | "rare" | "ultimate";
 
 export type Fish = {
   fishId: string;
   name: string;
   imageUrl: string;
   rarity: FishRarity;
+  description: string;
+  xp: number;
   createdAt?: string;
 };
 
@@ -16,6 +18,8 @@ export type FishReward = {
   imageUrl: string;
   amount: number;
   rarity: FishRarity;
+  description?: string;
+  xp?: number;
 };
 
 export type DockerContainer = {

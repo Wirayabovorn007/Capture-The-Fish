@@ -37,9 +37,9 @@ export default function App() {
           <Route path="/challenge" element={<UserRoute><Challenge_detail /></UserRoute>} />
           <Route path="/profile" element={<UserRoute><Profile /></UserRoute>} />
           <Route path="/profile-setting" element={<UserRoute><ManageProfile /></UserRoute>} />
-          <Route path="/contact" element={<UserRoute><Contact /></UserRoute>} />
-          <Route path="/leaderboard" element={<UserRoute><Leaderboard /></UserRoute>} />
-          <Route path="/story" element={<UserRoute><Story /></UserRoute>} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/story" element={<Story />} />
           <Route path="/collection" element={ <FishCollection />} />
 
           {/* Admin routes */}

@@ -3,11 +3,14 @@ import { Settings } from "lucide-react"
 import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth"
 
 import Navbar from "../components/Navbar"
+import AdminNavbar from "../components/admin/Navbar"
+import { isAdmin } from "../utils/auth"
 import Footer from "../components/Footer"
 import Reveal from "../components/effects/Reveal"
 import { getMyProfileStats } from "../services/userApi"
 
 export default function Profile() {
+  const [adminView, setAdminView] = useState(false)
   const [username, setUsername] = useState("Loading...")
   const [email, setEmail] = useState("")
   const [profileImage, setProfileImage] = useState("")
@@ -17,6 +20,10 @@ export default function Profile() {
   const [hardCompleted, setHardCompleted] = useState(0)
   const [completedChallenges, setCompletedChallenges] = useState(0)
   const [totalChallenges, setTotalChallenges] = useState(0)
+
+  useEffect(() => {
+    void isAdmin().then(setAdminView)
+  }, [])
 
   useEffect(() => {
     loadProfile()
@@ -47,7 +54,7 @@ export default function Profile() {
 
   return (
     <>
-      <Navbar />
+      {adminView ? <AdminNavbar /> : <Navbar />}
 
       <Reveal>
         <main className="min-h-screen px-6 py-8 sm:px-10 lg:px-16">
