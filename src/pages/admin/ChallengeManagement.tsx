@@ -4,9 +4,10 @@ import type { FormEvent } from "react"
 import {
   createChallenge,
   deleteChallenge,
-  getChallenges,
+  getAdminChallenges,
   getFishes,
   uploadChallengeThumbnail,
+  uploadChallengeFile,
   updateChallenge as updateChallengeApi,
 } from "../../services/challengeApi"
 
@@ -37,6 +38,10 @@ type ChallengeForm = {
   objective: string
   hint: string
   flag: string
+  hasContainer: boolean
+  challengeFiles: { fileName: string; fileUrl: string; contentType?: string }[]
+  websites: { label: string; url: string }[]
+  status: "draft" | "published" | "hidden"
   fishMode: "new" | "existing"
   selectedFishId: string
   fishName: string
@@ -90,6 +95,10 @@ function createEmptyChallenge(): ChallengeForm {
     objective: "",
     hint: "",
     flag: "",
+    hasContainer: true,
+    challengeFiles: [],
+    websites: [],
+    status: "draft",
     fishMode: "new",
     selectedFishId: "",
     fishName: "",
@@ -107,13 +116,15 @@ function createChallengeId(title: string) {
     return ""
   }
 
-  return title
+  const slug = title
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
+
+  return slug || `challenge-${Date.now()}`
 }
 
 export default function ChallengeManagement() {
@@ -146,6 +157,8 @@ export default function ChallengeManagement() {
   const [isUploadingThumbnail, setIsUploadingThumbnail] =
     useState(false)
 
+  const [isUploadingChallengeFile, setIsUploadingChallengeFile] = useState(false)
+
   const [message, setMessage] =
     useState("")
 
@@ -172,7 +185,7 @@ export default function ChallengeManagement() {
   const loadChallenges = async () => {
     try {
       setIsLoading(true)
-      const data = await getChallenges()
+      const data = await getAdminChallenges()
       setChallenges(data.map(toUiChallenge))
     } catch (error) {
       setMessage(
@@ -304,6 +317,10 @@ export default function ChallengeManagement() {
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
       flag: "",
+      hasContainer: selectedChallenge.hasContainer ?? selectedChallenge.containers.length > 0,
+      challengeFiles: selectedChallenge.challengeFiles ?? (selectedChallenge.challengeFile ? [selectedChallenge.challengeFile] : []),
+      websites: selectedChallenge.websites ?? (selectedChallenge.websiteUrl ? [{ label: "Website", url: selectedChallenge.websiteUrl }] : []),
+      status: selectedChallenge.status ?? "published",
       fishMode: selectedChallenge.fishReward?.fishId ? "existing" : "new",
       selectedFishId: selectedChallenge.fishReward?.fishId ?? "",
       fishName: selectedChallenge.fishReward?.name ?? "",
@@ -425,6 +442,19 @@ export default function ChallengeManagement() {
     finally { setIsUploadingFish(false) }
   }
 
+  const handleChallengeFileUpload = async (file: File) => {
+    try {
+      setIsUploadingChallengeFile(true)
+      setMessage("")
+      const uploaded = await uploadChallengeFile(file)
+      setChallenge((prev) => ({ ...prev, challengeFiles: [...prev.challengeFiles, uploaded] }))
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "อัปโหลดไฟล์ Challenge ไม่สำเร็จ")
+    } finally {
+      setIsUploadingChallengeFile(false)
+    }
+  }
+
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
   ) => {
@@ -462,7 +492,7 @@ export default function ChallengeManagement() {
     if (challenge.fishMode === "new" && Number(challenge.fishXp) < 1) { setMessage("XP ของปลาต้องอย่างน้อย 1"); return }
 
     const invalidContainer =
-      challenge.containers.some(
+      challenge.hasContainer && challenge.containers.some(
         (container) =>
           !container.name.trim() ||
           !container.image.trim() ||
@@ -488,6 +518,12 @@ export default function ChallengeManagement() {
       objective: challenge.objective.trim(),
       hint: challenge.hint.trim(),
       flag: challenge.flag.trim(),
+      hasContainer: challenge.hasContainer,
+      challengeFiles: challenge.challengeFiles,
+      websites: challenge.websites
+        .map((site) => ({ label: site.label.trim() || "Website", url: site.url.trim() }))
+        .filter((site) => site.url),
+      status: challenge.status,
       fishReward: challenge.fishMode === "existing" ? {
         fishId: challenge.selectedFishId,
         name: "", imageUrl: "", rarity: "common",
@@ -497,7 +533,7 @@ export default function ChallengeManagement() {
         amount: Math.max(1, Number(challenge.fishAmount) || 1), rarity: challenge.fishRarity,
         description: challenge.fishDescription.trim(), xp: Math.max(1, Number(challenge.fishXp) || 1),
       },
-      containers: challenge.containers.map(
+      containers: challenge.hasContainer ? challenge.containers.map(
         ({ name, image, port, accessType, buttonLabel }) => ({
           name: name.trim(),
           image: image.trim(),
@@ -505,7 +541,7 @@ export default function ChallengeManagement() {
           accessType,
           buttonLabel: buttonLabel.trim(),
         })
-      ),
+      ) : [],
     }
 
     try {
@@ -640,32 +676,6 @@ export default function ChallengeManagement() {
 
                         <div>
                           <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            Challenge ID
-                          </label>
-
-                          <input
-                            type="text"
-                            value={
-                              challenge.challengeId
-                            }
-                            readOnly
-                            className="
-                              h-12 w-full
-                              cursor-not-allowed
-                              rounded-xl
-                              border
-                              border-[#e0dcda]
-                              bg-[#f3f2f1]
-                              px-4
-                              text-sm
-                              text-[#77716e]
-                              outline-none
-                            "
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
                             หมวดหมู่
                           </label>
 
@@ -750,6 +760,19 @@ export default function ChallengeManagement() {
                                 {difficulty}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">Status</label>
+                          <select
+                            value={challenge.status}
+                            onChange={(event) => setChallenge((prev) => ({ ...prev, status: event.target.value as "draft" | "published" | "hidden" }))}
+                            className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm text-[#403a38] outline-none focus:border-[#b01414]"
+                          >
+                            <option value="draft">Draft - ยังไม่แสดงให้ผู้เล่น</option>
+                            <option value="published">Published - แสดงตามปกติ</option>
+                            <option value="hidden">Hidden - ไม่แสดงในรายการ แต่เปิดด้วยลิงก์ตรงได้</option>
                           </select>
                         </div>
 
@@ -994,10 +1017,72 @@ export default function ChallengeManagement() {
                         )}
                       </div>
 
+                      {/* Challenge Resources */}
+                      <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5">
+                        <h3 className="text-lg font-bold text-[#403a38]">Challenge Resources</h3>
+                        <p className="mt-1 text-xs text-[#999390]">กำหนด Resource ที่ผู้เล่นต้องใช้สำหรับโจทย์นี้</p>
+
+                        <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-[#403a38]">Challenge Files (ไม่บังคับ)</label>
+                            <input
+                              type="file"
+                              multiple
+                              disabled={isUploadingChallengeFile}
+                              onChange={(event) => {
+                                const files = Array.from(event.target.files ?? [])
+                                files.forEach((file) => void handleChallengeFileUpload(file))
+                                event.currentTarget.value = ""
+                              }}
+                              className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-4 py-3 text-sm"
+                            />
+                            <p className="mt-2 text-xs text-[#999390]">เลือกได้หลายไฟล์ และเพิ่มไฟล์ภายหลังได้ รองรับไฟล์ทุกประเภท</p>
+                            <div className="mt-3 space-y-2">
+                              {challenge.challengeFiles.map((file, index) => (
+                                <div key={`${file.fileUrl}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-[#e1ddda] bg-white px-4 py-3">
+                                  <span className="min-w-0 truncate text-sm text-[#403a38]">{file.fileName}</span>
+                                  <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, challengeFiles: prev.challengeFiles.filter((_, i) => i !== index) }))} className="shrink-0 text-xs font-semibold text-red-600 hover:underline">ลบไฟล์</button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between gap-3">
+                              <label className="block text-sm font-semibold text-[#403a38]">Websites (ไม่บังคับ)</label>
+                              <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, websites: [...prev.websites, { label: "", url: "" }] }))} className="rounded-lg bg-[#403a38] px-3 py-2 text-xs font-semibold text-white">+ เพิ่ม Website</button>
+                            </div>
+                            <p className="mt-2 text-xs text-[#999390]">เพิ่มได้หลายเว็บ พร้อมกำหนดชื่อที่จะแสดงให้ผู้เล่น</p>
+                            <div className="mt-3 space-y-3">
+                              {challenge.websites.map((site, index) => (
+                                <div key={index} className="rounded-xl border border-[#e1ddda] bg-white p-3">
+                                  <div className="grid gap-2 sm:grid-cols-[160px_minmax(0,1fr)_auto]">
+                                    <input type="text" value={site.label} onChange={(e) => setChallenge((prev) => ({ ...prev, websites: prev.websites.map((item, i) => i === index ? { ...item, label: e.target.value } : item) }))} placeholder="เช่น Target Website" className="h-11 rounded-lg border border-[#d8d2cf] px-3 text-sm outline-none focus:border-[#b01414]" />
+                                    <input type="url" value={site.url} onChange={(e) => setChallenge((prev) => ({ ...prev, websites: prev.websites.map((item, i) => i === index ? { ...item, url: e.target.value } : item) }))} placeholder="https://example.com" className="h-11 min-w-0 rounded-lg border border-[#d8d2cf] px-3 text-sm outline-none focus:border-[#b01414]" />
+                                    <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, websites: prev.websites.filter((_, i) => i !== index) }))} className="px-3 text-xs font-semibold text-red-600">ลบ</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Containers */}
 
                       <div className="mt-10">
+                        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4">
+                          <div>
+                            <h3 className="text-lg font-bold text-[#403a38]">ใช้ Container สำหรับโจทย์นี้</h3>
+                            <p className="mt-1 text-xs text-[#999390]">ปิดได้สำหรับโจทย์ที่ใช้เฉพาะไฟล์หรือเว็บไซต์</p>
+                          </div>
+                          <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#403a38]">
+                            <input type="checkbox" checked={challenge.hasContainer} onChange={(event) => setChallenge((prev) => ({ ...prev, hasContainer: event.target.checked, containers: event.target.checked && prev.containers.length === 0 ? [createEmptyContainer()] : prev.containers }))} className="h-5 w-5 accent-[#b01414]" />
+                            {challenge.hasContainer ? "มี Container" : "ไม่มี Container"}
+                          </label>
+                        </div>
 
+                        {challenge.hasContainer && <>
                         <div className="mb-4 flex items-center justify-between">
 
                           <div>
@@ -1174,6 +1259,7 @@ export default function ChallengeManagement() {
                         >
                           + เพิ่ม Container
                         </button>
+                        </>}
 
                       </div>
 
@@ -1295,7 +1381,7 @@ export default function ChallengeManagement() {
                               .value
                           )
                         }
-                        placeholder="ค้นหาโจทย์จากชื่อ, Challenge ID, หมวดหมู่ หรือคำอธิบาย..."
+                        placeholder="ค้นหาโจทย์จากชื่อ, หมวดหมู่ หรือคำอธิบาย..."
                         className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-[#faf9f8] pl-12 pr-4 text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:bg-white focus:ring-2 focus:ring-[#b01414]/10"
                       />
 
@@ -1350,12 +1436,6 @@ export default function ChallengeManagement() {
                                   </span>
 
                                 </div>
-
-                                <p className="mt-1 font-mono text-xs text-[#999390]">
-                                  {
-                                    item.challengeId
-                                  }
-                                </p>
 
                                 <p className="mt-3 max-w-3xl line-clamp-2 text-sm leading-6 text-[#77716e]">
                                   {

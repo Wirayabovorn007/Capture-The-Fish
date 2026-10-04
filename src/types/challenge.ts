@@ -30,6 +30,19 @@ export type DockerContainer = {
   buttonLabel?: string;
 };
 
+export type ChallengeFile = {
+  fileName: string;
+  fileUrl: string;
+  contentType?: string;
+};
+
+export type ChallengeWebsite = {
+  label: string;
+  url: string;
+};
+
+export type ChallengePublishStatus = "draft" | "published" | "hidden";
+
 export type Challenge = {
   challengeId: string;
   title: string;
@@ -39,7 +52,14 @@ export type Challenge = {
   thumbnailUrl?: string;
   objective: string;
   hint: string;
+  hasContainer: boolean;
   containers: DockerContainer[];
+  challengeFiles?: ChallengeFile[];
+  websites?: ChallengeWebsite[];
+  status?: ChallengePublishStatus;
+  // Legacy compatibility while old records are migrated.
+  challengeFile?: ChallengeFile;
+  websiteUrl?: string;
   flag?: string;
   fishReward?: FishReward;
 };
