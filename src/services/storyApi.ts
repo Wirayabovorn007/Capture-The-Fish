@@ -1,50 +1,79 @@
-import { getAuthHeaders } from "../utils/auth"
-import type { StoryConfig } from "../types/story"
-
-let apiUrl = ""
-
+import { getAuthHeaders } from "../utils/auth";
+import type { StoryConfig, StoryProgress } from "../types/story";
+let apiUrl = "";
 async function getApiUrl() {
-  if (apiUrl) return apiUrl
-  const response = await fetch("/config.json")
-  if (!response.ok) throw new Error("โหลด config.json ไม่สำเร็จ")
-  const config = await response.json()
-  if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json")
-  apiUrl = config.ALB_URL
-  return apiUrl
+  if (apiUrl) return apiUrl;
+  const r = await fetch("/config.json");
+  if (!r.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
+  const c = await r.json();
+  if (!c.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
+  apiUrl = c.ALB_URL;
+  return apiUrl;
 }
-
-async function readJson(response: Response) {
-  const data = await response.json()
-  if (!response.ok) throw new Error(data.error || "เกิดข้อผิดพลาดจากระบบ")
-  return data
+async function readJson(r: Response) {
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || "เกิดข้อผิดพลาดจากระบบ");
+  return d;
 }
-
 export async function getStory(): Promise<StoryConfig | null> {
-  const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=get_story&t=${Date.now()}`)
-  const data = await readJson(response)
-  if (data.status !== "SUCCESS") throw new Error(data.error || "โหลด Story ไม่สำเร็จ")
-  return data.story ?? null
+  const b = await getApiUrl();
+  return (
+    (await readJson(await fetch(`${b}/?action=get_story&t=${Date.now()}`)))
+      .story ?? null
+  );
 }
-
 export async function getAdminStory(): Promise<StoryConfig | null> {
-  const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=get_admin_story&t=${Date.now()}`, {
-    headers: await getAuthHeaders(false),
-  })
-  const data = await readJson(response)
-  if (data.status !== "SUCCESS") throw new Error(data.error || "โหลด Story ไม่สำเร็จ")
-  return data.story ?? null
+  const b = await getApiUrl();
+  return (
+    (
+      await readJson(
+        await fetch(`${b}/?action=get_admin_story&t=${Date.now()}`, {
+          headers: await getAuthHeaders(false),
+        }),
+      )
+    ).story ?? null
+  );
 }
-
-export async function saveStory(story: Omit<StoryConfig, "storyId" | "updatedAt">): Promise<StoryConfig> {
-  const baseUrl = await getApiUrl()
-  const response = await fetch(`${baseUrl}/?action=save_story`, {
+export async function getStoryProgress(): Promise<StoryProgress> {
+  const b = await getApiUrl();
+  const d = await readJson(
+    await fetch(`${b}/?action=get_story_progress&t=${Date.now()}`, {
+      headers: await getAuthHeaders(false),
+    }),
+  );
+  return { solvedChallengeIds: d.solvedChallengeIds ?? [] };
+}
+export async function uploadStoryImage(file: File): Promise<string> {
+  const b = await getApiUrl();
+  const contentType = file.type || "image/png";
+  if (!contentType.startsWith("image/"))
+    throw new Error("รองรับเฉพาะไฟล์รูปภาพ");
+  const d = await readJson(
+    await fetch(`${b}/?action=upload_story_image`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ fileName: file.name, contentType }),
+    }),
+  );
+  const u = await fetch(d.uploadUrl, {
     method: "PUT",
-    headers: await getAuthHeaders(),
-    body: JSON.stringify(story),
-  })
-  const data = await readJson(response)
-  if (data.status !== "SUCCESS") throw new Error(data.error || "บันทึก Story ไม่สำเร็จ")
-  return data.story
+    headers: { "Content-Type": contentType },
+    body: file,
+  });
+  if (!u.ok) throw new Error("อัปโหลดรูป Story ไม่สำเร็จ");
+  return d.imageUrl;
+}
+export async function saveStory(
+  story: Omit<StoryConfig, "storyId" | "updatedAt">,
+): Promise<StoryConfig> {
+  const b = await getApiUrl();
+  return (
+    await readJson(
+      await fetch(`${b}/?action=save_story`, {
+        method: "PUT",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify(story),
+      }),
+    )
+  ).story;
 }
