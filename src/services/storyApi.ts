@@ -27,6 +27,16 @@ export async function getStory(): Promise<StoryConfig | null> {
   return data.story ?? null
 }
 
+export async function getAdminStory(): Promise<StoryConfig | null> {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=get_admin_story&t=${Date.now()}`, {
+    headers: await getAuthHeaders(false),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "โหลด Story ไม่สำเร็จ")
+  return data.story ?? null
+}
+
 export async function saveStory(story: Omit<StoryConfig, "storyId" | "updatedAt">): Promise<StoryConfig> {
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=save_story`, {

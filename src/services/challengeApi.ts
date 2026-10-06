@@ -100,6 +100,42 @@ export async function deleteChallenge(challengeId: string) {
   if (data.status !== "SUCCESS") throw new Error(data.error || "ลบ Challenge ไม่สำเร็จ")
 }
 
+export type BulkChallengeAction = "delete" | "set_status"
+
+export async function importChallenges(challenges: unknown[]) {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=import_challenges`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: JSON.stringify({ challenges }),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "Import Challenge ไม่สำเร็จ")
+  return data as {
+    status: "SUCCESS"
+    created: number
+    skipped: number
+    failed: number
+    results: { challengeId?: string; title?: string; status: "created" | "skipped" | "failed"; error?: string }[]
+  }
+}
+
+export async function bulkChallengeAction(
+  challengeIds: string[],
+  bulkAction: BulkChallengeAction,
+  status?: "draft" | "published" | "hidden",
+) {
+  const baseUrl = await getApiUrl()
+  const response = await fetch(`${baseUrl}/?action=bulk_challenge_action`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: JSON.stringify({ challengeIds, bulkAction, status }),
+  })
+  const data = await readJson(response)
+  if (data.status !== "SUCCESS") throw new Error(data.error || "ดำเนินการหลาย Challenge ไม่สำเร็จ")
+  return data
+}
+
 export async function spawnChallenge(challengeId: string): Promise<SpawnChallengeResponse> {
   const baseUrl = await getApiUrl()
   const response = await fetch(`${baseUrl}/?action=spawn&challengeId=${encodeURIComponent(challengeId)}`, { method: "POST", headers: await getAuthHeaders(false) })
