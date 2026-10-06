@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import type { FormEvent } from "react"
 
 import {
   createChallenge,
   deleteChallenge,
+  importChallenges,
+  bulkChallengeAction,
   getAdminChallenges,
   getFishes,
   uploadChallengeThumbnail,
@@ -168,6 +171,95 @@ export default function ChallengeManagement() {
   const [isDeleting, setIsDeleting] =
     useState(false)
 
+  const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>([])
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importJson, setImportJson] = useState("")
+  const [isImporting, setIsImporting] = useState(false)
+  const [isBulkWorking, setIsBulkWorking] = useState(false)
+
+  const toggleChallengeSelection = (challengeId: string) => {
+    setSelectedChallengeIds((current) =>
+      current.includes(challengeId)
+        ? current.filter((id) => id !== challengeId)
+        : [...current, challengeId]
+    )
+  }
+
+  const handleImportFile = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      setImportJson(await file.text())
+      setMessage("")
+    } catch {
+      setMessage("ไม่สามารถอ่านไฟล์ JSON ได้")
+    }
+  }
+
+  const handleImportChallenges = async () => {
+    setMessage("")
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(importJson)
+    } catch {
+      setMessage("JSON ไม่ถูกต้อง กรุณาตรวจสอบ syntax")
+      return
+    }
+    const items = Array.isArray(parsed)
+      ? parsed
+      : (parsed && typeof parsed === "object" && Array.isArray((parsed as { challenges?: unknown[] }).challenges))
+        ? (parsed as { challenges: unknown[] }).challenges
+        : null
+    if (!items || items.length === 0) {
+      setMessage("JSON ต้องเป็น Array ของ Challenge หรือ { challenges: [...] }")
+      return
+    }
+    try {
+      setIsImporting(true)
+      const result = await importChallenges(items)
+      setShowImportModal(false)
+      setImportJson("")
+      await loadChallenges()
+      setMessage(`Import สำเร็จ ${result.created} ข้อ · ข้าม ${result.skipped} ข้อ · ผิดพลาด ${result.failed} ข้อ (ทุกข้อใหม่เป็น Draft)`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Import Challenge ไม่สำเร็จ")
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const handleBulkStatus = async (status: "draft" | "published" | "hidden") => {
+    if (selectedChallengeIds.length === 0) return
+    try {
+      setIsBulkWorking(true)
+      await bulkChallengeAction(selectedChallengeIds, "set_status", status)
+      const count = selectedChallengeIds.length
+      setSelectedChallengeIds([])
+      await loadChallenges()
+      setMessage(`เปลี่ยนสถานะ ${count} Challenge เป็น ${status} สำเร็จ`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "เปลี่ยนสถานะไม่สำเร็จ")
+    } finally {
+      setIsBulkWorking(false)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedChallengeIds.length === 0) return
+    if (!window.confirm(`ยืนยันลบ ${selectedChallengeIds.length} Challenge ที่เลือก? การกระทำนี้ย้อนกลับไม่ได้`)) return
+    try {
+      setIsBulkWorking(true)
+      await bulkChallengeAction(selectedChallengeIds, "delete")
+      const count = selectedChallengeIds.length
+      setSelectedChallengeIds([])
+      await loadChallenges()
+      setMessage(`ลบ ${count} Challenge สำเร็จ`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "ลบ Challenge ไม่สำเร็จ")
+    } finally {
+      setIsBulkWorking(false)
+    }
+  }
+
   const toUiChallenge = (
     item: ApiChallenge
   ): Challenge => ({
@@ -211,6 +303,20 @@ export default function ChallengeManagement() {
     void loadChallenges()
     void loadFishes()
   }, [])
+
+  useEffect(() => {
+    if (!showImportModal) return
+
+    const previousOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = "hidden"
+    document.documentElement.style.overflow = "hidden"
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+    }
+  }, [showImportModal])
 
   const isEditing = editingId !== null
 
@@ -1332,18 +1438,23 @@ export default function ChallengeManagement() {
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={
-                          handleCreateNew
-                        }
-                        className="inline-flex h-11 items-center justify-center rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010]"
-                      >
-                        <span className="mr-2 text-lg">
-                          +
-                        </span>
-                        เพิ่มโจทย์ใหม่
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setShowImportModal(true); setMessage("") }}
+                          className="inline-flex h-11 items-center justify-center rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#403a38] hover:border-[#b01414] hover:text-[#b01414]"
+                        >
+                          Import JSON
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCreateNew}
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010]"
+                        >
+                          <span className="mr-2 text-lg">+</span>
+                          เพิ่มโจทย์ใหม่
+                        </button>
+                      </div>
 
                     </div>
 
@@ -1389,6 +1500,39 @@ export default function ChallengeManagement() {
 
                   </div>
 
+                  {filteredChallenges.length > 0 && (
+                    <div className="flex flex-col gap-3 border-t border-[#eeeae8] bg-[#faf9f8] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-[#403a38]">
+                        <input
+                          type="checkbox"
+                          checked={filteredChallenges.every((item) => selectedChallengeIds.includes(item.challengeId))}
+                          onChange={(event) => {
+                            const visibleIds = filteredChallenges.map((item) => item.challengeId)
+                            setSelectedChallengeIds((current) =>
+                              event.target.checked
+                                ? Array.from(new Set([...current, ...visibleIds]))
+                                : current.filter((id) => !visibleIds.includes(id))
+                            )
+                          }}
+                          className="h-4 w-4 accent-[#b01414]"
+                        />
+                        เลือกทั้งหมด ({filteredChallenges.length})
+                      </label>
+
+                      {selectedChallengeIds.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="mr-1 text-sm font-semibold text-[#b01414]">
+                            เลือก {selectedChallengeIds.length} ข้อ
+                          </span>
+                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkStatus("draft")} className="h-9 rounded-lg border border-[#d8d2cf] bg-white px-3 text-xs font-semibold text-[#403a38] hover:border-[#b01414] disabled:opacity-50">Draft</button>
+                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkStatus("published")} className="h-9 rounded-lg border border-green-200 bg-white px-3 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">Published</button>
+                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkStatus("hidden")} className="h-9 rounded-lg border border-[#d8d2cf] bg-white px-3 text-xs font-semibold text-[#77716e] hover:bg-[#f1efed] disabled:opacity-50">Hidden</button>
+                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkDelete()} className="h-9 rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">ลบที่เลือก</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="divide-y divide-[#eeeae8]">
 
                     {isLoading ? (
@@ -1409,6 +1553,16 @@ export default function ChallengeManagement() {
                           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
 
                             <div className="flex min-w-0 gap-4">
+
+                              <label className="flex shrink-0 items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedChallengeIds.includes(item.challengeId)}
+                                  onChange={() => toggleChallengeSelection(item.challengeId)}
+                                  className="h-4 w-4 accent-[#b01414]"
+                                  aria-label={`เลือก ${item.title}`}
+                                />
+                              </label>
 
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#b01414]/10 text-sm font-bold text-[#b01414]">
                                 {String(
@@ -1433,6 +1587,16 @@ export default function ChallengeManagement() {
                                     {
                                       item.category
                                     }
+                                  </span>
+
+                                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                    item.status === "published"
+                                      ? "bg-green-50 text-green-700"
+                                      : item.status === "hidden"
+                                        ? "bg-[#f1efed] text-[#77716e]"
+                                        : "bg-amber-50 text-amber-700"
+                                  }`}>
+                                    {item.status ?? "published"}
                                   </span>
 
                                 </div>
@@ -1486,6 +1650,60 @@ export default function ChallengeManagement() {
                 </section>
 
               </div>
+
+      {showImportModal && createPortal(
+        <div
+          className="fixed inset-0 z-[2147483647] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-black/50 p-3 sm:p-5"
+          onWheel={(event) => event.stopPropagation()}
+          onTouchMove={(event) => event.stopPropagation()}
+        >
+          <div className="flex h-[min(760px,calc(100dvh-1.5rem))] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#e5e1df] bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-2.5rem))]">
+            <div className="flex shrink-0 items-start justify-between border-b border-[#eeeae8] p-4 sm:p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">Bulk Import</p>
+                <h3 className="mt-1 text-xl font-bold text-[#403a38]">Import Challenges จาก JSON</h3>
+                <p className="mt-1 text-sm text-[#77716e]">รองรับหลายข้อพร้อมกัน และ Challenge ที่สร้างใหม่จะถูกบังคับเป็น Draft เสมอ</p>
+              </div>
+              <button type="button" onClick={() => setShowImportModal(false)} className="ml-4 shrink-0 text-xl text-[#77716e] hover:text-[#b01414]">×</button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-[#403a38]">เลือกไฟล์ .json</span>
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(event) => void handleImportFile(event.target.files?.[0])}
+                  className="block w-full rounded-xl border border-[#d8d2cf] bg-[#faf9f8] p-3 text-sm"
+                />
+              </label>
+
+              <div className="text-center text-xs font-semibold uppercase tracking-wider text-[#aaa4a1]">หรือวาง JSON</div>
+
+              <textarea
+                value={importJson}
+                onChange={(event) => setImportJson(event.target.value)}
+                rows={8}
+                spellCheck={false}
+                placeholder={'[\n  {\n    "challengeId": "web-01",\n    "title": "Example",\n    "flag": "flag{example}"\n  }\n]'}
+                className="min-h-[180px] w-full resize-none rounded-xl border border-[#d8d2cf] bg-[#faf9f8] px-4 py-3 font-mono text-xs leading-5 outline-none focus:border-[#b01414] focus:bg-white"
+              />
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+                status ใน JSON จะถูก ignore และบันทึกเป็น draft เสมอ เพื่อให้ใส่ Thumbnail, Fish Reward, Files, Website หรือ Container ภายหลังได้
+              </div>
+            </div>
+
+            <div className="flex shrink-0 justify-end gap-2 border-t border-[#eeeae8] bg-white p-4 sm:p-5">
+              <button type="button" onClick={() => setShowImportModal(false)} className="h-11 rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#403a38]">ยกเลิก</button>
+              <button type="button" disabled={isImporting || !importJson.trim()} onClick={() => void handleImportChallenges()} className="h-11 rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010] disabled:opacity-50">
+                {isImporting ? "กำลัง Import..." : "Import ทั้งหมด"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* =========================================
           Delete Challenge Confirmation Modal
