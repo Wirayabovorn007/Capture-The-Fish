@@ -4,7 +4,7 @@ import {
   useState,
 } from "react"
 
-import { useLocation, useSearchParams } from "react-router-dom"
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 
 import TaskSetup from "../components/competition/Setup_task"
 import Task from "../components/competition/Task"
@@ -28,15 +28,18 @@ export default function Challenge_detail() {
 
   const [searchParams] = useSearchParams()
   const location = useLocation()
+  const navigate = useNavigate()
+  const previewChallenge = (location.state as { previewChallenge?: Challenge; fromStoryPreview?: boolean } | null)?.previewChallenge
+  const fromStoryPreview = Boolean((location.state as { fromStoryPreview?: boolean } | null)?.fromStoryPreview)
   const isAdminView = location.pathname.startsWith("/admin/")
   const PageNavbar = isAdminView ? AdminNavbar : Navbar
   const challengeId = searchParams.get("id")
 
   const [challenge, setChallenge] =
-    useState<Challenge | null>(null)
+    useState<Challenge | null>(previewChallenge ?? null)
 
   const [loading, setLoading] =
-    useState(true)
+    useState(!previewChallenge)
 
   const [error, setError] =
     useState("")
@@ -80,12 +83,20 @@ export default function Challenge_detail() {
         return
       }
 
+      // Admin Preview already has the full challenge object from getAdminChallenges().
+      // Use it directly so opening a draft challenge does not need another GET request.
+      if (previewChallenge && previewChallenge.challengeId === challengeId) {
+        setChallenge(previewChallenge)
+        setError("")
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
         setError("")
 
-        const data =
-          await getChallenge(challengeId)
+        const data = await getChallenge(challengeId)
 
         setChallenge(data)
       } catch (error) {
@@ -102,7 +113,7 @@ export default function Challenge_detail() {
     }
 
     void loadChallenge()
-  }, [challengeId])
+  }, [challengeId, previewChallenge])
 
   /* =============================================================
      Loading
@@ -140,6 +151,15 @@ export default function Challenge_detail() {
 
   return (
     <>
+      {isAdminView && fromStoryPreview && (
+        <button
+          type="button"
+          onClick={() => navigate("/story/preview")}
+          className="fixed left-5 top-28 z-[100] rounded-xl bg-[#b01414] px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-[#961010]"
+        >
+          ← กลับ Admin Preview
+        </button>
+      )}
       <div className="absolute w-full">
 
         <PageNavbar />
