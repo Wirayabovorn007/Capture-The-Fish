@@ -7,6 +7,7 @@ import {
   getAdminStory,
   getStory,
   getStoryProgress,
+  submitTreasureCode,
 } from "../services/storyApi";
 import type { Challenge } from "../types/challenge";
 import type { StoryAct, StoryConfig, StoryItem } from "../types/story";
@@ -15,7 +16,13 @@ export default function Story({ preview = false }: { preview?: boolean }) {
   const [story, setStory] = useState<StoryConfig | null>(null),
     [challenges, setChallenges] = useState<Challenge[]>([]),
     [solved, setSolved] = useState<Set<string>>(new Set()),
+    [treasureUnlocked, setTreasureUnlocked] = useState(false),
     [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     void (async () => {
       try {
@@ -29,6 +36,7 @@ export default function Story({ preview = false }: { preview?: boolean }) {
           try {
             const p = await getStoryProgress();
             setSolved(new Set(p.solvedChallengeIds));
+            setTreasureUnlocked(Boolean(p.treasureUnlocked));
           } catch {
             setSolved(new Set());
           }
@@ -45,7 +53,13 @@ export default function Story({ preview = false }: { preview?: boolean }) {
   if (loading)
     return (
       <>
-        <Navbar />
+        {preview ? (
+          <div className="pointer-events-none select-none" aria-disabled="true">
+            <Navbar />
+          </div>
+        ) : (
+          <Navbar />
+        )}
         <main className="min-h-screen pt-40 text-center">
           กำลังโหลด Story...
         </main>
@@ -55,7 +69,13 @@ export default function Story({ preview = false }: { preview?: boolean }) {
   if (!story)
     return (
       <>
-        <Navbar />
+        {preview ? (
+          <div className="pointer-events-none select-none" aria-disabled="true">
+            <Navbar />
+          </div>
+        ) : (
+          <Navbar />
+        )}
         <main className="min-h-screen pt-40 text-center">
           ยังไม่ได้ตั้งค่า Story Mode
         </main>
@@ -69,18 +89,26 @@ export default function Story({ preview = false }: { preview?: boolean }) {
   const completed = allChallenges.filter((id) => solved.has(id)).length;
   return (
     <>
-      <Navbar />
+      {preview ? (
+        <div className="pointer-events-none select-none" aria-disabled="true">
+          <Navbar />
+        </div>
+      ) : (
+        <Navbar />
+      )}
       <style>{styles}</style>
       <main className="story-page w-full overflow-hidden">
         {preview && (
-          <div className="fixed right-4 top-24 z-[100] flex items-center gap-2">
+          <div className="fixed left-6 top-32 z-[100] flex items-center gap-2">
             <div className="rounded-full bg-[#b01414] px-4 py-2 text-xs font-bold text-white shadow-lg">
               ADMIN PREVIEW
             </div>
             <button
               type="button"
-              onClick={() => window.location.assign("/admin/management")}
-              className="rounded-full border border-[#d8d2cf] bg-white px-4 py-2 text-xs font-bold text-[#403a38] shadow-lg hover:border-[#b01414] hover:text-[#b01414]"
+              onClick={() =>
+                window.location.assign("/admin/management?tab=story")
+              }
+              className="rounded-full border border-[#d8d2cf] bg-white px-4 py-2 text-xs font-bold text-[#403a38] shadow-lg transition hover:border-[#b01414] hover:bg-[#fff7f7] hover:text-[#b01414]"
             >
               ออกจาก Preview
             </button>
@@ -128,6 +156,10 @@ export default function Story({ preview = false }: { preview?: boolean }) {
               complete={
                 completed === allChallenges.length && allChallenges.length > 0
               }
+              treasure={story.treasure}
+              preview={preview}
+              initiallyUnlocked={preview ? false : treasureUnlocked}
+              onUnlocked={() => setTreasureUnlocked(true)}
             />
           </div>
         </section>
@@ -438,24 +470,162 @@ function StoryImage({ challenge }: { challenge: Challenge }) {
     </div>
   );
 }
-function Treasure({ complete }: { complete: boolean }) {
+function Treasure({
+  complete,
+  treasure,
+  preview,
+  initiallyUnlocked,
+  onUnlocked,
+}: {
+  complete: boolean;
+  treasure?: StoryConfig["treasure"];
+  preview: boolean;
+  initiallyUnlocked: boolean;
+  onUnlocked: () => void;
+}) {
+  const [digits, setDigits] = useState([0, 0, 0, 0, 0]);
+  const [submitting, setSubmitting] = useState(false);
+  const [unlocked, setUnlocked] = useState(initiallyUnlocked);
+  const [message, setMessage] = useState("");
+  const [reward, setReward] = useState(treasure?.fishReward ?? null);
+
+  useEffect(() => setUnlocked(initiallyUnlocked), [initiallyUnlocked]);
+
+  const rotate = (index: number, delta: number) =>
+    setDigits((current) =>
+      current.map((value, i) =>
+        i === index ? (value + delta + 10) % 10 : value,
+      ),
+    );
+
+  const unlock = async () => {
+    if (!treasure || !complete || preview || submitting || unlocked) return;
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const result = await submitTreasureCode(digits.join(""));
+      if (!result.correct) {
+        setMessage("รหัสไม่ถูกต้อง");
+        return;
+      }
+      setUnlocked(true);
+      setReward(result.reward ?? treasure.fishReward ?? null);
+      setMessage(
+        result.alreadyUnlocked
+          ? "คุณเปิดสมบัตินี้ไปแล้ว"
+          : "Treasure Unlocked!",
+      );
+      onUnlocked();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "ไม่สามารถเปิดสมบัติได้",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!treasure) return null;
+  const canTry = complete || preview;
+
   return (
     <div
-      className={`relative flex flex-col items-center pb-4 pt-16 ${complete ? "" : "opacity-45 grayscale"}`}
+      className={`relative flex flex-col items-center pb-8 pt-16 text-center ${canTry ? "" : "opacity-45 grayscale"}`}
     >
       <div className="relative h-[145px] w-[190px]">
-        <div className="absolute left-[28px] top-[20px] h-[60px] w-[134px] rotate-[-8deg] rounded-t-[55px] border-[8px] border-[#F59B2F] bg-[#8D2222]" />
+        <div
+          className={`absolute left-[28px] top-[20px] h-[60px] w-[134px] rounded-t-[55px] border-[8px] border-[#F59B2F] bg-[#8D2222] transition-transform duration-500 ${unlocked ? "-translate-y-5 -rotate-12" : "rotate-[-8deg]"}`}
+        />
         <div className="absolute bottom-3 left-[25px] h-[75px] w-[140px] rounded-b-xl border-8 border-[#F59B2F] bg-[#B83B32]" />
       </div>
-      <h3 className="mt-2 text-xl">
-        {complete ? "สมบัติใต้ทะเลลึก" : "🔒 สมบัติยังถูกล็อก"}
+      <div className="text-xs font-bold uppercase tracking-[.25em] text-[#F59B2F]">
+        Deep Sea Treasure
+      </div>
+      <h3 className="mt-2 text-2xl font-bold">
+        {unlocked
+          ? "Treasure Unlocked"
+          : complete
+            ? "ปลดล็อกสมบัติ"
+            : "🔒 สมบัติยังถูกล็อก"}
       </h3>
-      <p className="mt-2 text-xs text-gray-400">
-        {complete ? "Story Complete!" : "ผ่าน Story ให้ครบเพื่อปลดล็อก"}
-      </p>
+      {!complete && !preview ? (
+        <p className="mt-2 text-sm text-gray-400">
+          ผ่าน Story ให้ครบเพื่อปลดล็อกแม่กุญแจ
+        </p>
+      ) : unlocked ? (
+        <div className="mt-5 max-w-md rounded-2xl border border-white/15 bg-white/5 p-5">
+          {reward?.imageUrl && (
+            <img
+              src={reward.imageUrl}
+              alt={reward.name}
+              className="mx-auto h-28 w-40 rounded-xl object-cover"
+            />
+          )}
+          <div className="mt-3 text-xs font-bold uppercase tracking-[.18em] text-[#F59B2F]">
+            Treasure Reward
+          </div>
+          <div className="mt-1 text-xl font-bold">{reward?.name}</div>
+          <div className="mt-1 text-sm text-gray-300">
+            x{reward?.amount ?? 1} · {reward?.rarity}
+          </div>
+          {reward?.description && (
+            <p className="mt-2 text-sm text-gray-400">{reward.description}</p>
+          )}
+        </div>
+      ) : (
+        <>
+          <p className="mt-4 max-w-xl whitespace-pre-line text-sm leading-6 text-gray-300">
+            {treasure.hint}
+          </p>
+          <div className="mt-7 flex gap-2 sm:gap-3">
+            {digits.map((digit, index) => (
+              <div key={index} className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => rotate(index, 1)}
+                  className="h-8 w-12 text-lg text-gray-300 hover:text-white"
+                >
+                  ▲
+                </button>
+                <div className="flex h-16 w-12 items-center justify-center rounded-lg border-2 border-[#F59B2F] bg-[#111] font-mono text-3xl font-bold shadow-inner sm:h-20 sm:w-14">
+                  {digit}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => rotate(index, -1)}
+                  className="h-8 w-12 text-lg text-gray-300 hover:text-white"
+                >
+                  ▼
+                </button>
+              </div>
+            ))}
+          </div>
+          {preview && treasure.combinationCode && (
+            <p className="mt-3 text-xs text-gray-500">
+              Admin Preview Code: {treasure.combinationCode}
+            </p>
+          )}
+          <button
+            type="button"
+            disabled={preview || submitting}
+            onClick={() => void unlock()}
+            className="mt-6 h-12 rounded-xl bg-[#F59B2F] px-8 font-bold text-[#1E1E1E] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {preview ? "PREVIEW" : submitting ? "CHECKING..." : "UNLOCK"}
+          </button>
+          {message && (
+            <p
+              className={`mt-3 text-sm ${message === "รหัสไม่ถูกต้อง" ? "text-red-400" : "text-green-400"}`}
+            >
+              {message}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }
+
 function roman(v: number) {
   const m: [number, string][] = [
     [10, "X"],

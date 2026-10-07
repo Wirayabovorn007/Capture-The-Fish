@@ -1,25 +1,25 @@
-import { X } from "lucide-react"
-import type { FishReward, FishRarity } from "../../types/challenge"
+import { X } from "lucide-react";
+import type { FishReward, FishRarity } from "../../types/challenge";
 
 type FlagSuccessPopupProps = {
-  open: boolean
-  fishReward?: FishReward
-  onClose: () => void
-  firstSolve?: boolean
-  totalFish?: number
-}
+  open: boolean;
+  fishReward?: FishReward;
+  onClose: () => void;
+  firstSolve?: boolean;
+  totalFish?: number;
+};
 
 const rarityLabel: Record<FishRarity, string> = {
   common: "COMMON",
   rare: "RARE",
   ultimate: "ULTIMATE",
-}
+};
 
 const rarityClass: Record<FishRarity, string> = {
   common: "bg-slate-100 text-slate-700",
   rare: "bg-blue-100 text-blue-700",
   ultimate: "bg-red-100 text-red-700",
-}
+};
 
 export default function FlagSuccessPopup({
   open,
@@ -28,7 +28,7 @@ export default function FlagSuccessPopup({
   firstSolve = true,
   totalFish = 0,
 }: FlagSuccessPopupProps) {
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div
@@ -63,7 +63,9 @@ export default function FlagSuccessPopup({
         </h2>
 
         <p className="mt-2 text-sm leading-6 text-gray-500">
-          {firstSolve ? "คุณพิชิต Challenge สำเร็จและได้รับรางวัล" : "Flag ถูกต้อง แต่ Challenge นี้เคยผ่านแล้ว"}
+          {firstSolve
+            ? "คุณพิชิต Challenge สำเร็จและได้รับรางวัล"
+            : "Flag ถูกต้อง แต่ Challenge นี้เคยผ่านแล้ว"}
         </p>
 
         {fishReward ? (
@@ -98,7 +100,9 @@ export default function FlagSuccessPopup({
           </div>
         ) : (
           <p className="mt-6 rounded-2xl bg-gray-50 p-5 text-sm text-gray-600">
-            {firstSolve ? "Challenge นี้ไม่มีรางวัลปลา" : "คุณเคยรับรางวัลจาก Challenge นี้แล้ว จึงไม่ได้รับปลาซ้ำ"}
+            {firstSolve
+              ? "Challenge นี้ไม่มีรางวัลปลา"
+              : "คุณเคยรับรางวัลจาก Challenge นี้แล้ว จึงไม่ได้รับปลาซ้ำ"}
           </p>
         )}
 
@@ -115,5 +119,5 @@ export default function FlagSuccessPopup({
         </button>
       </div>
     </div>
-  )
+  );
 }

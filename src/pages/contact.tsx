@@ -18,8 +18,8 @@ export default function Contact() {
           </p>
 
           <p className="mt-3 text-sm sm:text-base text-[#444]">
-            เปลี่ยนการฝึก Cybersecurity แบบเดิม ๆ ให้กลายเป็นการผจญภัย
-            ออกล่า Flag สะสมปลา และปลดล็อกทักษะใหม่ไปพร้อมกัน
+            เปลี่ยนการฝึก Cybersecurity แบบเดิม ๆ ให้กลายเป็นการผจญภัย ออกล่า
+            Flag สะสมปลา และปลดล็อกทักษะใหม่ไปพร้อมกัน
           </p>
         </section>
 

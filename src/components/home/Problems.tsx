@@ -93,11 +93,10 @@ export default function ProblemSlider() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
 
-  const [slideDirection, setSlideDirection] = useState<
-    "left" | "right"
-  >("right");
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">(
+    "right",
+  );
 
- 
   const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
@@ -109,7 +108,7 @@ export default function ProblemSlider() {
         setProblems(challenges.map(toProblem));
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "ไม่สามารถโหลด Challenge ได้"
+          err instanceof Error ? err.message : "ไม่สามารถโหลด Challenge ได้",
         );
       } finally {
         setLoading(false);
@@ -119,19 +118,14 @@ export default function ProblemSlider() {
     void loadProblems();
   }, []);
 
-  const activeTabIndex = tabs.findIndex(
-    (tab) => tab.value === activeTab
-  );
+  const activeTabIndex = tabs.findIndex((tab) => tab.value === activeTab);
 
- 
   const filteredProblems = useMemo(() => {
     if (activeTab === "all") {
       return problems;
     }
 
-    return problems.filter(
-      (problem) => problem.level === activeTab
-    );
+    return problems.filter((problem) => problem.level === activeTab);
   }, [activeTab, problems]);
 
   /**
@@ -141,7 +135,7 @@ export default function ProblemSlider() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredProblems.length / itemsPerPage)
+    Math.ceil(filteredProblems.length / itemsPerPage),
   );
 
   /**
@@ -149,7 +143,7 @@ export default function ProblemSlider() {
    */
   const visibleProblems = filteredProblems.slice(
     page * itemsPerPage,
-    page * itemsPerPage + itemsPerPage
+    page * itemsPerPage + itemsPerPage,
   );
 
   /**
@@ -160,16 +154,12 @@ export default function ProblemSlider() {
       return;
     }
 
-    const newIndex = tabs.findIndex(
-      (tab) => tab.value === value
-    );
+    const newIndex = tabs.findIndex((tab) => tab.value === value);
 
     /**
      * Determine animation direction based on tab position.
      */
-    setSlideDirection(
-      newIndex > activeTabIndex ? "right" : "left"
-    );
+    setSlideDirection(newIndex > activeTabIndex ? "right" : "left");
 
     setActiveTab(value);
 
@@ -223,9 +213,7 @@ export default function ProblemSlider() {
       return;
     }
 
-    setSlideDirection(
-      newPage > page ? "right" : "left"
-    );
+    setSlideDirection(newPage > page ? "right" : "left");
 
     setPage(newPage);
 
@@ -290,7 +278,7 @@ export default function ProblemSlider() {
         {/* =====================================================
             Category Tabs
         ====================================================== */}
-               <div className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3">
           {tabs.map((tab) => {
             const active = activeTab === tab.value;
 
@@ -330,7 +318,7 @@ export default function ProblemSlider() {
         {/* =====================================================
             Slider Container
         ====================================================== */}
-              <div
+        <div
           className="
             relative
             overflow-hidden
@@ -378,9 +366,7 @@ export default function ProblemSlider() {
                 lg:flex
               "
             >
-              <span className="text-xl leading-none">
-                ←
-              </span>
+              <span className="text-xl leading-none">←</span>
             </button>
 
             {/* =================================================
@@ -417,10 +403,7 @@ export default function ProblemSlider() {
                   "
                 >
                   {visibleProblems.map((problem) => (
-                    <ProblemCard
-                      key={problem.id}
-                      problem={problem}
-                    />
+                    <ProblemCard key={problem.id} problem={problem} />
                   ))}
                 </div>
               )}
@@ -460,9 +443,7 @@ export default function ProblemSlider() {
                 lg:flex
               "
             >
-              <span className="text-xl leading-none">
-                →
-              </span>
+              <span className="text-xl leading-none">→</span>
             </button>
           </div>
 
@@ -511,11 +492,7 @@ export default function ProblemSlider() {
    Problem Card
 ============================================================= */
 
-function ProblemCard({
-  problem,
-}: {
-  problem: Problem;
-}) {
+function ProblemCard({ problem }: { problem: Problem }) {
   const variant = getVariant(problem.category);
   const Icon = variantIcon[variant];
 
@@ -576,7 +553,9 @@ function ProblemCard({
         "
       >
         <div className="mb-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-          <span className={`font-medium ${difficultyColor[problem.difficulty]}`}>
+          <span
+            className={`font-medium ${difficultyColor[problem.difficulty]}`}
+          >
             {problem.difficulty}
           </span>
 

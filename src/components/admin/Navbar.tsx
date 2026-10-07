@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
-import { getCurrentUser, fetchUserAttributes, signOut } from "aws-amplify/auth"
+import { useEffect, useState } from "react";
+import { getCurrentUser, fetchUserAttributes, signOut } from "aws-amplify/auth";
 
-import logo from "../../assets/home/Logo.png"
-import dashboard from "../../assets/home/Goal.png"
-import management from "../../assets/home/Storytelling.png"
+import logo from "../../assets/home/Logo.png";
+import dashboard from "../../assets/home/Goal.png";
+import management from "../../assets/home/Storytelling.png";
 
 const adminNavLinks = [
   {
@@ -16,43 +16,43 @@ const adminNavLinks = [
     label: "จัดการโจทย์/ผู้ใช้",
     href: "/admin/management",
   },
-]
+];
 
 export default function AdminNavbar() {
   const [user, setUser] = useState<{
-    username: string
-    email?: string
-    profileImage?: string
-  } | null>(null)
+    username: string;
+    email?: string;
+    profileImage?: string;
+  } | null>(null);
 
   useEffect(() => {
-    checkUser()
-  }, [])
+    checkUser();
+  }, []);
 
   const checkUser = async () => {
     try {
-      const currentUser = await getCurrentUser()
-      const attributes = await fetchUserAttributes()
+      const currentUser = await getCurrentUser();
+      const attributes = await fetchUserAttributes();
 
       setUser({
         username: attributes.preferred_username || currentUser.username,
         email: attributes.email,
         profileImage: attributes.picture,
-      })
+      });
     } catch {
-      setUser(null)
+      setUser(null);
     }
-  }
+  };
 
   const handleLogout = async () => {
     try {
-      await signOut()
-      setUser(null)
-      window.location.href = "/login"
+      await signOut();
+      setUser(null);
+      window.location.href = "/login";
     } catch (error) {
-      console.error("Error signing out:", error)
+      console.error("Error signing out:", error);
     }
-  }
+  };
 
   return (
     <nav className="sticky top-0 z-50 my-4 w-full px-4 py-0">
@@ -240,10 +240,10 @@ export default function AdminNavbar() {
                       alt="Profile"
                       className="h-full w-full object-cover"
                     />
+                  ) : user.username ? (
+                    user.username.charAt(0).toUpperCase()
                   ) : (
-                    user.username
-                      ? user.username.charAt(0).toUpperCase()
-                      : "A"
+                    "A"
                   )}
                 </a>
               </>
@@ -284,16 +284,12 @@ export default function AdminNavbar() {
               hover:bg-[#B01414]/10
             "
           >
-            <img
-              src={icon}
-              alt=""
-              className="h-5 w-5"
-            />
+            <img src={icon} alt="" className="h-5 w-5" />
 
             <span>{label}</span>
           </a>
         ))}
       </div>
     </nav>
-  )
+  );
 }

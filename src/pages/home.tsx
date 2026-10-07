@@ -1,13 +1,13 @@
-import Navbar from "../components/Navbar"
-import Content from "../components/home/Content"
-import Footer from "../components/Footer"
+import Navbar from "../components/Navbar";
+import Content from "../components/home/Content";
+import Footer from "../components/Footer";
 
 export default function Home() {
-	return (
-		<>
-			<Navbar/>
-			<Content/>
-			<Footer/>
-		</>
-	)
+  return (
+    <>
+      <Navbar />
+      <Content />
+      <Footer />
+    </>
+  );
 }

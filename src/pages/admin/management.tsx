@@ -1,15 +1,32 @@
-import { useState } from "react"
-import Navbar from "../../components/admin/Navbar"
-import Reveal from "../../components/effects/Reveal"
-import UserManagement from "./UserManagement"
-import ChallengeManagement from "./ChallengeManagement"
-import StoryManagement from "./StoryManagement"
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import Navbar from "../../components/admin/Navbar";
+import Reveal from "../../components/effects/Reveal";
+import UserManagement from "./UserManagement";
+import ChallengeManagement from "./ChallengeManagement";
+import StoryManagement from "./StoryManagement";
 
-type ManagementTab = "users" | "challenges" | "story"
+type ManagementTab = "users" | "challenges" | "story";
 
 export default function Management() {
-  const [activeTab, setActiveTab] =
-    useState<ManagementTab>("users")
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<ManagementTab>(
+    initialTab === "story" ||
+      initialTab === "challenges" ||
+      initialTab === "users"
+      ? initialTab
+      : "users",
+  );
+
+  const changeTab = (tab: ManagementTab) => {
+    setActiveTab(tab);
+    if (tab === "users") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab });
+    }
+  };
 
   return (
     <>
@@ -18,7 +35,6 @@ export default function Management() {
       <Reveal>
         <main className="min-h-screen px-6 py-10 sm:px-10 lg:px-14">
           <div className="mx-auto max-w-7xl">
-
             {/* =================================
                 Page Header
             ================================= */}
@@ -42,10 +58,9 @@ export default function Management() {
             ================================= */}
 
             <div className="mb-8 flex flex-wrap gap-2 border-b border-[#ddd8d5]">
-
               <button
                 type="button"
-                onClick={() => setActiveTab("users")}
+                onClick={() => changeTab("users")}
                 className={`px-5 py-3 font-medium transition-colors ${
                   activeTab === "users"
                     ? "border-b-2 border-[#b01414] text-[#b01414]"
@@ -57,7 +72,7 @@ export default function Management() {
 
               <button
                 type="button"
-                onClick={() => setActiveTab("challenges")}
+                onClick={() => changeTab("challenges")}
                 className={`px-5 py-3 font-medium transition-colors ${
                   activeTab === "challenges"
                     ? "border-b-2 border-[#b01414] text-[#b01414]"
@@ -69,7 +84,7 @@ export default function Management() {
 
               <button
                 type="button"
-                onClick={() => setActiveTab("story")}
+                onClick={() => changeTab("story")}
                 className={`px-5 py-3 font-medium transition-colors ${
                   activeTab === "story"
                     ? "border-b-2 border-[#b01414] text-[#b01414]"
@@ -78,32 +93,24 @@ export default function Management() {
               >
                 จัดการ Story
               </button>
-
             </div>
 
             {/* =================================
                 User Management
             ================================= */}
 
-            {activeTab === "users" && (
-              <UserManagement />
-            )}
+            {activeTab === "users" && <UserManagement />}
 
             {/* =================================
                 Challenge Management
             ================================= */}
 
-            {activeTab === "challenges" && (
-              <ChallengeManagement />
-            )}
+            {activeTab === "challenges" && <ChallengeManagement />}
 
-            {activeTab === "story" && (
-              <StoryManagement />
-            )}
-
+            {activeTab === "story" && <StoryManagement />}
           </div>
         </main>
       </Reveal>
     </>
-  )
+  );
 }

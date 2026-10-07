@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
-import { createPortal } from "react-dom"
-import type { FormEvent } from "react"
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import type { FormEvent } from "react";
 
 import {
   createChallenge,
@@ -12,53 +12,65 @@ import {
   uploadChallengeThumbnail,
   uploadChallengeFile,
   updateChallenge as updateChallengeApi,
-} from "../../services/challengeApi"
+} from "../../services/challengeApi";
 
-import type { Challenge as BaseApiChallenge, Fish } from "../../types/challenge"
-import { getAuthHeaders } from "../../utils/auth"
+import type {
+  Challenge as BaseApiChallenge,
+  Fish,
+} from "../../types/challenge";
+import { getAuthHeaders } from "../../utils/auth";
+import FishRewardSelector from "../../components/admin/FishRewardSelector";
 
-type FishRarity = "common" | "rare" | "ultimate"
+type FishRarity = "common" | "rare" | "ultimate";
 
-type FishReward = { fishId?: string; name: string; imageUrl: string; amount: number; rarity: FishRarity; description?: string; xp?: number }
-type ApiChallenge = BaseApiChallenge & { fishReward?: FishReward }
+type FishReward = {
+  fishId?: string;
+  name: string;
+  imageUrl: string;
+  amount: number;
+  rarity: FishRarity;
+  description?: string;
+  xp?: number;
+};
+type ApiChallenge = BaseApiChallenge & { fishReward?: FishReward };
 
 type DockerContainer = {
-  id: number
-  name: string
-  image: string
-  port: string
-  accessType: "none" | "web" | "terminal"
-  buttonLabel: string
-}
+  id: number;
+  name: string;
+  image: string;
+  port: string;
+  accessType: "none" | "web" | "terminal";
+  buttonLabel: string;
+};
 
 type ChallengeForm = {
-  title: string
-  challengeId: string
-  category: string
-  difficulty: string
-  description: string
-  thumbnailUrl: string
-  objective: string
-  hint: string
-  flag: string
-  hasContainer: boolean
-  challengeFiles: { fileName: string; fileUrl: string; contentType?: string }[]
-  websites: { label: string; url: string }[]
-  status: "draft" | "published" | "hidden"
-  fishMode: "new" | "existing"
-  selectedFishId: string
-  fishName: string
-  fishImageUrl: string
-  fishAmount: number | ""
-  fishRarity: FishRarity
-  fishDescription: string
-  fishXp: number | ""
-  containers: DockerContainer[]
-}
+  title: string;
+  challengeId: string;
+  category: string;
+  difficulty: string;
+  description: string;
+  thumbnailUrl: string;
+  objective: string;
+  hint: string;
+  flag: string;
+  hasContainer: boolean;
+  challengeFiles: { fileName: string; fileUrl: string; contentType?: string }[];
+  websites: { label: string; url: string }[];
+  status: "draft" | "published" | "hidden";
+  fishMode: "new" | "existing";
+  selectedFishId: string;
+  fishName: string;
+  fishImageUrl: string;
+  fishAmount: number | "";
+  fishRarity: FishRarity;
+  fishDescription: string;
+  fishXp: number | "";
+  containers: DockerContainer[];
+};
 
 type Challenge = Omit<ApiChallenge, "containers"> & {
-  containers: DockerContainer[]
-}
+  containers: DockerContainer[];
+};
 
 const categories = [
   "Web Security",
@@ -68,13 +80,9 @@ const categories = [
   "Pwn",
   "OSINT",
   "Miscellaneous",
-]
+];
 
-const difficulties = [
-  "Easy",
-  "Medium",
-  "Hard",
-]
+const difficulties = ["Easy", "Medium", "Hard"];
 
 function createEmptyContainer(): DockerContainer {
   return {
@@ -84,7 +92,7 @@ function createEmptyContainer(): DockerContainer {
     port: "80",
     accessType: "none",
     buttonLabel: "",
-  }
+  };
 }
 
 function createEmptyChallenge(): ChallengeForm {
@@ -111,12 +119,12 @@ function createEmptyChallenge(): ChallengeForm {
     fishDescription: "",
     fishXp: "",
     containers: [createEmptyContainer()],
-  }
+  };
 }
 
 function createChallengeId(title: string) {
   if (!title.trim()) {
-    return ""
+    return "";
   }
 
   const slug = title
@@ -125,206 +133,216 @@ function createChallengeId(title: string) {
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
+    .replace(/^-|-$/g, "");
 
-  return slug || `challenge-${Date.now()}`
+  return slug || `challenge-${Date.now()}`;
 }
 
 export default function ChallengeManagement() {
-  const [challenges, setChallenges] =
-    useState<Challenge[]>([])
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
 
-  const [fishes, setFishes] = useState<Fish[]>([])
+  const [fishes, setFishes] = useState<Fish[]>([]);
 
-  const [isLoading, setIsLoading] =
-    useState(true)
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [challenge, setChallenge] =
-    useState<ChallengeForm>(createEmptyChallenge())
+  const [challenge, setChallenge] = useState<ChallengeForm>(
+    createEmptyChallenge(),
+  );
 
-  const [editingId, setEditingId] =
-    useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [showForm, setShowForm] =
-    useState(false)
+  const [showForm, setShowForm] = useState(false);
 
-  const [searchQuery, setSearchQuery] =
-    useState("")
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [isSaving, setIsSaving] =
-    useState(false)
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [isUploadingFish, setIsUploadingFish] =
-    useState(false)
+  const [isUploadingFish, setIsUploadingFish] = useState(false);
 
-  const [isUploadingThumbnail, setIsUploadingThumbnail] =
-    useState(false)
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
-  const [isUploadingChallengeFile, setIsUploadingChallengeFile] = useState(false)
+  const [isUploadingChallengeFile, setIsUploadingChallengeFile] =
+    useState(false);
 
-  const [message, setMessage] =
-    useState("")
+  const [message, setMessage] = useState("");
 
-  const [deletingChallenge, setDeletingChallenge] =
-    useState<Challenge | null>(null)
+  const [deletingChallenge, setDeletingChallenge] = useState<Challenge | null>(
+    null,
+  );
 
-  const [isDeleting, setIsDeleting] =
-    useState(false)
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>([])
-  const [showImportModal, setShowImportModal] = useState(false)
-  const [importJson, setImportJson] = useState("")
-  const [isImporting, setIsImporting] = useState(false)
-  const [isBulkWorking, setIsBulkWorking] = useState(false)
+  const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>(
+    [],
+  );
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importJson, setImportJson] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [isBulkWorking, setIsBulkWorking] = useState(false);
 
   const toggleChallengeSelection = (challengeId: string) => {
     setSelectedChallengeIds((current) =>
       current.includes(challengeId)
         ? current.filter((id) => id !== challengeId)
-        : [...current, challengeId]
-    )
-  }
+        : [...current, challengeId],
+    );
+  };
 
   const handleImportFile = async (file: File | undefined) => {
-    if (!file) return
+    if (!file) return;
     try {
-      setImportJson(await file.text())
-      setMessage("")
+      setImportJson(await file.text());
+      setMessage("");
     } catch {
-      setMessage("ไม่สามารถอ่านไฟล์ JSON ได้")
+      setMessage("ไม่สามารถอ่านไฟล์ JSON ได้");
     }
-  }
+  };
 
   const handleImportChallenges = async () => {
-    setMessage("")
-    let parsed: unknown
+    setMessage("");
+    let parsed: unknown;
     try {
-      parsed = JSON.parse(importJson)
+      parsed = JSON.parse(importJson);
     } catch {
-      setMessage("JSON ไม่ถูกต้อง กรุณาตรวจสอบ syntax")
-      return
+      setMessage("JSON ไม่ถูกต้อง กรุณาตรวจสอบ syntax");
+      return;
     }
     const items = Array.isArray(parsed)
       ? parsed
-      : (parsed && typeof parsed === "object" && Array.isArray((parsed as { challenges?: unknown[] }).challenges))
+      : parsed &&
+          typeof parsed === "object" &&
+          Array.isArray((parsed as { challenges?: unknown[] }).challenges)
         ? (parsed as { challenges: unknown[] }).challenges
-        : null
+        : null;
     if (!items || items.length === 0) {
-      setMessage("JSON ต้องเป็น Array ของ Challenge หรือ { challenges: [...] }")
-      return
+      setMessage(
+        "JSON ต้องเป็น Array ของ Challenge หรือ { challenges: [...] }",
+      );
+      return;
     }
     try {
-      setIsImporting(true)
-      const result = await importChallenges(items)
-      setShowImportModal(false)
-      setImportJson("")
-      await loadChallenges()
-      setMessage(`Import สำเร็จ ${result.created} ข้อ · ข้าม ${result.skipped} ข้อ · ผิดพลาด ${result.failed} ข้อ (ทุกข้อใหม่เป็น Draft)`)
+      setIsImporting(true);
+      const result = await importChallenges(items);
+      setShowImportModal(false);
+      setImportJson("");
+      await loadChallenges();
+      setMessage(
+        `Import สำเร็จ ${result.created} ข้อ · ข้าม ${result.skipped} ข้อ · ผิดพลาด ${result.failed} ข้อ (ทุกข้อใหม่เป็น Draft)`,
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Import Challenge ไม่สำเร็จ")
+      setMessage(
+        error instanceof Error ? error.message : "Import Challenge ไม่สำเร็จ",
+      );
     } finally {
-      setIsImporting(false)
+      setIsImporting(false);
     }
-  }
+  };
 
   const handleBulkStatus = async (status: "draft" | "published" | "hidden") => {
-    if (selectedChallengeIds.length === 0) return
+    if (selectedChallengeIds.length === 0) return;
     try {
-      setIsBulkWorking(true)
-      await bulkChallengeAction(selectedChallengeIds, "set_status", status)
-      const count = selectedChallengeIds.length
-      setSelectedChallengeIds([])
-      await loadChallenges()
-      setMessage(`เปลี่ยนสถานะ ${count} Challenge เป็น ${status} สำเร็จ`)
+      setIsBulkWorking(true);
+      await bulkChallengeAction(selectedChallengeIds, "set_status", status);
+      const count = selectedChallengeIds.length;
+      setSelectedChallengeIds([]);
+      await loadChallenges();
+      setMessage(`เปลี่ยนสถานะ ${count} Challenge เป็น ${status} สำเร็จ`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "เปลี่ยนสถานะไม่สำเร็จ")
+      setMessage(
+        error instanceof Error ? error.message : "เปลี่ยนสถานะไม่สำเร็จ",
+      );
     } finally {
-      setIsBulkWorking(false)
+      setIsBulkWorking(false);
     }
-  }
+  };
 
   const handleBulkDelete = async () => {
-    if (selectedChallengeIds.length === 0) return
-    if (!window.confirm(`ยืนยันลบ ${selectedChallengeIds.length} Challenge ที่เลือก? การกระทำนี้ย้อนกลับไม่ได้`)) return
+    if (selectedChallengeIds.length === 0) return;
+    if (
+      !window.confirm(
+        `ยืนยันลบ ${selectedChallengeIds.length} Challenge ที่เลือก? การกระทำนี้ย้อนกลับไม่ได้`,
+      )
+    )
+      return;
     try {
-      setIsBulkWorking(true)
-      await bulkChallengeAction(selectedChallengeIds, "delete")
-      const count = selectedChallengeIds.length
-      setSelectedChallengeIds([])
-      await loadChallenges()
-      setMessage(`ลบ ${count} Challenge สำเร็จ`)
+      setIsBulkWorking(true);
+      await bulkChallengeAction(selectedChallengeIds, "delete");
+      const count = selectedChallengeIds.length;
+      setSelectedChallengeIds([]);
+      await loadChallenges();
+      setMessage(`ลบ ${count} Challenge สำเร็จ`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "ลบ Challenge ไม่สำเร็จ")
+      setMessage(
+        error instanceof Error ? error.message : "ลบ Challenge ไม่สำเร็จ",
+      );
     } finally {
-      setIsBulkWorking(false)
+      setIsBulkWorking(false);
     }
-  }
+  };
 
-  const toUiChallenge = (
-    item: ApiChallenge
-  ): Challenge => ({
+  const toUiChallenge = (item: ApiChallenge): Challenge => ({
     ...item,
-    containers: (item.containers ?? []).map(
-      (container, index) => ({
-        ...container,
-        accessType: container.accessType ?? "none",
-        buttonLabel: container.buttonLabel ?? "",
-        id: Date.now() + index + Math.random(),
-      })
-    ),
-  })
+    containers: (item.containers ?? []).map((container, index) => ({
+      ...container,
+      accessType: container.accessType ?? "none",
+      buttonLabel: container.buttonLabel ?? "",
+      id: Date.now() + index + Math.random(),
+    })),
+  });
 
   const loadChallenges = async () => {
     try {
-      setIsLoading(true)
-      const data = await getAdminChallenges()
-      setChallenges(data.map(toUiChallenge))
+      setIsLoading(true);
+      const data = await getAdminChallenges();
+      setChallenges(data.map(toUiChallenge));
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "ไม่สามารถโหลดโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
-      )
+          : "ไม่สามารถโหลดโจทย์ได้ กรุณาลองใหม่อีกครั้ง",
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const loadFishes = async () => {
     try {
-      const data = await getFishes()
-      setFishes(data)
+      const data = await getFishes();
+      setFishes(data);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "ไม่สามารถโหลดรายการปลาได้")
+      setMessage(
+        error instanceof Error ? error.message : "ไม่สามารถโหลดรายการปลาได้",
+      );
     }
-  }
+  };
 
   useEffect(() => {
-    void loadChallenges()
-    void loadFishes()
-  }, [])
+    void loadChallenges();
+    void loadFishes();
+  }, []);
 
   useEffect(() => {
-    if (!showImportModal) return
+    if (!showImportModal) return;
 
-    const previousOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-    document.body.style.overflow = "hidden"
-    document.documentElement.style.overflow = "hidden"
+    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-    }
-  }, [showImportModal])
+      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [showImportModal]);
 
-  const isEditing = editingId !== null
+  const isEditing = editingId !== null;
 
   const filteredChallenges = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
+    const query = searchQuery.trim().toLowerCase();
 
     if (!query) {
-      return challenges
+      return challenges;
     }
 
     return challenges.filter((item) => {
@@ -333,13 +351,13 @@ export default function ChallengeManagement() {
         item.challengeId.toLowerCase().includes(query) ||
         item.category.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query)
-      )
-    })
-  }, [challenges, searchQuery])
+      );
+    });
+  }, [challenges, searchQuery]);
 
   const updateChallengeField = (
     field: keyof Omit<ChallengeForm, "containers">,
-    value: string
+    value: string,
   ) => {
     setChallenge((prev) => ({
       ...prev,
@@ -349,13 +367,13 @@ export default function ChallengeManagement() {
             challengeId: createChallengeId(value),
           }
         : {}),
-    }))
-  }
+    }));
+  };
 
   const updateContainer = (
     id: number,
     field: keyof DockerContainer,
-    value: string
+    value: string,
   ) => {
     setChallenge((prev) => ({
       ...prev,
@@ -365,54 +383,47 @@ export default function ChallengeManagement() {
               ...container,
               [field]: value,
             }
-          : container
+          : container,
       ),
-    }))
-  }
+    }));
+  };
 
   const addContainer = () => {
     setChallenge((prev) => ({
       ...prev,
-      containers: [
-        ...prev.containers,
-        createEmptyContainer(),
-      ],
-    }))
-  }
+      containers: [...prev.containers, createEmptyContainer()],
+    }));
+  };
 
   const removeContainer = (id: number) => {
     setChallenge((prev) => {
       if (prev.containers.length <= 1) {
-        return prev
+        return prev;
       }
 
       return {
         ...prev,
-        containers: prev.containers.filter(
-          (container) => container.id !== id
-        ),
-      }
-    })
-  }
+        containers: prev.containers.filter((container) => container.id !== id),
+      };
+    });
+  };
 
   const handleCreateNew = () => {
-    setEditingId(null)
-    setChallenge(createEmptyChallenge())
-    setMessage("")
-    setShowForm(true)
+    setEditingId(null);
+    setChallenge(createEmptyChallenge());
+    setMessage("");
+    setShowForm(true);
 
     setTimeout(() => {
-      document
-        .getElementById("challenge-form")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        })
-    }, 50)
-  }
+      document.getElementById("challenge-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
 
   const handleEdit = (selectedChallenge: Challenge) => {
-    setEditingId(selectedChallenge.challengeId)
+    setEditingId(selectedChallenge.challengeId);
     setChallenge({
       title: selectedChallenge.title,
       challengeId: selectedChallenge.challengeId,
@@ -423,9 +434,19 @@ export default function ChallengeManagement() {
       objective: selectedChallenge.objective ?? "",
       hint: selectedChallenge.hint ?? "",
       flag: "",
-      hasContainer: selectedChallenge.hasContainer ?? selectedChallenge.containers.length > 0,
-      challengeFiles: selectedChallenge.challengeFiles ?? (selectedChallenge.challengeFile ? [selectedChallenge.challengeFile] : []),
-      websites: selectedChallenge.websites ?? (selectedChallenge.websiteUrl ? [{ label: "Website", url: selectedChallenge.websiteUrl }] : []),
+      hasContainer:
+        selectedChallenge.hasContainer ??
+        selectedChallenge.containers.length > 0,
+      challengeFiles:
+        selectedChallenge.challengeFiles ??
+        (selectedChallenge.challengeFile
+          ? [selectedChallenge.challengeFile]
+          : []),
+      websites:
+        selectedChallenge.websites ??
+        (selectedChallenge.websiteUrl
+          ? [{ label: "Website", url: selectedChallenge.websiteUrl }]
+          : []),
       status: selectedChallenge.status ?? "published",
       fishMode: selectedChallenge.fishReward?.fishId ? "existing" : "new",
       selectedFishId: selectedChallenge.fishReward?.fishId ?? "",
@@ -435,184 +456,212 @@ export default function ChallengeManagement() {
       fishRarity: selectedChallenge.fishReward?.rarity ?? "common",
       fishDescription: selectedChallenge.fishReward?.description ?? "",
       fishXp: selectedChallenge.fishReward?.xp ?? 0,
-      containers: selectedChallenge.containers.map(
-        (container) => ({
-          ...container,
-        })
-      ),
-    })
-    setMessage("")
-    setShowForm(true)
+      containers: selectedChallenge.containers.map((container) => ({
+        ...container,
+      })),
+    });
+    setMessage("");
+    setShowForm(true);
 
     setTimeout(() => {
-      document
-        .getElementById("challenge-form")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        })
-    }, 50)
-  }
+      document.getElementById("challenge-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
 
-  const handleDeleteChallenge = (
-    selectedChallenge: Challenge
-  ) => {
-    setMessage("")
-    setDeletingChallenge(selectedChallenge)
-  }
+  const handleDeleteChallenge = (selectedChallenge: Challenge) => {
+    setMessage("");
+    setDeletingChallenge(selectedChallenge);
+  };
 
   const confirmDeleteChallenge = async () => {
     if (!deletingChallenge) {
-      return
+      return;
     }
 
-    const challengeToDelete = deletingChallenge
+    const challengeToDelete = deletingChallenge;
 
-    setIsDeleting(true)
-    setMessage("")
+    setIsDeleting(true);
+    setMessage("");
 
     try {
-      await deleteChallenge(
-        challengeToDelete.challengeId
-      )
+      await deleteChallenge(challengeToDelete.challengeId);
 
-      if (
-        editingId ===
-        challengeToDelete.challengeId
-      ) {
-        setEditingId(null)
-        setChallenge(createEmptyChallenge())
-        setShowForm(false)
+      if (editingId === challengeToDelete.challengeId) {
+        setEditingId(null);
+        setChallenge(createEmptyChallenge());
+        setShowForm(false);
       }
 
-      setDeletingChallenge(null)
-      await loadChallenges()
-      await loadFishes()
+      setDeletingChallenge(null);
+      await loadChallenges();
+      await loadFishes();
 
-      setMessage(
-        `ลบโจทย์ "${challengeToDelete.title}" สำเร็จ`
-      )
+      setMessage(`ลบโจทย์ "${challengeToDelete.title}" สำเร็จ`);
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "ไม่สามารถลบโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
-      )
+          : "ไม่สามารถลบโจทย์ได้ กรุณาลองใหม่อีกครั้ง",
+      );
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    setEditingId(null)
-    setChallenge(createEmptyChallenge())
-    setMessage("")
-    setShowForm(false)
-  }
+    setEditingId(null);
+    setChallenge(createEmptyChallenge());
+    setMessage("");
+    setShowForm(false);
+  };
 
   const handleThumbnailUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น")
-      return
+      setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+      return;
     }
     try {
-      setIsUploadingThumbnail(true)
-      setMessage("")
-      const imageUrl = await uploadChallengeThumbnail(file)
-      setChallenge((prev) => ({ ...prev, thumbnailUrl: imageUrl }))
+      setIsUploadingThumbnail(true);
+      setMessage("");
+      const imageUrl = await uploadChallengeThumbnail(file);
+      setChallenge((prev) => ({ ...prev, thumbnailUrl: imageUrl }));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "อัปโหลด Thumbnail ไม่สำเร็จ")
+      setMessage(
+        error instanceof Error ? error.message : "อัปโหลด Thumbnail ไม่สำเร็จ",
+      );
     } finally {
-      setIsUploadingThumbnail(false)
+      setIsUploadingThumbnail(false);
     }
-  }
+  };
 
   const handleFishImageUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) { setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น"); return }
+    if (!file.type.startsWith("image/")) {
+      setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+      return;
+    }
     try {
-      setIsUploadingFish(true); setMessage("")
-      const configResponse = await fetch("/config.json")
-      if (!configResponse.ok) throw new Error("โหลด config.json ไม่สำเร็จ")
-      const config = await configResponse.json()
-      if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json")
-      const presignResponse = await fetch(`${config.ALB_URL}/?action=upload_fish_image`, {
-        method: "POST", headers: await getAuthHeaders(),
-        body: JSON.stringify({ fileName: file.name, contentType: file.type }),
-      })
-      const presignData = await presignResponse.json()
-      if (!presignResponse.ok || presignData.status !== "SUCCESS") throw new Error(presignData.error || "ไม่สามารถเตรียมการอัปโหลดรูปปลาได้")
-      const uploadResponse = await fetch(presignData.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
-      if (!uploadResponse.ok) throw new Error("ไม่สามารถอัปโหลดรูปปลาไปยัง S3 ได้")
-      setChallenge((prev) => ({ ...prev, fishImageUrl: presignData.imageUrl }))
-    } catch (error) { setMessage(error instanceof Error ? error.message : "อัปโหลดรูปปลาไม่สำเร็จ") }
-    finally { setIsUploadingFish(false) }
-  }
+      setIsUploadingFish(true);
+      setMessage("");
+      const configResponse = await fetch("/config.json");
+      if (!configResponse.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
+      const config = await configResponse.json();
+      if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
+      const presignResponse = await fetch(
+        `${config.ALB_URL}/?action=upload_fish_image`,
+        {
+          method: "POST",
+          headers: await getAuthHeaders(),
+          body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+        },
+      );
+      const presignData = await presignResponse.json();
+      if (!presignResponse.ok || presignData.status !== "SUCCESS")
+        throw new Error(
+          presignData.error || "ไม่สามารถเตรียมการอัปโหลดรูปปลาได้",
+        );
+      const uploadResponse = await fetch(presignData.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!uploadResponse.ok)
+        throw new Error("ไม่สามารถอัปโหลดรูปปลาไปยัง S3 ได้");
+      setChallenge((prev) => ({ ...prev, fishImageUrl: presignData.imageUrl }));
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "อัปโหลดรูปปลาไม่สำเร็จ",
+      );
+    } finally {
+      setIsUploadingFish(false);
+    }
+  };
 
   const handleChallengeFileUpload = async (file: File) => {
     try {
-      setIsUploadingChallengeFile(true)
-      setMessage("")
-      const uploaded = await uploadChallengeFile(file)
-      setChallenge((prev) => ({ ...prev, challengeFiles: [...prev.challengeFiles, uploaded] }))
+      setIsUploadingChallengeFile(true);
+      setMessage("");
+      const uploaded = await uploadChallengeFile(file);
+      setChallenge((prev) => ({
+        ...prev,
+        challengeFiles: [...prev.challengeFiles, uploaded],
+      }));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "อัปโหลดไฟล์ Challenge ไม่สำเร็จ")
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "อัปโหลดไฟล์ Challenge ไม่สำเร็จ",
+      );
     } finally {
-      setIsUploadingChallengeFile(false)
+      setIsUploadingChallengeFile(false);
     }
-  }
+  };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault()
-    setMessage("")
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage("");
 
     if (!challenge.title.trim()) {
-      setMessage("กรุณากรอกชื่อโจทย์")
-      return
+      setMessage("กรุณากรอกชื่อโจทย์");
+      return;
     }
 
     if (!challenge.challengeId.trim()) {
-      setMessage("ไม่สามารถสร้าง Challenge ID ได้")
-      return
+      setMessage("ไม่สามารถสร้าง Challenge ID ได้");
+      return;
     }
 
     if (!challenge.description.trim()) {
-      setMessage("กรุณากรอกรายละเอียดโจทย์")
-      return
+      setMessage("กรุณากรอกรายละเอียดโจทย์");
+      return;
     }
 
     if (!isEditing && !challenge.flag.trim()) {
-      setMessage("กรุณากรอก Flag ของโจทย์")
-      return
+      setMessage("กรุณากรอก Flag ของโจทย์");
+      return;
     }
 
     if (challenge.fishMode === "existing" && !challenge.selectedFishId) {
-      setMessage("กรุณาเลือกปลาที่มีอยู่ในระบบ"); return
+      setMessage("กรุณาเลือกปลาที่มีอยู่ในระบบ");
+      return;
     }
-    if (challenge.fishMode === "new" && (!challenge.fishName.trim() || !challenge.fishImageUrl)) {
-      setMessage("กรุณากรอกชื่อปลาและอัปโหลดรูปปลาให้ครบ"); return
+    if (
+      challenge.fishMode === "new" &&
+      (!challenge.fishName.trim() || !challenge.fishImageUrl)
+    ) {
+      setMessage("กรุณากรอกชื่อปลาและอัปโหลดรูปปลาให้ครบ");
+      return;
     }
-    if (Number(challenge.fishAmount) < 1) { setMessage("จำนวนปลาต้องอย่างน้อย 1 ตัว"); return }
-    if (challenge.fishMode === "new" && !challenge.fishDescription.trim()) { setMessage("กรุณากรอกคำอธิบายปลา"); return }
-    if (challenge.fishMode === "new" && Number(challenge.fishXp) < 1) { setMessage("XP ของปลาต้องอย่างน้อย 1"); return }
+    if (Number(challenge.fishAmount) < 1) {
+      setMessage("จำนวนปลาต้องอย่างน้อย 1 ตัว");
+      return;
+    }
+    if (challenge.fishMode === "new" && !challenge.fishDescription.trim()) {
+      setMessage("กรุณากรอกคำอธิบายปลา");
+      return;
+    }
+    if (challenge.fishMode === "new" && Number(challenge.fishXp) < 1) {
+      setMessage("XP ของปลาต้องอย่างน้อย 1");
+      return;
+    }
 
     const invalidContainer =
-      challenge.hasContainer && challenge.containers.some(
+      challenge.hasContainer &&
+      challenge.containers.some(
         (container) =>
           !container.name.trim() ||
           !container.image.trim() ||
-          !container.port.trim()
-      )
+          !container.port.trim(),
+      );
 
     if (invalidContainer) {
-      setMessage(
-        "กรุณากรอกข้อมูล Docker Container ให้ครบถ้วน"
-      )
-      return
+      setMessage("กรุณากรอกข้อมูล Docker Container ให้ครบถ้วน");
+      return;
     }
 
-    setIsSaving(true)
+    setIsSaving(true);
 
     const payload: ApiChallenge = {
       title: challenge.title.trim(),
@@ -627,1083 +676,1174 @@ export default function ChallengeManagement() {
       hasContainer: challenge.hasContainer,
       challengeFiles: challenge.challengeFiles,
       websites: challenge.websites
-        .map((site) => ({ label: site.label.trim() || "Website", url: site.url.trim() }))
+        .map((site) => ({
+          label: site.label.trim() || "Website",
+          url: site.url.trim(),
+        }))
         .filter((site) => site.url),
       status: challenge.status,
-      fishReward: challenge.fishMode === "existing" ? {
-        fishId: challenge.selectedFishId,
-        name: "", imageUrl: "", rarity: "common",
-        amount: Math.max(1, Number(challenge.fishAmount) || 1),
-      } : {
-        name: challenge.fishName.trim(), imageUrl: challenge.fishImageUrl,
-        amount: Math.max(1, Number(challenge.fishAmount) || 1), rarity: challenge.fishRarity,
-        description: challenge.fishDescription.trim(), xp: Math.max(1, Number(challenge.fishXp) || 1),
-      },
-      containers: challenge.hasContainer ? challenge.containers.map(
-        ({ name, image, port, accessType, buttonLabel }) => ({
-          name: name.trim(),
-          image: image.trim(),
-          port: port.trim(),
-          accessType,
-          buttonLabel: buttonLabel.trim(),
-        })
-      ) : [],
-    }
+      fishReward:
+        challenge.fishMode === "existing"
+          ? {
+              fishId: challenge.selectedFishId,
+              name: "",
+              imageUrl: "",
+              rarity: "common",
+              amount: Math.max(1, Number(challenge.fishAmount) || 1),
+            }
+          : {
+              name: challenge.fishName.trim(),
+              imageUrl: challenge.fishImageUrl,
+              amount: Math.max(1, Number(challenge.fishAmount) || 1),
+              rarity: challenge.fishRarity,
+              description: challenge.fishDescription.trim(),
+              xp: Math.max(1, Number(challenge.fishXp) || 1),
+            },
+      containers: challenge.hasContainer
+        ? challenge.containers.map(
+            ({ name, image, port, accessType, buttonLabel }) => ({
+              name: name.trim(),
+              image: image.trim(),
+              port: port.trim(),
+              accessType,
+              buttonLabel: buttonLabel.trim(),
+            }),
+          )
+        : [],
+    };
 
     try {
       if (isEditing) {
-        await updateChallengeApi(payload)
-        setMessage("แก้ไขโจทย์สำเร็จ")
+        await updateChallengeApi(payload);
+        setMessage("แก้ไขโจทย์สำเร็จ");
       } else {
-        await createChallenge(payload)
-        setMessage("สร้างโจทย์สำเร็จ")
+        await createChallenge(payload);
+        setMessage("สร้างโจทย์สำเร็จ");
       }
 
-      setEditingId(null)
-      setChallenge(createEmptyChallenge())
-      setShowForm(false)
+      setEditingId(null);
+      setChallenge(createEmptyChallenge());
+      setShowForm(false);
 
-      await loadChallenges()
-      await loadFishes()
+      await loadChallenges();
+      await loadFishes();
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
           : isEditing
             ? "ไม่สามารถแก้ไขโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
-            : "ไม่สามารถสร้างโจทย์ได้ กรุณาลองใหม่อีกครั้ง"
-      )
+            : "ไม่สามารถสร้างโจทย์ได้ กรุณาลองใหม่อีกครั้ง",
+      );
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   return (
     <>
-                    <div className="space-y-6">
-
-                {/* Add / Edit Form */}
-
-                {showForm && (
-                  <section
-                    id="challenge-form"
-                    className="scroll-mt-6 rounded-2xl border border-[#e5e1df] bg-white p-6 sm:p-8"
-                  >
-
-                    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-
-                      <div>
-
-                        <div className="flex items-center gap-3">
-
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b01414]/10">
-                            ⚙
-                          </div>
-
-                          <div>
-
-                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
-                              Challenge Management
-                            </p>
-
-                            <h2 className="mt-1 text-2xl font-bold text-[#403a38]">
-                              {isEditing
-                                ? "แก้ไขโจทย์"
-                                : "เพิ่มโจทย์ใหม่"}
-                            </h2>
-
-                          </div>
-
-                        </div>
-
-                        <p className="mt-3 text-sm text-[#77716e]">
-                          {isEditing
-                            ? `กำลังแก้ไข Challenge: ${challenge.title}`
-                            : "สร้าง Challenge ใหม่สำหรับผู้เล่น"}
-                        </p>
-
-                      </div>
-
-                      {isEditing && (
-                        <span className="inline-flex w-fit rounded-full bg-[#b01414]/10 px-3 py-1.5 text-xs font-semibold text-[#b01414]">
-                          กำลังแก้ไข
-                        </span>
-                      )}
-
-                    </div>
-
-                    <form
-                      onSubmit={
-                        handleSubmit
-                      }
-                    >
-
-                      <div className="space-y-6">
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            ชื่อโจทย์
-                            <span className="ml-1 text-[#b01414]">
-                              *
-                            </span>
-                          </label>
-
-                          <input
-                            type="text"
-                            value={
-                              challenge.title
-                            }
-                            onChange={(
-                              event
-                            ) =>
-                              updateChallengeField(
-                                "title",
-                                event.target
-                                  .value
-                              )
-                            }
-                            placeholder="เช่น Phishing in the Dark"
-                            className="
-                              h-12 w-full
-                              rounded-xl
-                              border
-                              border-[#d8d2cf]
-                              bg-white px-4
-                              text-sm
-                              text-[#403a38]
-                              outline-none
-                              placeholder:text-[#aaa4a1]
-                              focus:border-[#b01414]
-                              focus:ring-2
-                              focus:ring-[#b01414]/10
-                            "
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            หมวดหมู่
-                          </label>
-
-                          <select
-                            value={
-                              challenge.category
-                            }
-                            onChange={(
-                              event
-                            ) =>
-                              updateChallengeField(
-                                "category",
-                                event.target
-                                  .value
-                              )
-                            }
-                            className="
-                              h-12 w-full
-                              rounded-xl
-                              border
-                              border-[#d8d2cf]
-                              bg-white px-4
-                              text-sm
-                              text-[#403a38]
-                              outline-none
-                              focus:border-[#b01414]
-                              focus:ring-2
-                              focus:ring-[#b01414]/10
-                            "
-                          >
-                            {categories.map(
-                              (
-                                category
-                              ) => (
-                                <option
-                                  key={
-                                    category
-                                  }
-                                  value={
-                                    category
-                                  }
-                                >
-                                  {category}
-                                </option>
-                              )
-                            )}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            ระดับความยาก
-                          </label>
-
-                          <select
-                            value={challenge.difficulty}
-                            onChange={(event) =>
-                              updateChallengeField(
-                                "difficulty",
-                                event.target.value
-                              )
-                            }
-                            className="
-                              h-12 w-full
-                              rounded-xl
-                              border
-                              border-[#d8d2cf]
-                              bg-white px-4
-                              text-sm
-                              text-[#403a38]
-                              outline-none
-                              focus:border-[#b01414]
-                              focus:ring-2
-                              focus:ring-[#b01414]/10
-                            "
-                          >
-                            {difficulties.map((difficulty) => (
-                              <option
-                                key={difficulty}
-                                value={difficulty}
-                              >
-                                {difficulty}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">Status</label>
-                          <select
-                            value={challenge.status}
-                            onChange={(event) => setChallenge((prev) => ({ ...prev, status: event.target.value as "draft" | "published" | "hidden" }))}
-                            className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm text-[#403a38] outline-none focus:border-[#b01414]"
-                          >
-                            <option value="draft">Draft - ยังไม่แสดงให้ผู้เล่น</option>
-                            <option value="published">Published - แสดงตามปกติ</option>
-                            <option value="hidden">Hidden - ไม่แสดงในรายการ แต่เปิดด้วยลิงก์ตรงได้</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            คำอธิบาย
-                          </label>
-
-                          <textarea
-                            value={
-                              challenge.description
-                            }
-                            onChange={(
-                              event
-                            ) =>
-                              updateChallengeField(
-                                "description",
-                                event.target
-                                  .value
-                              )
-                            }
-                            rows={5}
-                            placeholder="รายละเอียดโจทย์"
-                            className="
-                              w-full
-                              resize-y
-                              rounded-xl
-                              border
-                              border-[#d8d2cf]
-                              bg-white
-                              px-4 py-3
-                              text-sm
-                              text-[#403a38]
-                              outline-none
-                              placeholder:text-[#aaa4a1]
-                              focus:border-[#b01414]
-                              focus:ring-2
-                              focus:ring-[#b01414]/10
-                            "
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            Thumbnail
-                          </label>
-
-                          <div className="rounded-xl border border-[#e7e3e1] bg-[#faf9f8] p-4">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              disabled={isUploadingThumbnail}
-                              onChange={(event) => {
-                                const file = event.target.files?.[0]
-                                if (file) void handleThumbnailUpload(file)
-                              }}
-                              className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm"
-                            />
-                            <p className="mt-2 text-xs text-[#999390]">
-                              {isUploadingThumbnail ? "กำลังอัปโหลด Thumbnail..." : "รูป Thumbnail จะถูกอัปโหลดไปยัง S3"}
-                            </p>
-
-                            {challenge.thumbnailUrl && (
-                              <div className="mt-4 overflow-hidden rounded-xl border border-[#e7e3e1] bg-white">
-                                <img
-                                  src={challenge.thumbnailUrl}
-                                  alt="Challenge thumbnail preview"
-                                  className="aspect-video w-full object-cover"
-                                />
-                                <div className="flex items-center justify-between gap-3 p-3">
-                                  <span className="truncate text-xs text-[#77716e]">Thumbnail ปัจจุบัน</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setChallenge((prev) => ({ ...prev, thumbnailUrl: "" }))}
-                                    className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
-                                  >
-                                    ลบรูป
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            Objective
-                          </label>
-
-                          <textarea
-                            value={challenge.objective}
-                            onChange={(event) =>
-                              updateChallengeField(
-                                "objective",
-                                event.target.value
-                              )
-                            }
-                            rows={3}
-                            placeholder="เช่น ค้นหา Flag ที่ถูกซ่อนอยู่ภายในเว็บไซต์"
-                            className="
-                              w-full
-                              resize-y
-                              rounded-xl
-                              border
-                              border-[#d8d2cf]
-                              bg-white
-                              px-4 py-3
-                              text-sm
-                              text-[#403a38]
-                              outline-none
-                              placeholder:text-[#aaa4a1]
-                              focus:border-[#b01414]
-                              focus:ring-2
-                              focus:ring-[#b01414]/10
-                            "
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                            Hints
-                          </label>
-
-                          <textarea
-                            value={challenge.hint}
-                            onChange={(event) =>
-                              updateChallengeField(
-                                "hint",
-                                event.target.value
-                              )
-                            }
-                            rows={3}
-                            placeholder="เช่น dirb, Browser Developer Tools, Not everything on a website is meant to be seen."
-                            className="
-                              w-full
-                              resize-y
-                              rounded-xl
-                              border
-                              border-[#d8d2cf]
-                              bg-white
-                              px-4 py-3
-                              text-sm
-                              text-[#403a38]
-                              outline-none
-                              placeholder:text-[#aaa4a1]
-                              focus:border-[#b01414]
-                              focus:ring-2
-                              focus:ring-[#b01414]/10
-                            "
-                          />
-
-                          <p className="mt-2 text-xs text-[#999390]">
-                            หากมีหลาย Hint ให้ใช้เครื่องหมาย , คั่นแต่ละข้อ
-                          </p>
-                        </div>
-
-                      </div>
-
-                      <div className="mt-6">
-                        <label className="mb-2 block text-sm font-semibold text-[#403a38]">
-                          Flag
-                          {!isEditing && <span className="ml-1 text-[#b01414]">*</span>}
-                        </label>
-
-                        <input
-                          type="text"
-                          value={challenge.flag}
-                          onChange={(event) =>
-                            updateChallengeField("flag", event.target.value)
-                          }
-                          placeholder="เช่น flag{salmon_secret}"
-                          className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 font-mono text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:ring-2 focus:ring-[#b01414]/10"
-                        />
-
-                        <p className="mt-2 text-xs text-[#999390]">
-                          {isEditing
-                            ? "ปล่อยว่างหากไม่ต้องการเปลี่ยน Flag เดิม"
-                            : "Flag จะถูกใช้ตรวจคำตอบของผู้เล่นและไม่แสดงในหน้า Challenge"}
-                        </p>
-                      </div>
-
-                      {/* Fish Reward */}
-                      <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5 sm:p-6">
-                        <div className="mb-5">
-                          <h3 className="text-lg font-bold text-[#403a38]">Fish Reward</h3>
-                          <p className="mt-1 text-xs text-[#999390]">เลือกใช้ปลาที่มีอยู่แล้ว หรือสร้างปลาชนิดใหม่สำหรับ Challenge นี้</p>
-                        </div>
-
-                        <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-xl border border-[#d8d2cf] bg-white p-1">
-                          <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, fishMode: "new", selectedFishId: "" }))}
-                            className={`h-11 rounded-lg text-sm font-semibold transition-all ${challenge.fishMode === "new" ? "bg-[#b01414] text-white shadow-sm" : "text-[#77716e] hover:bg-[#f5f2f1]"}`}>
-                            + สร้างปลาใหม่
-                          </button>
-                          <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, fishMode: "existing" }))}
-                            className={`h-11 rounded-lg text-sm font-semibold transition-all ${challenge.fishMode === "existing" ? "bg-[#b01414] text-white shadow-sm" : "text-[#77716e] hover:bg-[#f5f2f1]"}`}>
-                            ใช้ปลาที่มีอยู่
-                          </button>
-                        </div>
-
-                        {challenge.fishMode === "new" ? (
-                          <div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ชื่อปลา</label><input type="text" value={challenge.fishName} onChange={(e) => setChallenge((prev) => ({ ...prev, fishName: e.target.value }))} placeholder="เช่น Golden Fish" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: e.target.value === "" ? "" : Number(e.target.value) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">ความแรร์</label><select value={challenge.fishRarity} onChange={(e) => setChallenge((prev) => ({ ...prev, fishRarity: e.target.value as FishRarity }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]"><option value="common">COMMON</option><option value="rare">RARE</option><option value="ultimate">ULTIMATE</option></select></div>
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">XP ของปลา</label><input type="number" min="1" value={challenge.fishXp} onChange={(e) => setChallenge((prev) => ({ ...prev, fishXp: e.target.value === "" ? "" : Number(e.target.value) }))} placeholder="เช่น 100" className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /><p className="mt-2 text-xs text-[#999390]">ผู้เล่นจะได้รับ XP นี้เมื่อค้นพบปลาชนิดนี้ครั้งแรก</p></div>
-                              <div className="md:col-span-2"><label className="mb-2 block text-sm font-semibold text-[#403a38]">คำอธิบายปลา</label><textarea value={challenge.fishDescription} onChange={(e) => setChallenge((prev) => ({ ...prev, fishDescription: e.target.value }))} rows={3} placeholder="อธิบายลักษณะหรือเรื่องราวของปลา" className="w-full resize-y rounded-xl border border-[#d8d2cf] bg-white px-4 py-3 text-sm outline-none focus:border-[#b01414]" /></div>
-                              <div><label className="mb-2 block text-sm font-semibold text-[#403a38]">รูปปลา</label><input type="file" accept="image/*" disabled={isUploadingFish} onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFishImageUpload(file) }} className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm" /><p className="mt-2 text-xs text-[#999390]">{isUploadingFish ? "กำลังอัปโหลดรูป..." : "รูปจะถูกอัปโหลดไปยัง S3"}</p></div>
-                            </div>
-                            {challenge.fishImageUrl && <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4"><img src={challenge.fishImageUrl} alt={challenge.fishName || "Fish preview"} className="h-24 w-24 rounded-xl object-contain" /><div><p className="font-bold text-[#403a38]">{challenge.fishName || "ยังไม่ได้ตั้งชื่อปลา"}</p><p className="mt-1 text-sm text-[#77716e]">จำนวน ×{challenge.fishAmount}</p><p className="mt-1 text-sm text-[#77716e]">{challenge.fishRarity === "ultimate" ? "ULTIMATE" : challenge.fishRarity === "rare" ? "RARE" : "COMMON"}</p></div></div>}
-                          </div>
-                        ) : (
-                          <div>
-                            {fishes.length === 0 ? (
-                              <div className="rounded-xl border border-dashed border-[#d8d2cf] bg-white p-6 text-center text-sm text-[#77716e]">ยังไม่มีปลาในระบบ กรุณาเลือก “สร้างปลาใหม่” ก่อน</div>
-                            ) : (
-                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {fishes.map((fish) => {
-                                  const selected = challenge.selectedFishId === fish.fishId
-                                  return <button key={fish.fishId} type="button" onClick={() => setChallenge((prev) => ({ ...prev, selectedFishId: fish.fishId }))}
-                                    className={`group relative flex items-center gap-3 overflow-hidden border bg-white p-3 text-left transition-all hover:-translate-y-0.5 ${
-                                      fish.rarity === "ultimate" ? "border-[#B01414]/40" : "border-black/10"
-                                    } ${selected ? "ring-2 ring-[#B01414] ring-offset-2" : ""}`}>
-                                    {selected && <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#b01414] text-[11px] font-bold text-white shadow-sm">✓</span>}
-                                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border ${fish.rarity === "ultimate" ? "border-red-300 bg-red-50" : fish.rarity === "rare" ? "border-blue-300 bg-blue-50" : "border-gray-300 bg-gray-100"}`}>
-                                      <img src={fish.imageUrl} alt={fish.name} className="h-14 w-14 object-contain" />
-                                    </div>
-                                    <div className="min-w-0 pr-5">
-                                      <p className="truncate text-sm font-bold text-[#403a38]">{fish.name}</p>
-                                      <span className={`mt-1.5 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${fish.rarity === "ultimate" ? "border-red-300 bg-red-50 text-[#B01414]" : fish.rarity === "rare" ? "border-blue-300 bg-blue-50 text-[#2563EB]" : "border-gray-300 bg-gray-100 text-[#6B7280]"}`}>
-                                        {fish.rarity === "ultimate" ? "ULTIMATE" : fish.rarity === "rare" ? "RARE" : "COMMON"}
-                                      </span>
-                                      <p className="mt-1 text-xs font-semibold text-[#77716e]">{fish.xp ?? 0} XP</p>
-                                      {selected && <p className="mt-1.5 text-xs font-semibold text-[#b01414]">เลือกแล้ว</p>}
-                                    </div>
-                                  </button>
-                                })}
-                              </div>
-                            )}
-                            <div className="mt-5 max-w-xs"><label className="mb-2 block text-sm font-semibold text-[#403a38]">จำนวนปลา</label><input type="number" min="1" value={challenge.fishAmount} onChange={(e) => setChallenge((prev) => ({ ...prev, fishAmount: e.target.value === "" ? "" : Number(e.target.value) }))} className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm outline-none focus:border-[#b01414]" /></div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Challenge Resources */}
-                      <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5">
-                        <h3 className="text-lg font-bold text-[#403a38]">Challenge Resources</h3>
-                        <p className="mt-1 text-xs text-[#999390]">กำหนด Resource ที่ผู้เล่นต้องใช้สำหรับโจทย์นี้</p>
-
-                        <div className="mt-5 grid gap-6 lg:grid-cols-2">
-                          <div>
-                            <label className="mb-2 block text-sm font-semibold text-[#403a38]">Challenge Files (ไม่บังคับ)</label>
-                            <input
-                              type="file"
-                              multiple
-                              disabled={isUploadingChallengeFile}
-                              onChange={(event) => {
-                                const files = Array.from(event.target.files ?? [])
-                                files.forEach((file) => void handleChallengeFileUpload(file))
-                                event.currentTarget.value = ""
-                              }}
-                              className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-4 py-3 text-sm"
-                            />
-                            <p className="mt-2 text-xs text-[#999390]">เลือกได้หลายไฟล์ และเพิ่มไฟล์ภายหลังได้ รองรับไฟล์ทุกประเภท</p>
-                            <div className="mt-3 space-y-2">
-                              {challenge.challengeFiles.map((file, index) => (
-                                <div key={`${file.fileUrl}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-[#e1ddda] bg-white px-4 py-3">
-                                  <span className="min-w-0 truncate text-sm text-[#403a38]">{file.fileName}</span>
-                                  <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, challengeFiles: prev.challengeFiles.filter((_, i) => i !== index) }))} className="shrink-0 text-xs font-semibold text-red-600 hover:underline">ลบไฟล์</button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center justify-between gap-3">
-                              <label className="block text-sm font-semibold text-[#403a38]">Websites (ไม่บังคับ)</label>
-                              <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, websites: [...prev.websites, { label: "", url: "" }] }))} className="rounded-lg bg-[#403a38] px-3 py-2 text-xs font-semibold text-white">+ เพิ่ม Website</button>
-                            </div>
-                            <p className="mt-2 text-xs text-[#999390]">เพิ่มได้หลายเว็บ พร้อมกำหนดชื่อที่จะแสดงให้ผู้เล่น</p>
-                            <div className="mt-3 space-y-3">
-                              {challenge.websites.map((site, index) => (
-                                <div key={index} className="rounded-xl border border-[#e1ddda] bg-white p-3">
-                                  <div className="grid gap-2 sm:grid-cols-[160px_minmax(0,1fr)_auto]">
-                                    <input type="text" value={site.label} onChange={(e) => setChallenge((prev) => ({ ...prev, websites: prev.websites.map((item, i) => i === index ? { ...item, label: e.target.value } : item) }))} placeholder="เช่น Target Website" className="h-11 rounded-lg border border-[#d8d2cf] px-3 text-sm outline-none focus:border-[#b01414]" />
-                                    <input type="url" value={site.url} onChange={(e) => setChallenge((prev) => ({ ...prev, websites: prev.websites.map((item, i) => i === index ? { ...item, url: e.target.value } : item) }))} placeholder="https://example.com" className="h-11 min-w-0 rounded-lg border border-[#d8d2cf] px-3 text-sm outline-none focus:border-[#b01414]" />
-                                    <button type="button" onClick={() => setChallenge((prev) => ({ ...prev, websites: prev.websites.filter((_, i) => i !== index) }))} className="px-3 text-xs font-semibold text-red-600">ลบ</button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Containers */}
-
-                      <div className="mt-10">
-                        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4">
-                          <div>
-                            <h3 className="text-lg font-bold text-[#403a38]">ใช้ Container สำหรับโจทย์นี้</h3>
-                            <p className="mt-1 text-xs text-[#999390]">ปิดได้สำหรับโจทย์ที่ใช้เฉพาะไฟล์หรือเว็บไซต์</p>
-                          </div>
-                          <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#403a38]">
-                            <input type="checkbox" checked={challenge.hasContainer} onChange={(event) => setChallenge((prev) => ({ ...prev, hasContainer: event.target.checked, containers: event.target.checked && prev.containers.length === 0 ? [createEmptyContainer()] : prev.containers }))} className="h-5 w-5 accent-[#b01414]" />
-                            {challenge.hasContainer ? "มี Container" : "ไม่มี Container"}
-                          </label>
-                        </div>
-
-                        {challenge.hasContainer && <>
-                        <div className="mb-4 flex items-center justify-between">
-
-                          <div>
-                            <h3 className="text-lg font-bold text-[#403a38]">
-                              Docker Containers
-                            </h3>
-
-                            <p className="mt-1 text-xs text-[#999390]">
-                              กำหนด Container ของโจทย์
-                            </p>
-                          </div>
-
-                          <span className="text-xs text-[#999390]">
-                            {
-                              challenge
-                                .containers
-                                .length
-                            }{" "}
-                            Container
-                          </span>
-
-                        </div>
-
-                        <div className="space-y-3">
-
-                          {challenge.containers.map(
-                            (
-                              container,
-                              index
-                            ) => (
-                              <div
-                                key={
-                                  container.id
-                                }
-                                className="rounded-xl border border-[#e7e3e1] bg-[#faf9f8] p-4"
-                              >
-
-                                <div className="mb-3 flex items-center justify-between">
-
-                                  <span className="text-xs font-semibold uppercase tracking-wider text-[#77716e]">
-                                    Container{" "}
-                                    {index +
-                                      1}
-                                  </span>
-
-                                  {challenge
-                                    .containers
-                                    .length >
-                                    1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        removeContainer(
-                                          container.id
-                                        )
-                                      }
-                                      className="text-xs font-semibold text-red-600 hover:underline"
-                                    >
-                                      ลบ
-                                    </button>
-                                  )}
-
-                                </div>
-
-                                <div className="grid gap-3 lg:grid-cols-[0.8fr_1.6fr_0.5fr]">
-
-                                  <input
-                                    type="text"
-                                    value={
-                                      container.name
-                                    }
-                                    onChange={(
-                                      event
-                                    ) =>
-                                      updateContainer(
-                                        container.id,
-                                        "name",
-                                        event
-                                          .target
-                                          .value
-                                      )
-                                    }
-                                    placeholder="ชื่อ Container"
-                                    className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
-                                  />
-
-                                  <input
-                                    type="text"
-                                    value={
-                                      container.image
-                                    }
-                                    onChange={(
-                                      event
-                                    ) =>
-                                      updateContainer(
-                                        container.id,
-                                        "image",
-                                        event
-                                          .target
-                                          .value
-                                      )
-                                    }
-                                    placeholder="Docker Image"
-                                    className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
-                                  />
-
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="65535"
-                                    value={
-                                      container.port
-                                    }
-                                    onChange={(
-                                      event
-                                    ) =>
-                                      updateContainer(
-                                        container.id,
-                                        "port",
-                                        event
-                                          .target
-                                          .value
-                                      )
-                                    }
-                                    placeholder="Port"
-                                    className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
-                                  />
-
-                                </div>
-
-                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                  <div>
-                                    <label className="mb-1 block text-xs font-semibold text-[#77716e]">Player Access</label>
-                                    <select
-                                      value={container.accessType}
-                                      onChange={(event) =>
-                                        updateContainer(container.id, "accessType", event.target.value as DockerContainer["accessType"])
-                                      }
-                                      className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
-                                    >
-                                      <option value="none">Internal only</option>
-                                      <option value="web">Web Application</option>
-                                      <option value="terminal">Web Terminal</option>
-                                    </select>
-                                  </div>
-
-                                  <div>
-                                    <label className="mb-1 block text-xs font-semibold text-[#77716e]">Button Label</label>
-                                    <input
-                                      type="text"
-                                      value={container.buttonLabel}
-                                      disabled={container.accessType === "none"}
-                                      onChange={(event) =>
-                                        updateContainer(container.id, "buttonLabel", event.target.value)
-                                      }
-                                      placeholder={container.accessType === "terminal" ? "Open Terminal" : "Open Website"}
-                                      className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414] disabled:bg-[#f1efed] disabled:text-[#aaa4a1]"
-                                    />
-                                  </div>
-                                </div>
-
-                              </div>
-                            )
-                          )}
-
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={
-                            addContainer
-                          }
-                          className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border border-[#b01414] bg-white px-5 text-sm font-semibold text-[#b01414] transition-all hover:bg-[#b01414] hover:text-white"
-                        >
-                          + เพิ่ม Container
-                        </button>
-                        </>}
-
-                      </div>
-
-                      {message && (
-                        <div
-                          className={`mt-6 rounded-xl border px-4 py-3 text-sm ${
-                            message.includes(
-                              "สำเร็จ"
-                            )
-                              ? "border-green-200 bg-green-50 text-green-700"
-                              : "border-red-200 bg-red-50 text-red-700"
-                          }`}
-                        >
-                          {message}
-                        </div>
-                      )}
-
-                      <div className="mt-8 flex flex-col-reverse gap-3 border-t border-[#eeeae8] pt-6 sm:flex-row sm:justify-end">
-
-                        <button
-                          type="button"
-                          onClick={
-                            handleCancel
-                          }
-                          className="h-12 rounded-xl border border-[#d8d2cf] bg-white px-6 text-sm font-semibold text-[#77716e] hover:border-[#b01414] hover:text-[#b01414]"
-                        >
-                          ยกเลิก
-                        </button>
-
-                        <button
-                          type="submit"
-                          disabled={
-                            isSaving
-                          }
-                          className="h-12 rounded-xl bg-[#b01414] px-7 text-sm font-semibold text-white hover:bg-[#961010] disabled:opacity-60"
-                        >
-                          {isSaving
-                            ? "กำลังบันทึก..."
-                            : isEditing
-                              ? "บันทึกการแก้ไข"
-                              : "บันทึกสร้างโจทย์"}
-                        </button>
-
-                      </div>
-
-                    </form>
-
-                  </section>
-                )}
-
-                {/* Challenge List */}
-
-                <section className="overflow-hidden rounded-2xl border border-[#e5e1df] bg-white">
-
-                  <div className="border-b border-[#eeeae8] p-6 sm:p-8">
-
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
-                          Challenge Management
-                        </p>
-
-                        <h2 className="mt-2 text-2xl font-bold text-[#403a38]">
-                          โจทย์ทั้งหมด
-                        </h2>
-
-                        <p className="mt-1 text-sm text-[#77716e]">
-                          จัดการ Challenge ที่มีอยู่ในระบบ
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => { setShowImportModal(true); setMessage("") }}
-                          className="inline-flex h-11 items-center justify-center rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#403a38] hover:border-[#b01414] hover:text-[#b01414]"
-                        >
-                          Import JSON
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCreateNew}
-                          className="inline-flex h-11 items-center justify-center rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010]"
-                        >
-                          <span className="mr-2 text-lg">+</span>
-                          เพิ่มโจทย์ใหม่
-                        </button>
-                      </div>
-
-                    </div>
-
-                    {/* Search */}
-
-                    <div className="relative mt-6">
-
-                      <svg
-                        className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#999390]"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle
-                          cx="11"
-                          cy="11"
-                          r="7"
-                        />
-                        <path d="m20 20-3.5-3.5" />
-                      </svg>
-
-                      <input
-                        type="text"
-                        value={
-                          searchQuery
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          setSearchQuery(
-                            event.target
-                              .value
-                          )
-                        }
-                        placeholder="ค้นหาโจทย์จากชื่อ, หมวดหมู่ หรือคำอธิบาย..."
-                        className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-[#faf9f8] pl-12 pr-4 text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:bg-white focus:ring-2 focus:ring-[#b01414]/10"
-                      />
-
-                    </div>
-
+      <div className="space-y-6">
+        {/* Add / Edit Form */}
+
+        {showForm && (
+          <section
+            id="challenge-form"
+            className="scroll-mt-6 rounded-2xl border border-[#e5e1df] bg-white p-6 sm:p-8"
+          >
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b01414]/10">
+                    ⚙
                   </div>
 
-                  {filteredChallenges.length > 0 && (
-                    <div className="flex flex-col gap-3 border-t border-[#eeeae8] bg-[#faf9f8] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                      <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-[#403a38]">
-                        <input
-                          type="checkbox"
-                          checked={filteredChallenges.every((item) => selectedChallengeIds.includes(item.challengeId))}
-                          onChange={(event) => {
-                            const visibleIds = filteredChallenges.map((item) => item.challengeId)
-                            setSelectedChallengeIds((current) =>
-                              event.target.checked
-                                ? Array.from(new Set([...current, ...visibleIds]))
-                                : current.filter((id) => !visibleIds.includes(id))
-                            )
-                          }}
-                          className="h-4 w-4 accent-[#b01414]"
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
+                      Challenge Management
+                    </p>
+
+                    <h2 className="mt-1 text-2xl font-bold text-[#403a38]">
+                      {isEditing ? "แก้ไขโจทย์" : "เพิ่มโจทย์ใหม่"}
+                    </h2>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-sm text-[#77716e]">
+                  {isEditing
+                    ? `กำลังแก้ไข Challenge: ${challenge.title}`
+                    : "สร้างและตั้งค่า Challenge สำหรับผู้เล่น"}
+                </p>
+              </div>
+
+              {isEditing && (
+                <span className="inline-flex w-fit rounded-full bg-[#b01414]/10 px-3 py-1.5 text-xs font-semibold text-[#b01414]">
+                  กำลังแก้ไข
+                </span>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-[#eeeae8] pb-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#b01414] text-sm font-bold text-white">
+                    1
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#403a38]">
+                      ข้อมูลหลักของ Challenge
+                    </h3>
+                    <p className="text-xs text-[#999390]">
+                      ชื่อ หมวดหมู่ ความยาก และรายละเอียดที่ผู้เล่นจะเห็น
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    ชื่อโจทย์
+                    <span className="ml-1 text-[#b01414]">*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    value={challenge.title}
+                    onChange={(event) =>
+                      updateChallengeField("title", event.target.value)
+                    }
+                    placeholder="เช่น Phishing in the Dark"
+                    className="
+                              h-12 w-full
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white px-4
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              placeholder:text-[#aaa4a1]
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    หมวดหมู่
+                  </label>
+
+                  <select
+                    value={challenge.category}
+                    onChange={(event) =>
+                      updateChallengeField("category", event.target.value)
+                    }
+                    className="
+                              h-12 w-full
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white px-4
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                  >
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    ระดับความยาก
+                  </label>
+
+                  <select
+                    value={challenge.difficulty}
+                    onChange={(event) =>
+                      updateChallengeField("difficulty", event.target.value)
+                    }
+                    className="
+                              h-12 w-full
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white px-4
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                  >
+                    {difficulties.map((difficulty) => (
+                      <option key={difficulty} value={difficulty}>
+                        {difficulty}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    Status
+                  </label>
+                  <select
+                    value={challenge.status}
+                    onChange={(event) =>
+                      setChallenge((prev) => ({
+                        ...prev,
+                        status: event.target.value as
+                          "draft" | "published" | "hidden",
+                      }))
+                    }
+                    className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 text-sm text-[#403a38] outline-none focus:border-[#b01414]"
+                  >
+                    <option value="draft">Draft - ยังไม่แสดงให้ผู้เล่น</option>
+                    <option value="published">Published - แสดงตามปกติ</option>
+                    <option value="hidden">
+                      Hidden - ไม่แสดงในรายการ แต่เปิดด้วยลิงก์ตรงได้
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    คำอธิบาย
+                  </label>
+
+                  <textarea
+                    value={challenge.description}
+                    onChange={(event) =>
+                      updateChallengeField("description", event.target.value)
+                    }
+                    rows={5}
+                    placeholder="รายละเอียดโจทย์"
+                    className="
+                              w-full
+                              resize-y
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white
+                              px-4 py-3
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              placeholder:text-[#aaa4a1]
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    Thumbnail
+                  </label>
+
+                  <div className="rounded-xl border border-[#e7e3e1] bg-[#faf9f8] p-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingThumbnail}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void handleThumbnailUpload(file);
+                      }}
+                      className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-3 py-2.5 text-sm"
+                    />
+                    <p className="mt-2 text-xs text-[#999390]">
+                      {isUploadingThumbnail
+                        ? "กำลังอัปโหลด Thumbnail..."
+                        : "รูป Thumbnail จะถูกอัปโหลดไปยัง S3"}
+                    </p>
+
+                    {challenge.thumbnailUrl && (
+                      <div className="mt-4 overflow-hidden rounded-xl border border-[#e7e3e1] bg-white">
+                        <img
+                          src={challenge.thumbnailUrl}
+                          alt="Challenge thumbnail preview"
+                          className="aspect-video w-full object-cover"
                         />
-                        เลือกทั้งหมด ({filteredChallenges.length})
-                      </label>
-
-                      {selectedChallengeIds.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="mr-1 text-sm font-semibold text-[#b01414]">
-                            เลือก {selectedChallengeIds.length} ข้อ
+                        <div className="flex items-center justify-between gap-3 p-3">
+                          <span className="truncate text-xs text-[#77716e]">
+                            Thumbnail ปัจจุบัน
                           </span>
-                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkStatus("draft")} className="h-9 rounded-lg border border-[#d8d2cf] bg-white px-3 text-xs font-semibold text-[#403a38] hover:border-[#b01414] disabled:opacity-50">Draft</button>
-                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkStatus("published")} className="h-9 rounded-lg border border-green-200 bg-white px-3 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">Published</button>
-                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkStatus("hidden")} className="h-9 rounded-lg border border-[#d8d2cf] bg-white px-3 text-xs font-semibold text-[#77716e] hover:bg-[#f1efed] disabled:opacity-50">Hidden</button>
-                          <button type="button" disabled={isBulkWorking} onClick={() => void handleBulkDelete()} className="h-9 rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">ลบที่เลือก</button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setChallenge((prev) => ({
+                                ...prev,
+                                thumbnailUrl: "",
+                              }))
+                            }
+                            className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
+                          >
+                            ลบรูป
+                          </button>
                         </div>
-                      )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    Objective
+                  </label>
+
+                  <textarea
+                    value={challenge.objective}
+                    onChange={(event) =>
+                      updateChallengeField("objective", event.target.value)
+                    }
+                    rows={3}
+                    placeholder="เช่น ค้นหา Flag ที่ถูกซ่อนอยู่ภายในเว็บไซต์"
+                    className="
+                              w-full
+                              resize-y
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white
+                              px-4 py-3
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              placeholder:text-[#aaa4a1]
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    Hints
+                  </label>
+
+                  <textarea
+                    value={challenge.hint}
+                    onChange={(event) =>
+                      updateChallengeField("hint", event.target.value)
+                    }
+                    rows={3}
+                    placeholder="เช่น dirb, Browser Developer Tools, Not everything on a website is meant to be seen."
+                    className="
+                              w-full
+                              resize-y
+                              rounded-xl
+                              border
+                              border-[#d8d2cf]
+                              bg-white
+                              px-4 py-3
+                              text-sm
+                              text-[#403a38]
+                              outline-none
+                              placeholder:text-[#aaa4a1]
+                              focus:border-[#b01414]
+                              focus:ring-2
+                              focus:ring-[#b01414]/10
+                            "
+                  />
+
+                  <p className="mt-2 text-xs text-[#999390]">
+                    หากมีหลาย Hint ให้ใช้เครื่องหมาย , คั่นแต่ละข้อ
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5 sm:p-6">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#b01414] text-sm font-bold text-white">
+                    2
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#403a38]">
+                      คำตอบของ Challenge
+                    </h3>
+                    <p className="text-xs text-[#999390]">
+                      กำหนด Flag ที่ระบบใช้ตรวจคำตอบของผู้เล่น
+                    </p>
+                  </div>
+                </div>
+                <label className="mb-2 block text-sm font-semibold text-[#403a38]">
+                  Flag
+                  {!isEditing && <span className="ml-1 text-[#b01414]">*</span>}
+                </label>
+
+                <input
+                  type="text"
+                  value={challenge.flag}
+                  onChange={(event) =>
+                    updateChallengeField("flag", event.target.value)
+                  }
+                  placeholder="เช่น flag{salmon_secret}"
+                  className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-white px-4 font-mono text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:ring-2 focus:ring-[#b01414]/10"
+                />
+
+                <p className="mt-2 text-xs text-[#999390]">
+                  {isEditing
+                    ? "ปล่อยว่างหากไม่ต้องการเปลี่ยน Flag เดิม"
+                    : "Flag จะถูกใช้ตรวจคำตอบของผู้เล่นและไม่แสดงในหน้า Challenge"}
+                </p>
+              </div>
+
+              {/* Fish Reward */}
+              <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5 sm:p-6">
+                <div className="mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#b01414] text-sm font-bold text-white">
+                      3
                     </div>
-                  )}
+                    <h3 className="text-lg font-bold text-[#403a38]">
+                      Fish Reward
+                    </h3>
+                  </div>
+                  <p className="mt-1 text-xs text-[#999390]">
+                    เลือกใช้ปลาที่มีอยู่แล้ว หรือสร้างปลาชนิดใหม่สำหรับ
+                    Challenge นี้
+                  </p>
+                </div>
+                <FishRewardSelector
+                  mode={challenge.fishMode}
+                  onModeChange={(fishMode) =>
+                    setChallenge((prev) => ({ ...prev, fishMode }))
+                  }
+                  fishes={fishes}
+                  selectedFishId={challenge.selectedFishId}
+                  onSelectedFishIdChange={(selectedFishId) =>
+                    setChallenge((prev) => ({ ...prev, selectedFishId }))
+                  }
+                  fishName={challenge.fishName}
+                  onFishNameChange={(fishName) =>
+                    setChallenge((prev) => ({ ...prev, fishName }))
+                  }
+                  fishImageUrl={challenge.fishImageUrl}
+                  fishAmount={challenge.fishAmount}
+                  onFishAmountChange={(fishAmount) =>
+                    setChallenge((prev) => ({ ...prev, fishAmount }))
+                  }
+                  fishRarity={challenge.fishRarity}
+                  onFishRarityChange={(fishRarity) =>
+                    setChallenge((prev) => ({ ...prev, fishRarity }))
+                  }
+                  fishDescription={challenge.fishDescription}
+                  onFishDescriptionChange={(fishDescription) =>
+                    setChallenge((prev) => ({ ...prev, fishDescription }))
+                  }
+                  fishXp={challenge.fishXp}
+                  onFishXpChange={(fishXp) =>
+                    setChallenge((prev) => ({ ...prev, fishXp }))
+                  }
+                  uploadingFish={isUploadingFish}
+                  onFishImageUpload={handleFishImageUpload}
+                />
+              </div>
 
-                  <div className="divide-y divide-[#eeeae8]">
+              {/* Challenge Resources */}
+              <div className="mt-10 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#b01414] text-sm font-bold text-white">
+                    4
+                  </div>
+                  <h3 className="text-lg font-bold text-[#403a38]">
+                    Challenge Resources
+                  </h3>
+                </div>
+                <p className="mt-1 text-xs text-[#999390]">
+                  กำหนด Resource ที่ผู้เล่นต้องใช้สำหรับโจทย์นี้
+                </p>
 
-                    {isLoading ? (
-                      <div className="p-8 text-center text-sm text-[#77716e]">
-                        กำลังโหลด Challenge...
-                      </div>
-                    ) : filteredChallenges.length === 0 ? (
-                      <div className="p-8 text-center text-sm text-[#77716e]">
-                        ไม่พบ Challenge
-                      </div>
-                    ) : filteredChallenges.map(
-                      (item, index) => (
+                <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                  <div className="flex min-w-0 flex-col">
+                    <div className="mb-3 min-h-[66px]">
+                      <label className="block text-sm font-semibold text-[#403a38]">
+                        Challenge Files (ไม่บังคับ)
+                      </label>
+                      <p className="mt-2 text-xs text-[#999390]">
+                        เลือกได้หลายไฟล์ และเพิ่มไฟล์ภายหลังได้
+                        รองรับไฟล์ทุกประเภท
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      disabled={isUploadingChallengeFile}
+                      onChange={(event) => {
+                        const files = Array.from(event.target.files ?? []);
+                        files.forEach(
+                          (file) => void handleChallengeFileUpload(file),
+                        );
+                        event.currentTarget.value = "";
+                      }}
+                      className="block w-full rounded-xl border border-[#d8d2cf] bg-white px-4 py-3 text-sm"
+                    />
+                    <div className="mt-3 space-y-2">
+                      {challenge.challengeFiles.map((file, index) => (
                         <div
-                          key={item.challengeId}
-                          className="group p-6 transition-colors hover:bg-[#faf9f8] sm:p-7"
+                          key={`${file.fileUrl}-${index}`}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-[#e1ddda] bg-white px-4 py-3"
                         >
+                          <span className="min-w-0 truncate text-sm text-[#403a38]">
+                            {file.fileName}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setChallenge((prev) => ({
+                                ...prev,
+                                challengeFiles: prev.challengeFiles.filter(
+                                  (_, i) => i !== index,
+                                ),
+                              }))
+                            }
+                            className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
+                          >
+                            ลบไฟล์
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 flex-col">
+                    <div className="mb-3 flex min-h-[66px] items-start justify-between gap-3">
+                      <div>
+                        <label className="block text-sm font-semibold text-[#403a38]">
+                          Websites (ไม่บังคับ)
+                        </label>
+                        <p className="mt-2 text-xs text-[#999390]">
+                          เพิ่มได้หลายเว็บ พร้อมกำหนดชื่อที่จะแสดงให้ผู้เล่น
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setChallenge((prev) => ({
+                            ...prev,
+                            websites: [
+                              ...prev.websites,
+                              { label: "", url: "" },
+                            ],
+                          }))
+                        }
+                        className="shrink-0 rounded-lg bg-[#403a38] px-3 py-2 text-xs font-semibold text-white"
+                      >
+                        + เพิ่ม Website
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {challenge.websites.map((site, index) => (
+                        <div
+                          key={index}
+                          className="rounded-xl border border-[#e1ddda] bg-white p-3"
+                        >
+                          <div className="grid gap-2 sm:grid-cols-[160px_minmax(0,1fr)_auto]">
+                            <input
+                              type="text"
+                              value={site.label}
+                              onChange={(e) =>
+                                setChallenge((prev) => ({
+                                  ...prev,
+                                  websites: prev.websites.map((item, i) =>
+                                    i === index
+                                      ? { ...item, label: e.target.value }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              placeholder="เช่น Target Website"
+                              className="h-11 rounded-lg border border-[#d8d2cf] px-3 text-sm outline-none focus:border-[#b01414]"
+                            />
+                            <input
+                              type="url"
+                              value={site.url}
+                              onChange={(e) =>
+                                setChallenge((prev) => ({
+                                  ...prev,
+                                  websites: prev.websites.map((item, i) =>
+                                    i === index
+                                      ? { ...item, url: e.target.value }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              placeholder="https://example.com"
+                              className="h-11 min-w-0 rounded-lg border border-[#d8d2cf] px-3 text-sm outline-none focus:border-[#b01414]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setChallenge((prev) => ({
+                                  ...prev,
+                                  websites: prev.websites.filter(
+                                    (_, i) => i !== index,
+                                  ),
+                                }))
+                              }
+                              className="px-3 text-xs font-semibold text-red-600"
+                            >
+                              ลบ
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                            <div className="flex min-w-0 gap-4">
+              {/* Containers */}
 
-                              <label className="flex shrink-0 items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedChallengeIds.includes(item.challengeId)}
-                                  onChange={() => toggleChallengeSelection(item.challengeId)}
-                                  className="h-4 w-4 accent-[#b01414]"
-                                  aria-label={`เลือก ${item.title}`}
-                                />
-                              </label>
+              <div className="mt-10">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e7e3e1] bg-white p-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#403a38]">
+                      ใช้ Container สำหรับโจทย์นี้
+                    </h3>
+                    <p className="mt-1 text-xs text-[#999390]">
+                      ปิดได้สำหรับโจทย์ที่ใช้เฉพาะไฟล์หรือเว็บไซต์
+                    </p>
+                  </div>
+                  <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#403a38]">
+                    <input
+                      type="checkbox"
+                      checked={challenge.hasContainer}
+                      onChange={(event) =>
+                        setChallenge((prev) => ({
+                          ...prev,
+                          hasContainer: event.target.checked,
+                          containers:
+                            event.target.checked && prev.containers.length === 0
+                              ? [createEmptyContainer()]
+                              : prev.containers,
+                        }))
+                      }
+                      className="h-5 w-5 accent-[#b01414]"
+                    />
+                    {challenge.hasContainer
+                      ? "มี Container"
+                      : "ไม่มี Container"}
+                  </label>
+                </div>
 
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#b01414]/10 text-sm font-bold text-[#b01414]">
-                                {String(
-                                  index + 1
-                                ).padStart(
-                                  2,
-                                  "0"
-                                )}
-                              </div>
+                {challenge.hasContainer && (
+                  <>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-[#403a38]">
+                          Docker Containers
+                        </h3>
 
-                              <div className="min-w-0">
+                        <p className="mt-1 text-xs text-[#999390]">
+                          กำหนด Container ของโจทย์
+                        </p>
+                      </div>
 
-                                <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-[#999390]">
+                        {challenge.containers.length} Container
+                      </span>
+                    </div>
 
-                                  <h3 className="truncate text-lg font-bold text-[#403a38]">
-                                    {
-                                      item.title
-                                    }
-                                  </h3>
+                    <div className="space-y-3">
+                      {challenge.containers.map((container, index) => (
+                        <div
+                          key={container.id}
+                          className="rounded-xl border border-[#e7e3e1] bg-[#faf9f8] p-4"
+                        >
+                          <div className="mb-3 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-[#77716e]">
+                              Container {index + 1}
+                            </span>
 
-                                  <span className="rounded-full bg-[#f1efed] px-2.5 py-1 text-xs font-medium text-[#77716e]">
-                                    {
-                                      item.category
-                                    }
-                                  </span>
-
-                                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                    item.status === "published"
-                                      ? "bg-green-50 text-green-700"
-                                      : item.status === "hidden"
-                                        ? "bg-[#f1efed] text-[#77716e]"
-                                        : "bg-amber-50 text-amber-700"
-                                  }`}>
-                                    {item.status ?? "published"}
-                                  </span>
-
-                                </div>
-
-                                <p className="mt-3 max-w-3xl line-clamp-2 text-sm leading-6 text-[#77716e]">
-                                  {
-                                    item.description
-                                  }
-                                </p>
-
-                              </div>
-
-                            </div>
-
-                            <div className="flex shrink-0 gap-2">
-
+                            {challenge.containers.length > 1 && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  handleEdit(
-                                    item
-                                  )
-                                }
-                                className="inline-flex h-10 items-center justify-center rounded-lg border border-[#d8d2cf] bg-white px-4 text-sm font-medium text-[#403a38] transition-all hover:border-[#b01414] hover:text-[#b01414]"
-                              >
-                                แก้ไข
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDeleteChallenge(
-                                    item
-                                  )
-                                }
-                                className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition-all hover:border-red-600 hover:bg-red-50"
+                                onClick={() => removeContainer(container.id)}
+                                className="text-xs font-semibold text-red-600 hover:underline"
                               >
                                 ลบ
                               </button>
-
-                            </div>
-
+                            )}
                           </div>
 
+                          <div className="grid gap-3 lg:grid-cols-[0.8fr_1.6fr_0.5fr]">
+                            <input
+                              type="text"
+                              value={container.name}
+                              onChange={(event) =>
+                                updateContainer(
+                                  container.id,
+                                  "name",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="ชื่อ Container"
+                              className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
+                            />
+
+                            <input
+                              type="text"
+                              value={container.image}
+                              onChange={(event) =>
+                                updateContainer(
+                                  container.id,
+                                  "image",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="Docker Image"
+                              className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
+                            />
+
+                            <input
+                              type="number"
+                              min="1"
+                              max="65535"
+                              value={container.port}
+                              onChange={(event) =>
+                                updateContainer(
+                                  container.id,
+                                  "port",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="Port"
+                              className="h-11 rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
+                            />
+                          </div>
+
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold text-[#77716e]">
+                                Player Access
+                              </label>
+                              <select
+                                value={container.accessType}
+                                onChange={(event) =>
+                                  updateContainer(
+                                    container.id,
+                                    "accessType",
+                                    event.target
+                                      .value as DockerContainer["accessType"],
+                                  )
+                                }
+                                className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414]"
+                              >
+                                <option value="none">Internal only</option>
+                                <option value="web">Web Application</option>
+                                <option value="terminal">Web Terminal</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold text-[#77716e]">
+                                Button Label
+                              </label>
+                              <input
+                                type="text"
+                                value={container.buttonLabel}
+                                disabled={container.accessType === "none"}
+                                onChange={(event) =>
+                                  updateContainer(
+                                    container.id,
+                                    "buttonLabel",
+                                    event.target.value,
+                                  )
+                                }
+                                placeholder={
+                                  container.accessType === "terminal"
+                                    ? "Open Terminal"
+                                    : "Open Website"
+                                }
+                                className="h-11 w-full rounded-lg border border-[#d8d2cf] bg-white px-3 text-sm outline-none focus:border-[#b01414] disabled:bg-[#f1efed] disabled:text-[#aaa4a1]"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      )
-                    )}
+                      ))}
+                    </div>
 
-                  </div>
-
-                </section>
-
+                    <button
+                      type="button"
+                      onClick={addContainer}
+                      className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border border-[#b01414] bg-white px-5 text-sm font-semibold text-[#b01414] transition-all hover:bg-[#b01414] hover:text-white"
+                    >
+                      + เพิ่ม Container
+                    </button>
+                  </>
+                )}
               </div>
 
-      {showImportModal && createPortal(
-        <div
-          className="fixed inset-0 z-[2147483647] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-black/50 p-3 sm:p-5"
-          onWheel={(event) => event.stopPropagation()}
-          onTouchMove={(event) => event.stopPropagation()}
-        >
-          <div className="flex h-[min(760px,calc(100dvh-1.5rem))] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#e5e1df] bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-2.5rem))]">
-            <div className="flex shrink-0 items-start justify-between border-b border-[#eeeae8] p-4 sm:p-5">
+              {message && (
+                <div
+                  className={`mt-6 rounded-xl border px-4 py-3 text-sm ${
+                    message.includes("สำเร็จ")
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
+
+              <div className="mt-8 rounded-2xl border border-[#e7e3e1] bg-[#faf9f8] p-4 sm:flex sm:items-center sm:justify-between">
+                <div className="mb-3 sm:mb-0">
+                  <p className="text-sm font-bold text-[#403a38]">
+                    พร้อมบันทึก Challenge?
+                  </p>
+                  <p className="mt-1 text-xs text-[#999390]">
+                    ตรวจข้อมูลสำคัญ โดยเฉพาะ Flag, Reward และ Environment
+                    ก่อนบันทึก
+                  </p>
+                </div>
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="h-12 rounded-xl border border-[#d8d2cf] bg-white px-6 text-sm font-semibold text-[#77716e] hover:border-[#b01414] hover:text-[#b01414]"
+                  >
+                    ยกเลิก
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="h-12 rounded-xl bg-[#b01414] px-7 text-sm font-semibold text-white hover:bg-[#961010] disabled:opacity-60"
+                  >
+                    {isSaving
+                      ? "กำลังบันทึก..."
+                      : isEditing
+                        ? "บันทึกการแก้ไข"
+                        : "บันทึกสร้างโจทย์"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </section>
+        )}
+
+        {/* Challenge List */}
+
+        <section className="overflow-hidden rounded-2xl border border-[#e5e1df] bg-white">
+          <div className="border-b border-[#eeeae8] p-6 sm:p-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">Bulk Import</p>
-                <h3 className="mt-1 text-xl font-bold text-[#403a38]">Import Challenges จาก JSON</h3>
-                <p className="mt-1 text-sm text-[#77716e]">รองรับหลายข้อพร้อมกัน และ Challenge ที่สร้างใหม่จะถูกบังคับเป็น Draft เสมอ</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
+                  Challenge Management
+                </p>
+
+                <h2 className="mt-2 text-2xl font-bold text-[#403a38]">
+                  โจทย์ทั้งหมด
+                </h2>
+
+                <p className="mt-1 text-sm text-[#77716e]">
+                  จัดการ Challenge ที่มีอยู่ในระบบ
+                </p>
               </div>
-              <button type="button" onClick={() => setShowImportModal(false)} className="ml-4 shrink-0 text-xl text-[#77716e] hover:text-[#b01414]">×</button>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(true);
+                    setMessage("");
+                  }}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#403a38] hover:border-[#b01414] hover:text-[#b01414]"
+                >
+                  Import JSON
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateNew}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010]"
+                >
+                  <span className="mr-2 text-lg">+</span>
+                  เพิ่มโจทย์ใหม่
+                </button>
+              </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#403a38]">เลือกไฟล์ .json</span>
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  onChange={(event) => void handleImportFile(event.target.files?.[0])}
-                  className="block w-full rounded-xl border border-[#d8d2cf] bg-[#faf9f8] p-3 text-sm"
-                />
-              </label>
+            {/* Search */}
 
-              <div className="text-center text-xs font-semibold uppercase tracking-wider text-[#aaa4a1]">หรือวาง JSON</div>
+            <div className="relative mt-6">
+              <svg
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#999390]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
 
-              <textarea
-                value={importJson}
-                onChange={(event) => setImportJson(event.target.value)}
-                rows={8}
-                spellCheck={false}
-                placeholder={'[\n  {\n    "challengeId": "web-01",\n    "title": "Example",\n    "flag": "flag{example}"\n  }\n]'}
-                className="min-h-[180px] w-full resize-none rounded-xl border border-[#d8d2cf] bg-[#faf9f8] px-4 py-3 font-mono text-xs leading-5 outline-none focus:border-[#b01414] focus:bg-white"
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="ค้นหาโจทย์จากชื่อ, หมวดหมู่ หรือคำอธิบาย..."
+                className="h-12 w-full rounded-xl border border-[#d8d2cf] bg-[#faf9f8] pl-12 pr-4 text-sm text-[#403a38] outline-none placeholder:text-[#aaa4a1] focus:border-[#b01414] focus:bg-white focus:ring-2 focus:ring-[#b01414]/10"
               />
-
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
-                status ใน JSON จะถูก ignore และบันทึกเป็น draft เสมอ เพื่อให้ใส่ Thumbnail, Fish Reward, Files, Website หรือ Container ภายหลังได้
-              </div>
-            </div>
-
-            <div className="flex shrink-0 justify-end gap-2 border-t border-[#eeeae8] bg-white p-4 sm:p-5">
-              <button type="button" onClick={() => setShowImportModal(false)} className="h-11 rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#403a38]">ยกเลิก</button>
-              <button type="button" disabled={isImporting || !importJson.trim()} onClick={() => void handleImportChallenges()} className="h-11 rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010] disabled:opacity-50">
-                {isImporting ? "กำลัง Import..." : "Import ทั้งหมด"}
-              </button>
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+
+          {filteredChallenges.length > 0 && (
+            <div className="flex flex-col gap-3 border-t border-[#eeeae8] bg-[#faf9f8] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-[#403a38]">
+                <input
+                  type="checkbox"
+                  checked={filteredChallenges.every((item) =>
+                    selectedChallengeIds.includes(item.challengeId),
+                  )}
+                  onChange={(event) => {
+                    const visibleIds = filteredChallenges.map(
+                      (item) => item.challengeId,
+                    );
+                    setSelectedChallengeIds((current) =>
+                      event.target.checked
+                        ? Array.from(new Set([...current, ...visibleIds]))
+                        : current.filter((id) => !visibleIds.includes(id)),
+                    );
+                  }}
+                  className="h-4 w-4 accent-[#b01414]"
+                />
+                เลือกทั้งหมด ({filteredChallenges.length})
+              </label>
+
+              {selectedChallengeIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="mr-1 text-sm font-semibold text-[#b01414]">
+                    เลือก {selectedChallengeIds.length} ข้อ
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isBulkWorking}
+                    onClick={() => void handleBulkStatus("draft")}
+                    className="h-9 rounded-lg border border-[#d8d2cf] bg-white px-3 text-xs font-semibold text-[#403a38] hover:border-[#b01414] disabled:opacity-50"
+                  >
+                    Draft
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isBulkWorking}
+                    onClick={() => void handleBulkStatus("published")}
+                    className="h-9 rounded-lg border border-green-200 bg-white px-3 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50"
+                  >
+                    Published
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isBulkWorking}
+                    onClick={() => void handleBulkStatus("hidden")}
+                    className="h-9 rounded-lg border border-[#d8d2cf] bg-white px-3 text-xs font-semibold text-[#77716e] hover:bg-[#f1efed] disabled:opacity-50"
+                  >
+                    Hidden
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isBulkWorking}
+                    onClick={() => void handleBulkDelete()}
+                    className="h-9 rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    ลบที่เลือก
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="divide-y divide-[#eeeae8]">
+            {isLoading ? (
+              <div className="p-8 text-center text-sm text-[#77716e]">
+                กำลังโหลด Challenge...
+              </div>
+            ) : filteredChallenges.length === 0 ? (
+              <div className="p-8 text-center text-sm text-[#77716e]">
+                ไม่พบ Challenge
+              </div>
+            ) : (
+              filteredChallenges.map((item, index) => (
+                <div
+                  key={item.challengeId}
+                  className="group p-6 transition-colors hover:bg-[#faf9f8] sm:p-7"
+                >
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex min-w-0 gap-4">
+                      <label className="flex shrink-0 items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedChallengeIds.includes(
+                            item.challengeId,
+                          )}
+                          onChange={() =>
+                            toggleChallengeSelection(item.challengeId)
+                          }
+                          className="h-4 w-4 accent-[#b01414]"
+                          aria-label={`เลือก ${item.title}`}
+                        />
+                      </label>
+
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#b01414]/10 text-sm font-bold text-[#b01414]">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="truncate text-lg font-bold text-[#403a38]">
+                            {item.title}
+                          </h3>
+
+                          <span className="rounded-full bg-[#f1efed] px-2.5 py-1 text-xs font-medium text-[#77716e]">
+                            {item.category}
+                          </span>
+
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              item.status === "published"
+                                ? "bg-green-50 text-green-700"
+                                : item.status === "hidden"
+                                  ? "bg-[#f1efed] text-[#77716e]"
+                                  : "bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {item.status ?? "published"}
+                          </span>
+                        </div>
+
+                        <p className="mt-3 max-w-3xl line-clamp-2 text-sm leading-6 text-[#77716e]">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(item)}
+                        className="inline-flex h-10 items-center justify-center rounded-lg border border-[#d8d2cf] bg-white px-4 text-sm font-medium text-[#403a38] transition-all hover:border-[#b01414] hover:text-[#b01414]"
+                      >
+                        แก้ไข
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteChallenge(item)}
+                        className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition-all hover:border-red-600 hover:bg-red-50"
+                      >
+                        ลบ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </div>
+
+      {showImportModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[2147483647] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-black/50 p-3 sm:p-5"
+            onWheel={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
+          >
+            <div className="flex h-[min(760px,calc(100dvh-1.5rem))] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#e5e1df] bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-2.5rem))]">
+              <div className="flex shrink-0 items-start justify-between border-b border-[#eeeae8] p-4 sm:p-5">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b01414]">
+                    Bulk Import
+                  </p>
+                  <h3 className="mt-1 text-xl font-bold text-[#403a38]">
+                    Import Challenges จาก JSON
+                  </h3>
+                  <p className="mt-1 text-sm text-[#77716e]">
+                    รองรับหลายข้อพร้อมกัน และ Challenge
+                    ที่สร้างใหม่จะถูกบังคับเป็น Draft เสมอ
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="ml-4 shrink-0 text-xl text-[#77716e] hover:text-[#b01414]"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#403a38]">
+                    เลือกไฟล์ .json
+                  </span>
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={(event) =>
+                      void handleImportFile(event.target.files?.[0])
+                    }
+                    className="block w-full rounded-xl border border-[#d8d2cf] bg-[#faf9f8] p-3 text-sm"
+                  />
+                </label>
+
+                <div className="text-center text-xs font-semibold uppercase tracking-wider text-[#aaa4a1]">
+                  หรือวาง JSON
+                </div>
+
+                <textarea
+                  value={importJson}
+                  onChange={(event) => setImportJson(event.target.value)}
+                  rows={8}
+                  spellCheck={false}
+                  placeholder={
+                    '[\n  {\n    "challengeId": "web-01",\n    "title": "Example",\n    "flag": "flag{example}"\n  }\n]'
+                  }
+                  className="min-h-[180px] w-full resize-none rounded-xl border border-[#d8d2cf] bg-[#faf9f8] px-4 py-3 font-mono text-xs leading-5 outline-none focus:border-[#b01414] focus:bg-white"
+                />
+
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+                  status ใน JSON จะถูก ignore และบันทึกเป็น draft เสมอ
+                  เพื่อให้ใส่ Thumbnail, Fish Reward, Files, Website หรือ
+                  Container ภายหลังได้
+                </div>
+              </div>
+
+              <div className="flex shrink-0 justify-end gap-2 border-t border-[#eeeae8] bg-white p-4 sm:p-5">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="h-11 rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#403a38]"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  disabled={isImporting || !importJson.trim()}
+                  onClick={() => void handleImportChallenges()}
+                  className="h-11 rounded-xl bg-[#b01414] px-5 text-sm font-semibold text-white hover:bg-[#961010] disabled:opacity-50"
+                >
+                  {isImporting ? "กำลัง Import..." : "Import ทั้งหมด"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* =========================================
           Delete Challenge Confirmation Modal
@@ -1714,15 +1854,13 @@ export default function ChallengeManagement() {
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
           onClick={() => {
             if (!isDeleting) {
-              setDeletingChallenge(null)
+              setDeletingChallenge(null);
             }
           }}
         >
           <div
             className="w-full max-w-lg rounded-2xl bg-white shadow-2xl"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
           >
             <div className="p-6 sm:p-8">
               <div className="flex items-start gap-4">
@@ -1763,7 +1901,9 @@ export default function ChallengeManagement() {
                 </p>
 
                 <p className="mt-3 text-sm leading-6 text-red-700">
-                  การลบจะนำโจทย์ออกจากรายการ Challenge ในหน้านี้ และถ้ามี Docker Container หรือข้อมูลที่ผูกกับโจทย์ ระบบ Backend ควรจัดการลบข้อมูลเหล่านั้นด้วย
+                  การลบจะนำโจทย์ออกจากรายการ Challenge ในหน้านี้ และถ้ามี Docker
+                  Container หรือข้อมูลที่ผูกกับโจทย์ ระบบ Backend
+                  ควรจัดการลบข้อมูลเหล่านั้นด้วย
                 </p>
               </div>
             </div>
@@ -1772,9 +1912,7 @@ export default function ChallengeManagement() {
               <button
                 type="button"
                 disabled={isDeleting}
-                onClick={() =>
-                  setDeletingChallenge(null)
-                }
+                onClick={() => setDeletingChallenge(null)}
                 className="h-11 rounded-xl border border-[#d8d2cf] bg-white px-5 text-sm font-semibold text-[#77716e] transition-all hover:border-[#403a38] hover:text-[#403a38] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 ยกเลิก
@@ -1786,14 +1924,12 @@ export default function ChallengeManagement() {
                 onClick={confirmDeleteChallenge}
                 className="h-11 rounded-xl bg-red-600 px-5 text-sm font-semibold text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isDeleting
-                  ? "กำลังลบ..."
-                  : "ยืนยันลบโจทย์"}
+                {isDeleting ? "กำลังลบ..." : "ยืนยันลบโจทย์"}
               </button>
             </div>
           </div>
         </div>
       )}
     </>
-  )
+  );
 }

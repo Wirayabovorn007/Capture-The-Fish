@@ -1,5 +1,9 @@
 import { getAuthHeaders } from "../utils/auth";
-import type { StoryConfig, StoryProgress } from "../types/story";
+import type {
+  StoryConfig,
+  StoryProgress,
+  TreasureSubmitResult,
+} from "../types/story";
 let apiUrl = "";
 async function getApiUrl() {
   if (apiUrl) return apiUrl;
@@ -41,7 +45,10 @@ export async function getStoryProgress(): Promise<StoryProgress> {
       headers: await getAuthHeaders(false),
     }),
   );
-  return { solvedChallengeIds: d.solvedChallengeIds ?? [] };
+  return {
+    solvedChallengeIds: d.solvedChallengeIds ?? [],
+    treasureUnlocked: Boolean(d.treasureUnlocked),
+  };
 }
 export async function uploadStoryImage(file: File): Promise<string> {
   const b = await getApiUrl();
@@ -76,4 +83,23 @@ export async function saveStory(
       }),
     )
   ).story;
+}
+
+export async function submitTreasureCode(
+  code: string,
+): Promise<TreasureSubmitResult> {
+  const b = await getApiUrl();
+  const d = await readJson(
+    await fetch(`${b}/?action=submit_treasure_code`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ code }),
+    }),
+  );
+  return {
+    correct: Boolean(d.correct),
+    alreadyUnlocked: Boolean(d.alreadyUnlocked),
+    reward: d.reward ?? null,
+    totalFish: d.totalFish ?? null,
+  };
 }
