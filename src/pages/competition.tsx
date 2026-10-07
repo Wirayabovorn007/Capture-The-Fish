@@ -1,17 +1,15 @@
-import Navbar from "../components/Navbar"
-import Footer from "../components/Footer"
-import Content from "../components/competition/Content"
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import Content from "../components/competition/Content";
 
-export default function Competition()
-{
-	return (
-		<>
-			<div className="absolute w-full">
-				<Navbar/>
-				<Content/>
-				<Footer/>
-			</div>
-			
-		</>
-	)
+export default function Competition() {
+  return (
+    <>
+      <div className="absolute w-full">
+        <Navbar />
+        <Content />
+        <Footer />
+      </div>
+    </>
+  );
 }

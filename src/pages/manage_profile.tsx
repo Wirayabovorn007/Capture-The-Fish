@@ -1,80 +1,87 @@
-import { useEffect, useRef, useState } from "react"
-import { Camera, Image as ImageIcon } from "lucide-react"
-import { fetchUserAttributes, updatePassword, updateUserAttributes } from "aws-amplify/auth"
+import { useEffect, useRef, useState } from "react";
+import { Camera, Image as ImageIcon } from "lucide-react";
+import {
+  fetchUserAttributes,
+  updatePassword,
+  updateUserAttributes,
+} from "aws-amplify/auth";
 
-import Reveal from "../components/effects/Reveal"
-import Navbar from "../components/Navbar"
-import AdminNavbar from "../components/admin/Navbar"
-import { isAdmin } from "../utils/auth"
-import Footer from "../components/Footer"
+import Reveal from "../components/effects/Reveal";
+import Navbar from "../components/Navbar";
+import AdminNavbar from "../components/admin/Navbar";
+import { isAdmin } from "../utils/auth";
+import Footer from "../components/Footer";
 
 export default function ManageProfile() {
-  const [adminView, setAdminView] = useState(false)
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [profileImage, setProfileImage] = useState("")
-  const [apiUrl, setApiUrl] = useState("")
+  const [adminView, setAdminView] = useState(false);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [apiUrl, setApiUrl] = useState("");
 
   // Password States
-  const [oldPassword, setOldPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [errorMsg, setErrorMsg] = useState("")
-  const [successMsg, setSuccessMsg] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    void isAdmin().then(setAdminView)
-  }, [])
+    void isAdmin().then(setAdminView);
+  }, []);
 
   useEffect(() => {
     // โหลด config.json เพื่อดึง Lambda URL
-    fetch('/config.json')
+    fetch("/config.json")
       .then((res) => res.json())
       .then((config) => {
         if (config.ALB_URL) {
-          setApiUrl(config.ALB_URL)
+          setApiUrl(config.ALB_URL);
         }
       })
-      .catch((err) => console.error("Failed to load config.json", err))
+      .catch((err) => console.error("Failed to load config.json", err));
 
-    loadUserData()
-  }, [])
+    loadUserData();
+  }, []);
 
   const loadUserData = async () => {
     try {
-      const attributes = await fetchUserAttributes()
-      const currentName = attributes.preferred_username || attributes.email || ""
-      setUsername(currentName)
-      setEmail(attributes.email || "")
+      const attributes = await fetchUserAttributes();
+      const currentName =
+        attributes.preferred_username || attributes.email || "";
+      setUsername(currentName);
+      setEmail(attributes.email || "");
       if (attributes.picture) {
-        setProfileImage(attributes.picture)
+        setProfileImage(attributes.picture);
       }
     } catch (error) {
-      console.error("Error loading user attributes:", error)
+      console.error("Error loading user attributes:", error);
     }
-  }
+  };
 
   const handleImageClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
-  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || !file.type.startsWith("image/")) return
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
 
     if (!apiUrl) {
-      setErrorMsg("ยังไม่พบ URL สำหรับอัปโหลด กรุณาลองใหม่อีกครั้ง")
-      return
+      setErrorMsg("ยังไม่พบ URL สำหรับอัปโหลด กรุณาลองใหม่อีกครั้ง");
+      return;
     }
 
-    setLoading(true)
-    setErrorMsg("")
+    setLoading(true);
+    setErrorMsg("");
 
     try {
-      const fileName = `${Date.now()}_${file.name}`
+      const fileName = `${Date.now()}_${file.name}`;
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -84,11 +91,11 @@ export default function ManageProfile() {
           fileName: fileName,
           contentType: file.type,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (!data.uploadUrl) {
-        throw new Error(data.error || "ไม่สามารถขอลิงก์อัปโหลดได้")
+        throw new Error(data.error || "ไม่สามารถขอลิงก์อัปโหลดได้");
       }
 
       const uploadResponse = await fetch(data.uploadUrl, {
@@ -97,69 +104,69 @@ export default function ManageProfile() {
           "Content-Type": file.type,
         },
         body: file,
-      })
+      });
 
       if (!uploadResponse.ok) {
-        throw new Error("อัปโหลดไฟล์ไปที่ S3 ไม่สำเร็จ")
+        throw new Error("อัปโหลดไฟล์ไปที่ S3 ไม่สำเร็จ");
       }
 
       if (data.imageUrl) {
-        setProfileImage(data.imageUrl)
+        setProfileImage(data.imageUrl);
 
         await updateUserAttributes({
           userAttributes: {
             picture: data.imageUrl,
           },
-        })
-        setSuccessMsg("อัปเดตภาพโปรไฟล์สำเร็จ")
+        });
+        setSuccessMsg("อัปเดตภาพโปรไฟล์สำเร็จ");
       }
     } catch (err: any) {
-      console.error("Upload error:", err)
-      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ")
+      console.error("Upload error:", err);
+      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg("")
-    setSuccessMsg("")
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
 
     if (newPassword || oldPassword || confirmPassword) {
       if (!oldPassword) {
-        setErrorMsg("กรุณากรอกรหัสผ่านเดิมเพื่อยืนยันการเปลี่ยนรหัสผ่าน")
-        return
+        setErrorMsg("กรุณากรอกรหัสผ่านเดิมเพื่อยืนยันการเปลี่ยนรหัสผ่าน");
+        return;
       }
       if (newPassword !== confirmPassword) {
-        setErrorMsg("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน")
-        return
+        setErrorMsg("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
+        return;
       }
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       await updateUserAttributes({
         userAttributes: {
           preferred_username: username,
         },
-      })
+      });
 
       if (newPassword && oldPassword) {
-        await updatePassword({ oldPassword, newPassword })
+        await updatePassword({ oldPassword, newPassword });
       }
 
-      setSuccessMsg("บันทึกข้อมูลและอัปเดตลง Cognito สำเร็จเรียบร้อย!")
+      setSuccessMsg("บันทึกข้อมูลและอัปเดตลง Cognito สำเร็จเรียบร้อย!");
       setTimeout(() => {
-        window.location.href = "/profile"
-      }, 1500)
+        window.location.href = "/profile";
+      }, 1500);
     } catch (err: any) {
-      console.error("Update profile error:", err)
-      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูล")
+      console.error("Update profile error:", err);
+      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -178,7 +185,9 @@ export default function ManageProfile() {
 
             <form onSubmit={handleSave}>
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-[#B01414]">จัดการโปรไฟล์</h1>
+                <h1 className="text-2xl font-bold text-[#B01414]">
+                  จัดการโปรไฟล์
+                </h1>
                 <div className="flex items-center gap-5">
                   <button
                     type="submit"
@@ -188,14 +197,25 @@ export default function ManageProfile() {
                     {loading ? "กำลังบันทึก..." : "เสร็จสิ้น"}
                   </button>
 
-                  <a href="/profile" className="font-semibold text-[#B01414] underline underline-offset-2 hover:text-[#8F1010]">
+                  <a
+                    href="/profile"
+                    className="font-semibold text-[#B01414] underline underline-offset-2 hover:text-[#8F1010]"
+                  >
                     ยกเลิก
                   </a>
                 </div>
               </div>
 
-              {errorMsg && <p className="mt-4 text-sm font-medium text-red-600">{errorMsg}</p>}
-              {successMsg && <p className="mt-4 text-sm font-medium text-green-600">{successMsg}</p>}
+              {errorMsg && (
+                <p className="mt-4 text-sm font-medium text-red-600">
+                  {errorMsg}
+                </p>
+              )}
+              {successMsg && (
+                <p className="mt-4 text-sm font-medium text-green-600">
+                  {successMsg}
+                </p>
+              )}
 
               <section className="mt-8">
                 <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
@@ -221,7 +241,9 @@ export default function ManageProfile() {
 
                       <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 backdrop-blur-[2px] transition-all duration-300 opacity-90 group-hover:opacity-100">
                         <ImageIcon className="h-8 w-8 text-white mb-1" />
-                        <span className="text-[10px] text-white font-medium">เปลี่ยนรูป</span>
+                        <span className="text-[10px] text-white font-medium">
+                          เปลี่ยนรูป
+                        </span>
                       </div>
                     </button>
 
@@ -236,7 +258,9 @@ export default function ManageProfile() {
 
                   <div className="w-full max-w-[600px] space-y-6">
                     <div>
-                      <label className="text-xs text-gray-600">ชื่อผู้ใช้ (Username)</label>
+                      <label className="text-xs text-gray-600">
+                        ชื่อผู้ใช้ (Username)
+                      </label>
                       <input
                         type="text"
                         value={username}
@@ -256,10 +280,14 @@ export default function ManageProfile() {
                     </div>
 
                     <div className="pt-4 border-t border-gray-200 space-y-4">
-                      <h3 className="text-sm font-bold text-[#B01414]">เปลี่ยนรหัสผ่าน (ไม่บังคับ)</h3>
-                      
+                      <h3 className="text-sm font-bold text-[#B01414]">
+                        เปลี่ยนรหัสผ่าน (ไม่บังคับ)
+                      </h3>
+
                       <div>
-                        <label className="text-xs text-gray-600">รหัสผ่านเดิม</label>
+                        <label className="text-xs text-gray-600">
+                          รหัสผ่านเดิม
+                        </label>
                         <input
                           type="password"
                           value={oldPassword}
@@ -270,7 +298,9 @@ export default function ManageProfile() {
                       </div>
 
                       <div>
-                        <label className="text-xs text-gray-600">รหัสผ่านใหม่</label>
+                        <label className="text-xs text-gray-600">
+                          รหัสผ่านใหม่
+                        </label>
                         <input
                           type="password"
                           value={newPassword}
@@ -281,7 +311,9 @@ export default function ManageProfile() {
                       </div>
 
                       <div>
-                        <label className="text-xs text-gray-600">ยืนยันรหัสผ่านใหม่</label>
+                        <label className="text-xs text-gray-600">
+                          ยืนยันรหัสผ่านใหม่
+                        </label>
                         <input
                           type="password"
                           value={confirmPassword}
@@ -301,5 +333,5 @@ export default function ManageProfile() {
 
       <Footer />
     </>
-  )
+  );
 }

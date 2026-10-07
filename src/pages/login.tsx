@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { signIn, signUp, confirmSignIn, confirmSignUp, resendSignUpCode, signOut } from "aws-amplify/auth";
+import {
+  signIn,
+  signUp,
+  confirmSignIn,
+  confirmSignUp,
+  resendSignUpCode,
+  signOut,
+} from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
 import Navbar from "../components/Navbar";
 import Reveal from "../components/effects/Reveal";
-import { isAdmin } from "../utils/auth"
+import { isAdmin } from "../utils/auth";
 
 export default function Login() {
   const [viewMode, setViewMode] = useState<"login" | "signup" | "otp">("login");
-  
+
   // ฟอร์มสเตท
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userNameInput, setUserNameInput] = useState("");
-  
+
   // ข้อความแจ้งเตือนสีแดง (Error Message) แต่ละฟิลด์หรือภาพรวม
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -31,7 +38,7 @@ export default function Login() {
 
   // โหลด Config และตั้งค่า Amplify
   useEffect(() => {
-    fetch('/config.json')
+    fetch("/config.json")
       .then((res) => res.json())
       .then((config) => {
         Amplify.configure({
@@ -39,8 +46,8 @@ export default function Login() {
             Cognito: {
               userPoolId: config.USER_POOL_ID,
               userPoolClientId: config.CLIENT_ID,
-            }
-          }
+            },
+          },
         });
       })
       .catch((err) => console.error("Failed to load config.json", err));
@@ -75,26 +82,28 @@ export default function Login() {
       }
 
       const { nextStep } = await signIn({ username: email, password });
-      
+
       if (
-        nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE' || 
-        nextStep.signInStep === 'CONFIRM_SIGN_UP'
+        nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE" ||
+        nextStep.signInStep === "CONFIRM_SIGN_UP"
       ) {
         setViewMode("otp");
         setCountdown(60);
         setTimeout(() => inputRefs.current[0]?.focus(), 100);
       } else if (nextStep.signInStep === "DONE") {
-        const admin = await isAdmin()
+        const admin = await isAdmin();
 
         if (admin) {
-          window.location.href = "/admin/dashboard"
+          window.location.href = "/admin/dashboard";
         } else {
-          window.location.href = "/"
+          window.location.href = "/";
         }
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      setErrorMsg(error.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+      setErrorMsg(
+        error.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง",
+      );
     } finally {
       setLoading(false);
     }
@@ -119,11 +128,11 @@ export default function Login() {
           userAttributes: {
             email,
             preferred_username: userNameInput,
-          }
-        }
+          },
+        },
       });
 
-      if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+      if (nextStep.signUpStep === "CONFIRM_SIGN_UP") {
         // ไปหน้า OTP ทันทีโดยไม่ใช้ alert
         setViewMode("otp");
         setCountdown(60);
@@ -168,7 +177,10 @@ export default function Login() {
     if (index < 5) inputRefs.current[index + 1]?.focus();
   };
 
-  const handleKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (event.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -176,7 +188,10 @@ export default function Login() {
 
   const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
     event.preventDefault();
-    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pasted) return;
 
     const newOtp = ["", "", "", "", "", ""];
@@ -197,7 +212,10 @@ export default function Login() {
     setLoading(true);
     try {
       try {
-        const result = await confirmSignUp({ username: email, confirmationCode: code });
+        const result = await confirmSignUp({
+          username: email,
+          confirmationCode: code,
+        });
         if (result.isSignUpComplete) {
           switchMode("login");
           setErrorMsg("");
@@ -206,19 +224,19 @@ export default function Login() {
         }
       } catch {
         const result = await confirmSignIn({
-          challengeResponse: code
-        })
+          challengeResponse: code,
+        });
 
         if (result.isSignedIn) {
-          const admin = await isAdmin()
+          const admin = await isAdmin();
 
           if (admin) {
-            window.location.href = "/admin/dashboard"
+            window.location.href = "/admin/dashboard";
           } else {
-            window.location.href = "/"
+            window.location.href = "/";
           }
 
-          return
+          return;
         }
       }
     } catch (error: any) {
@@ -262,11 +280,15 @@ export default function Login() {
 
                 <form onSubmit={handleLoginSubmit} className="mt-8 space-y-4">
                   {errorMsg && (
-                    <p className="text-sm font-medium text-red-600">{errorMsg}</p>
+                    <p className="text-sm font-medium text-red-600">
+                      {errorMsg}
+                    </p>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-[#403a38]">Email / Username</label>
+                    <label className="block text-sm font-medium text-[#403a38]">
+                      Email / Username
+                    </label>
                     <input
                       type="email"
                       required
@@ -278,7 +300,9 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#403a38]">Password</label>
+                    <label className="block text-sm font-medium text-[#403a38]">
+                      Password
+                    </label>
                     <input
                       type="password"
                       required
@@ -332,11 +356,15 @@ export default function Login() {
 
                 <form onSubmit={handleSignUpSubmit} className="mt-8 space-y-4">
                   {errorMsg && (
-                    <p className="text-sm font-medium text-red-600">{errorMsg}</p>
+                    <p className="text-sm font-medium text-red-600">
+                      {errorMsg}
+                    </p>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-[#403a38]">ชื่อผู้ใช้ (Username)</label>
+                    <label className="block text-sm font-medium text-[#403a38]">
+                      ชื่อผู้ใช้ (Username)
+                    </label>
                     <input
                       type="text"
                       required
@@ -348,7 +376,9 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#403a38]">Email</label>
+                    <label className="block text-sm font-medium text-[#403a38]">
+                      Email
+                    </label>
                     <input
                       type="email"
                       required
@@ -360,7 +390,9 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#403a38]">Password</label>
+                    <label className="block text-sm font-medium text-[#403a38]">
+                      Password
+                    </label>
                     <input
                       type="password"
                       required
@@ -372,7 +404,9 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#403a38]">Confirm Password</label>
+                    <label className="block text-sm font-medium text-[#403a38]">
+                      Confirm Password
+                    </label>
                     <input
                       type="password"
                       required
@@ -419,16 +453,23 @@ export default function Login() {
                 <h1 className="text-5xl font-bold tracking-tight text-[#b01414] sm:text-6xl">
                   Verify your account
                 </h1>
-                <h2 className="mt-1 text-3xl text-[#403a38]">Check your email</h2>
+                <h2 className="mt-1 text-3xl text-[#403a38]">
+                  Check your email
+                </h2>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-[#403a38]">
-                  เราได้ส่งรหัส OTP 6 หลักไปยังอีเมล <span className="font-semibold">{email}</span> กรุณากรอกรหัสเพื่อยืนยัน
+                  เราได้ส่งรหัส OTP 6 หลักไปยังอีเมล{" "}
+                  <span className="font-semibold">{email}</span>{" "}
+                  กรุณากรอกรหัสเพื่อยืนยัน
                 </p>
                 <p className="mt-1 text-xs text-red-500 font-medium">
-                  * หากไม่เจออีเมล กรุณาตรวจสอบในจดหมายขยะ (Spam) หรือกล่องจดหมายอื่นๆ
+                  * หากไม่เจออีเมล กรุณาตรวจสอบในจดหมายขยะ (Spam)
+                  หรือกล่องจดหมายอื่นๆ
                 </p>
 
                 {errorMsg && (
-                  <p className="mt-3 text-sm font-medium text-red-600">{errorMsg}</p>
+                  <p className="mt-3 text-sm font-medium text-red-600">
+                    {errorMsg}
+                  </p>
                 )}
 
                 <div className="mt-9 flex gap-2 sm:gap-3">
@@ -442,7 +483,9 @@ export default function Login() {
                       inputMode="numeric"
                       maxLength={1}
                       value={digit}
-                      onChange={(event) => handleOtpChange(index, event.target.value)}
+                      onChange={(event) =>
+                        handleOtpChange(index, event.target.value)
+                      }
                       onKeyDown={(event) => handleKeyDown(index, event)}
                       onPaste={handlePaste}
                       aria-label={`OTP digit ${index + 1}`}
@@ -464,7 +507,10 @@ export default function Login() {
                   {countdown > 0 ? (
                     <p>
                       ส่งรหัสอีกครั้งใน{" "}
-                      <span className="font-mono font-bold text-[#b01414]">{countdown}</span> วินาที
+                      <span className="font-mono font-bold text-[#b01414]">
+                        {countdown}
+                      </span>{" "}
+                      วินาที
                     </p>
                   ) : (
                     <button

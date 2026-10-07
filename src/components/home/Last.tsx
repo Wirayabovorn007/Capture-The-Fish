@@ -25,7 +25,9 @@ export default function CybersecurityCTA() {
         </h2>
 
         <p className="mt-4 sm:mt-6 text-sm leading-relaxed text-white/90 sm:text-[15px] lg:text-base">
-          ออกแบบมาเพื่อกระตุ้นการมีส่วนร่วมของผู้เรียนผ่านการฝึกอบรมด้านความปลอดภัยทางไซเบอร์ที่เน้นการปฏิบัติจริงตามสถานการณ์ที่เกิดขึ้นจริง ซึ่งช่วยสร้างความมั่นใจ ตอกย้ำความรู้ทางทฤษฎี และสนับสนุนผลลัพธ์การเรียนรู้ในระยะยาว
+          ออกแบบมาเพื่อกระตุ้นการมีส่วนร่วมของผู้เรียนผ่านการฝึกอบรมด้านความปลอดภัยทางไซเบอร์ที่เน้นการปฏิบัติจริงตามสถานการณ์ที่เกิดขึ้นจริง
+          ซึ่งช่วยสร้างความมั่นใจ ตอกย้ำความรู้ทางทฤษฎี
+          และสนับสนุนผลลัพธ์การเรียนรู้ในระยะยาว
         </p>
 
         <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
@@ -38,12 +40,12 @@ export default function CybersecurityCTA() {
             </button>
           </a>
           <a href="/competition">
-          <button
-            type="button"
-            className="border border-white/70 px-5 py-2.5 sm:px-6 sm:py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-          >
-            ดูโจทย์ทั้งหมด
-          </button>
+            <button
+              type="button"
+              className="border border-white/70 px-5 py-2.5 sm:px-6 sm:py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              ดูโจทย์ทั้งหมด
+            </button>
           </a>
         </div>
 

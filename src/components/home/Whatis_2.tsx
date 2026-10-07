@@ -1,9 +1,4 @@
-import {
-  BarChart3,
-  CircleCheck,
-  Crosshair,
-  Fish,
-} from "lucide-react";
+import { BarChart3, CircleCheck, Crosshair, Fish } from "lucide-react";
 
 type FloatingItem = {
   text: string;
@@ -29,26 +24,22 @@ const sections: FeatureSection[] = [
     items: [
       {
         text: "Web exploitation",
-        desktopClassName:
-          "left-[4%] top-[17%] w-[310px] rotate-[1deg]",
+        desktopClassName: "left-[4%] top-[17%] w-[310px] rotate-[1deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[1deg]",
       },
       {
         text: "Networking",
-        desktopClassName:
-          "left-[10%] top-[39%] w-[300px] rotate-[1deg]",
+        desktopClassName: "left-[10%] top-[39%] w-[300px] rotate-[1deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[1deg]",
       },
       {
         text: "Cryptography",
-        desktopClassName:
-          "left-[25%] top-[57%] w-[300px] rotate-[-1deg]",
+        desktopClassName: "left-[25%] top-[57%] w-[300px] rotate-[-1deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[-1deg]",
       },
       {
         text: "Forensics",
-        desktopClassName:
-          "left-[15%] top-[76%] w-[290px] rotate-[-2deg]",
+        desktopClassName: "left-[15%] top-[76%] w-[290px] rotate-[-2deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[-2deg]",
       },
     ],
@@ -61,22 +52,19 @@ const sections: FeatureSection[] = [
       {
         emoji: "😄",
         text: "Easy  -  ง่ายมาก",
-        desktopClassName:
-          "left-[16%] top-[17%] w-[285px] border-green-300",
+        desktopClassName: "left-[16%] top-[17%] w-[285px] border-green-300",
         mobileClassName: "w-full max-w-[360px] border-green-300",
       },
       {
         emoji: "🥺",
         text: "Medium  -  ชิวอยู่พี่",
-        desktopClassName:
-          "left-[38%] top-[39%] w-[300px] border-red-200",
+        desktopClassName: "left-[38%] top-[39%] w-[300px] border-red-200",
         mobileClassName: "w-full max-w-[380px] border-red-200",
       },
       {
         emoji: "😭",
         text: "Hard  -  ร้องขอชีวิต",
-        desktopClassName:
-          "left-[18%] top-[60%] w-[285px] border-red-400",
+        desktopClassName: "left-[18%] top-[60%] w-[285px] border-red-400",
         mobileClassName: "w-full max-w-[360px] border-red-400",
       },
     ],
@@ -88,26 +76,22 @@ const sections: FeatureSection[] = [
     items: [
       {
         text: "ปลาหมอกดำ",
-        desktopClassName:
-          "left-[30%] top-[17%] w-[310px] rotate-[1deg]",
+        desktopClassName: "left-[30%] top-[17%] w-[310px] rotate-[1deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[1deg]",
       },
       {
         text: "โลมา",
-        desktopClassName:
-          "left-[52%] top-[39%] w-[210px] rotate-[2deg]",
+        desktopClassName: "left-[52%] top-[39%] w-[210px] rotate-[2deg]",
         mobileClassName: "w-full max-w-[4200px] rotate-[2deg]",
       },
       {
         text: "ฉลาม",
-        desktopClassName:
-          "left-[42%] top-[57%] w-[230px] rotate-[-1deg]",
+        desktopClassName: "left-[42%] top-[57%] w-[230px] rotate-[-1deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[-1deg]",
       },
       {
         text: "ปิรันยา",
-        desktopClassName:
-          "left-[47%] top-[74%] w-[240px] rotate-[-2deg]",
+        desktopClassName: "left-[47%] top-[74%] w-[240px] rotate-[-2deg]",
         mobileClassName: "w-full max-w-[420px] rotate-[-2deg]",
       },
     ],
@@ -340,14 +324,11 @@ function getDesktopPosition(item: FloatingItem) {
     "Web exploitation":
       "xl:left-[4%] xl:top-[17%] xl:w-[310px] xl:rotate-[1deg]",
 
-    Networking:
-      "xl:left-[10%] xl:top-[39%] xl:w-[300px] xl:rotate-[1deg]",
+    Networking: "xl:left-[10%] xl:top-[39%] xl:w-[300px] xl:rotate-[1deg]",
 
-    Cryptography:
-      "xl:left-[25%] xl:top-[57%] xl:w-[300px] xl:rotate-[-1deg]",
+    Cryptography: "xl:left-[25%] xl:top-[57%] xl:w-[300px] xl:rotate-[-1deg]",
 
-    Forensics:
-      "xl:left-[15%] xl:top-[76%] xl:w-[290px] xl:rotate-[-2deg]",
+    Forensics: "xl:left-[15%] xl:top-[76%] xl:w-[290px] xl:rotate-[-2deg]",
 
     "Easy  -  ง่ายมาก":
       "xl:left-[16%] xl:top-[17%] xl:w-[285px] xl:border-green-300",
@@ -358,17 +339,13 @@ function getDesktopPosition(item: FloatingItem) {
     "Hard  -  ร้องขอชีวิต":
       "xl:left-[18%] xl:top-[60%] xl:w-[285px] xl:border-red-400",
 
-    ปลาหมอกดำ:
-      "xl:left-[30%] xl:top-[17%] xl:w-[310px] xl:rotate-[1deg]",
+    ปลาหมอกดำ: "xl:left-[30%] xl:top-[17%] xl:w-[310px] xl:rotate-[1deg]",
 
-    โลมา:
-      "xl:left-[52%] xl:top-[39%] xl:w-[210px] xl:rotate-[2deg]",
+    โลมา: "xl:left-[52%] xl:top-[39%] xl:w-[210px] xl:rotate-[2deg]",
 
-    ฉลาม:
-      "xl:left-[42%] xl:top-[57%] xl:w-[230px] xl:rotate-[-1deg]",
+    ฉลาม: "xl:left-[42%] xl:top-[57%] xl:w-[230px] xl:rotate-[-1deg]",
 
-    ปิรันยา:
-      "xl:left-[47%] xl:top-[74%] xl:w-[240px] xl:rotate-[-2deg]",
+    ปิรันยา: "xl:left-[47%] xl:top-[74%] xl:w-[240px] xl:rotate-[-2deg]",
   };
 
   return positions[item.text] ?? "";

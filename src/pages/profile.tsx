@@ -1,56 +1,56 @@
-import { useEffect, useState } from "react"
-import { Settings } from "lucide-react"
-import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth"
+import { useEffect, useState } from "react";
+import { Settings } from "lucide-react";
+import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
 
-import Navbar from "../components/Navbar"
-import AdminNavbar from "../components/admin/Navbar"
-import { isAdmin } from "../utils/auth"
-import Footer from "../components/Footer"
-import Reveal from "../components/effects/Reveal"
-import { getMyProfileStats } from "../services/userApi"
+import Navbar from "../components/Navbar";
+import AdminNavbar from "../components/admin/Navbar";
+import { isAdmin } from "../utils/auth";
+import Footer from "../components/Footer";
+import Reveal from "../components/effects/Reveal";
+import { getMyProfileStats } from "../services/userApi";
 
 export default function Profile() {
-  const [adminView, setAdminView] = useState(false)
-  const [username, setUsername] = useState("Loading...")
-  const [email, setEmail] = useState("")
-  const [profileImage, setProfileImage] = useState("")
-  const [fish, setFish] = useState(0)
-  const [easyCompleted, setEasyCompleted] = useState(0)
-  const [mediumCompleted, setMediumCompleted] = useState(0)
-  const [hardCompleted, setHardCompleted] = useState(0)
-  const [completedChallenges, setCompletedChallenges] = useState(0)
-  const [totalChallenges, setTotalChallenges] = useState(0)
+  const [adminView, setAdminView] = useState(false);
+  const [username, setUsername] = useState("Loading...");
+  const [email, setEmail] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [fish, setFish] = useState(0);
+  const [easyCompleted, setEasyCompleted] = useState(0);
+  const [mediumCompleted, setMediumCompleted] = useState(0);
+  const [hardCompleted, setHardCompleted] = useState(0);
+  const [completedChallenges, setCompletedChallenges] = useState(0);
+  const [totalChallenges, setTotalChallenges] = useState(0);
 
   useEffect(() => {
-    void isAdmin().then(setAdminView)
-  }, [])
+    void isAdmin().then(setAdminView);
+  }, []);
 
   useEffect(() => {
-    loadProfile()
-  }, [])
+    loadProfile();
+  }, []);
 
   const loadProfile = async () => {
     try {
-      const currentUser = await getCurrentUser()
-      const attributes = await fetchUserAttributes()
-      const name = attributes.preferred_username || currentUser.username
-      setUsername(name)
-      setEmail(attributes.email || "")
+      const currentUser = await getCurrentUser();
+      const attributes = await fetchUserAttributes();
+      const name = attributes.preferred_username || currentUser.username;
+      setUsername(name);
+      setEmail(attributes.email || "");
       if (attributes.picture) {
-        setProfileImage(attributes.picture)
+        setProfileImage(attributes.picture);
       }
 
-      const stats = await getMyProfileStats()
-      setFish(stats.fish)
-      setEasyCompleted(stats.difficulty.easy)
-      setMediumCompleted(stats.difficulty.medium)
-      setHardCompleted(stats.difficulty.hard)
-      setCompletedChallenges(stats.completedChallenges)
-      setTotalChallenges(stats.totalChallenges)
+      const stats = await getMyProfileStats();
+      setFish(stats.fish);
+      setEasyCompleted(stats.difficulty.easy);
+      setMediumCompleted(stats.difficulty.medium);
+      setHardCompleted(stats.difficulty.hard);
+      setCompletedChallenges(stats.completedChallenges);
+      setTotalChallenges(stats.totalChallenges);
     } catch (error) {
-      console.error("Not authenticated or error loading profile", error)
+      console.error("Not authenticated or error loading profile", error);
     }
-  }
+  };
 
   return (
     <>
@@ -86,15 +86,25 @@ export default function Profile() {
                 {/* Profile Image or Initial Letter */}
                 <div className="h-[125px] w-[125px] shrink-0 overflow-hidden rounded-full border-[6px] border-[#f5e4e4] bg-gray-200 flex items-center justify-center font-bold text-[#B01414] text-5xl shadow-sm">
                   {profileImage ? (
-                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <span>{username !== "Loading..." && username ? username.charAt(0).toUpperCase() : "U"}</span>
+                    <span>
+                      {username !== "Loading..." && username
+                        ? username.charAt(0).toUpperCase()
+                        : "U"}
+                    </span>
                   )}
                 </div>
 
                 <div>
                   <p className="text-xs text-gray-500">ชื่อผู้ใช้</p>
-                  <h2 className="text-2xl font-bold text-black sm:text-3xl">{username}</h2>
+                  <h2 className="text-2xl font-bold text-black sm:text-3xl">
+                    {username}
+                  </h2>
                   <p className="text-xs text-gray-400 mt-1">{email}</p>
 
                   <div className="mt-3 flex gap-10">
@@ -113,14 +123,29 @@ export default function Profile() {
               {/* Challenge Stats */}
               <div className="flex items-center justify-between gap-8">
                 <div className="space-y-2 text-sm">
-                  <StatRow dot="bg-green-500" label="ง่าย" count={easyCompleted} />
-                  <StatRow dot="bg-orange-500" label="ปานกลาง" count={mediumCompleted} />
-                  <StatRow dot="bg-[#B01414]" label="ยาก" count={hardCompleted} />
+                  <StatRow
+                    dot="bg-green-500"
+                    label="ง่าย"
+                    count={easyCompleted}
+                  />
+                  <StatRow
+                    dot="bg-orange-500"
+                    label="ปานกลาง"
+                    count={mediumCompleted}
+                  />
+                  <StatRow
+                    dot="bg-[#B01414]"
+                    label="ยาก"
+                    count={hardCompleted}
+                  />
                 </div>
 
                 <div className="text-center">
                   <p className="text-xs text-gray-600">เคลียร์โจทย์</p>
-                  <p className="text-3xl font-bold text-black">{completedChallenges}<span className="text-xl">/{totalChallenges}</span></p>
+                  <p className="text-3xl font-bold text-black">
+                    {completedChallenges}
+                    <span className="text-xl">/{totalChallenges}</span>
+                  </p>
                 </div>
               </div>
             </section>
@@ -130,15 +155,23 @@ export default function Profile() {
 
       <Footer />
     </>
-  )
+  );
 }
 
-function StatRow({ dot, label, count }: { dot: string; label: string; count: number | string }) {
+function StatRow({
+  dot,
+  label,
+  count,
+}: {
+  dot: string;
+  label: string;
+  count: number | string;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span className={`h-3 w-3 rounded-full ${dot}`} />
       <span className="text-gray-700">{label}</span>
       <span className="text-black">{count}</span>
     </div>
-  )
+  );
 }

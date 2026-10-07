@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 interface RevealProps {
-	children: ReactNode
-	/** Extra delay in ms, useful for staggering a few sections */
-	delay?: number
-	className?: string
+  children: ReactNode;
+  /** Extra delay in ms, useful for staggering a few sections */
+  delay?: number;
+  className?: string;
 }
 
 /**
@@ -16,40 +16,44 @@ interface RevealProps {
  *
  * Respects prefers-reduced-motion.
  */
-export default function Reveal({ children, delay = 0, className = "" }: RevealProps) {
-	const ref = useRef<HTMLDivElement>(null)
-	const [visible, setVisible] = useState(false)
+export default function Reveal({
+  children,
+  delay = 0,
+  className = "",
+}: RevealProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-	useEffect(() => {
-		const el = ref.current
-		if (!el) return
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
 
-		const observer = new IntersectionObserver(
-			([entry]) => {
-				if (entry.isIntersecting) {
-					setVisible(true)
-					observer.disconnect()
-				}
-			},
-			{ threshold: 0.15 }
-		)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
 
-		observer.observe(el)
-		return () => observer.disconnect()
-	}, [])
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-	return (
-		<div
-			ref={ref}
-			style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
-			className={`
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
+      className={`
 				transition-all duration-700 ease-out
 				motion-reduce:transition-none motion-reduce:transform-none
 				${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
 				${className}
 			`}
-		>
-			{children}
-		</div>
-	)
+    >
+      {children}
+    </div>
+  );
 }

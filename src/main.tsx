@@ -1,14 +1,14 @@
-import { StrictMode, useEffect, useState } from 'react'
-import { createRoot } from 'react-dom/client'
-import { Amplify } from 'aws-amplify'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode, useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { Amplify } from "aws-amplify";
+import "./index.css";
+import App from "./App.tsx";
 
 function Root() {
   const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
-    fetch('/config.json')
+    fetch("/config.json")
       .then((res) => res.json())
       .then((config) => {
         Amplify.configure({
@@ -16,8 +16,8 @@ function Root() {
             Cognito: {
               userPoolId: config.USER_POOL_ID,
               userPoolClientId: config.CLIENT_ID,
-            }
-          }
+            },
+          },
         });
         setIsConfigured(true);
       })
@@ -38,16 +38,18 @@ function Root() {
   return <App />;
 }
 
-createRoot(getElementByIdOrThrow('root')).render(
+createRoot(getElementByIdOrThrow("root")).render(
   <StrictMode>
     <Root />
   </StrictMode>,
-)
+);
 
 function getElementByIdOrThrow(id: string): HTMLElement {
   const element = document.getElementById(id);
   if (!element) {
-    throw new Error(`Root element with ID '${id}' was not found in the document.`);
+    throw new Error(
+      `Root element with ID '${id}' was not found in the document.`,
+    );
   }
   return element;
 }

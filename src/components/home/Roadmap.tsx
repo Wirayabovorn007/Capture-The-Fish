@@ -1,8 +1,4 @@
-import {
-  BookOpen,
-  Crosshair,
-  Trophy,
-} from "lucide-react";
+import { BookOpen, Crosshair, Trophy } from "lucide-react";
 
 type TimelineItem = {
   title: string;
@@ -27,7 +23,7 @@ const timelineItems: TimelineItem[] = [
       "ท้าทายความสามารถของตัวเองด้วยโจทย์ Cybersecurity ที่ต้องแข่งกับเวลา แก้โจทย์ ค้นหา Flag และทำคะแนนให้ได้มากที่สุด เพื่อพิสูจน์ว่าใครคือนักล่าที่เก่งที่สุด",
     icon: Crosshair,
     side: "right",
-    path: "/competition"
+    path: "/competition",
   },
   {
     title: "Leaderboard",
@@ -35,8 +31,8 @@ const timelineItems: TimelineItem[] = [
       "แสดงความสำเร็จจากการเรียนรู้และพิชิตโจทย์บนแพลตฟอร์ม เมื่อผ่านเงื่อนไขที่กำหนด คุณจะได้รับใบรับรองเพื่อยืนยันความสำเร็จและทักษะที่ได้ฝึกฝน",
     icon: Trophy,
     side: "left",
-    path: "/leaderboard"
-  }
+    path: "/leaderboard",
+  },
 ];
 
 export default function LearningJourney() {
@@ -99,10 +95,7 @@ export default function LearningJourney() {
                 lg:text-[68px]
               "
             >
-              ให้การฝึก{" "}
-              <span className="text-[#B01414]">
-                Cybersecurity
-              </span>
+              ให้การฝึก <span className="text-[#B01414]">Cybersecurity</span>
               <br />
               สนุกยิ่งขึ้น
             </h2>
@@ -145,10 +138,7 @@ export default function LearningJourney() {
           ==================================================== */}
           <div className="relative flex flex-col gap-12 lg:gap-0">
             {timelineItems.map((item) => (
-              <TimelineCard
-                key={item.title}
-                item={item}
-              />
+              <TimelineCard key={item.title} item={item} />
             ))}
           </div>
         </div>
@@ -161,11 +151,7 @@ export default function LearningJourney() {
    Timeline Card
 ============================================================= */
 
-function TimelineCard({
-  item,
-}: {
-  item: TimelineItem;
-}) {
+function TimelineCard({ item }: { item: TimelineItem }) {
   const Icon = item.icon;
   const isLeft = item.side === "left";
 
@@ -199,11 +185,7 @@ function TimelineCard({
           border-[#3B3535]
           lg:block
 
-          ${
-            isLeft
-              ? "left-[calc(50%-115px)]"
-              : "left-1/2"
-          }
+          ${isLeft ? "left-[calc(50%-115px)]" : "left-1/2"}
         `}
       />
 
@@ -236,22 +218,14 @@ function TimelineCard({
           lg:px-8
           lg:py-7
 
-          ${
-            isLeft
-              ? "lg:mr-auto"
-              : "lg:ml-auto"
-          }
+          ${isLeft ? "lg:mr-auto" : "lg:ml-auto"}
         `}
       >
         {/* ===================================================
             Card title
         ==================================================== */}
         <div className="flex items-center gap-3">
-          <Icon
-            size={29}
-            strokeWidth={2}
-            className="shrink-0 text-[#B01414]"
-          />
+          <Icon size={29} strokeWidth={2} className="shrink-0 text-[#B01414]" />
 
           <h3
             className="
@@ -299,10 +273,10 @@ function TimelineCard({
         {/* ===================================================
             More button
         ==================================================== */}
-       <a href={item.path}>
-         <button
-          type="button"
-          className="
+        <a href={item.path}>
+          <button
+            type="button"
+            className="
             mt-7
             flex
             items-center
@@ -316,11 +290,11 @@ function TimelineCard({
             duration-200
             hover:text-[#B01414]
           "
-        >
-          เพิ่มเติม
-          <span aria-hidden="true">→</span>
-        </button>
-       </a>
+          >
+            เพิ่มเติม
+            <span aria-hidden="true">→</span>
+          </button>
+        </a>
       </article>
     </div>
   );
