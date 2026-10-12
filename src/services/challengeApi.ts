@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 import { getAuthHeaders } from "../utils/auth";
 import type {
   Challenge,
@@ -14,7 +15,7 @@ let apiUrl = "";
 async function getApiUrl() {
   if (apiUrl) return apiUrl;
 
-  const response = await fetch("/config.json");
+  const response = await apiFetch("/config.json");
   if (!response.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
 
   const config = await response.json();
@@ -34,7 +35,7 @@ async function readJson(response: Response) {
 
 export async function getFishes(): Promise<Fish[]> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=list_fishes&t=${Date.now()}`,
     {
       headers: await getAuthHeaders(false),
@@ -48,7 +49,7 @@ export async function getFishes(): Promise<Fish[]> {
 
 export async function getChallenges(): Promise<Challenge[]> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=list_challenges&t=${Date.now()}`,
   );
   const data = await readJson(response);
@@ -59,7 +60,7 @@ export async function getChallenges(): Promise<Challenge[]> {
 
 export async function getAdminChallenges(): Promise<Challenge[]> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=list_admin_challenges&t=${Date.now()}`,
     {
       headers: await getAuthHeaders(false),
@@ -73,7 +74,7 @@ export async function getAdminChallenges(): Promise<Challenge[]> {
 
 export async function getChallenge(challengeId: string): Promise<Challenge> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=get_challenge&challengeId=${encodeURIComponent(challengeId)}`,
     { headers: await getAuthHeaders(false) },
   );
@@ -85,7 +86,7 @@ export async function getChallenge(challengeId: string): Promise<Challenge> {
 
 export async function createChallenge(challenge: Challenge) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=create_challenge`, {
+  const response = await apiFetch(`${baseUrl}/?action=create_challenge`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify(challenge),
@@ -98,7 +99,7 @@ export async function createChallenge(challenge: Challenge) {
 
 export async function updateChallenge(challenge: Challenge) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=update_challenge`, {
+  const response = await apiFetch(`${baseUrl}/?action=update_challenge`, {
     method: "PUT",
     headers: await getAuthHeaders(),
     body: JSON.stringify(challenge),
@@ -111,7 +112,7 @@ export async function updateChallenge(challenge: Challenge) {
 
 export async function deleteChallenge(challengeId: string) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=delete_challenge&challengeId=${encodeURIComponent(challengeId)}`,
     { method: "DELETE", headers: await getAuthHeaders(false) },
   );
@@ -124,7 +125,7 @@ export type BulkChallengeAction = "delete" | "set_status";
 
 export async function importChallenges(challenges: unknown[]) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=import_challenges`, {
+  const response = await apiFetch(`${baseUrl}/?action=import_challenges`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ challenges }),
@@ -152,7 +153,7 @@ export async function bulkChallengeAction(
   status?: "draft" | "published" | "hidden",
 ) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=bulk_challenge_action`, {
+  const response = await apiFetch(`${baseUrl}/?action=bulk_challenge_action`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ challengeIds, bulkAction, status }),
@@ -167,7 +168,7 @@ export async function spawnChallenge(
   challengeId: string,
 ): Promise<SpawnChallengeResponse> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=spawn&challengeId=${encodeURIComponent(challengeId)}`,
     { method: "POST", headers: await getAuthHeaders(false) },
   );
@@ -190,7 +191,7 @@ export async function getChallengeStatus(
   sessionId: string,
 ): Promise<ChallengeStatusResponse> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=status&challengeId=${encodeURIComponent(challengeId)}&sessionId=${encodeURIComponent(sessionId)}&t=${Date.now()}`,
     { headers: await getAuthHeaders(false) },
   );
@@ -210,7 +211,7 @@ export async function getChallengeStatus(
 
 export async function terminateChallenge(sessionId: string) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=terminate&sessionId=${encodeURIComponent(sessionId)}`,
     { method: "POST", headers: await getAuthHeaders(false) },
   );
@@ -224,7 +225,7 @@ export async function submitFlag(
   flag: string,
 ): Promise<SubmitFlagResponse> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=submit_flag`, {
+  const response = await apiFetch(`${baseUrl}/?action=submit_flag`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ challengeId, flag }),
@@ -245,7 +246,7 @@ export async function getActiveChallenge(
 ): Promise<ActiveChallengeResponse> {
   const baseUrl = await getApiUrl();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=active&challengeId=${encodeURIComponent(challengeId)}&t=${Date.now()}`,
     { headers: await getAuthHeaders(false) },
   );
@@ -268,7 +269,7 @@ export async function extendChallenge(
   sessionId: string,
 ): Promise<ExtendChallengeResponse> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=extend_session&sessionId=${encodeURIComponent(sessionId)}`,
     {
       method: "POST",
@@ -291,7 +292,7 @@ export async function extendChallenge(
 export async function uploadFishImage(file: File): Promise<string> {
   const baseUrl = await getApiUrl();
 
-  const response = await fetch(`${baseUrl}/?action=upload_fish_image`, {
+  const response = await apiFetch(`${baseUrl}/?action=upload_fish_image`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify({
@@ -306,7 +307,7 @@ export async function uploadFishImage(file: File): Promise<string> {
     throw new Error(data.error || "ไม่สามารถอัปโหลดรูปปลาได้");
   }
 
-  const uploadResponse = await fetch(data.uploadUrl, {
+  const uploadResponse = await apiFetch(data.uploadUrl, {
     method: "PUT",
     headers: {
       "Content-Type": file.type,
@@ -323,7 +324,7 @@ export async function uploadFishImage(file: File): Promise<string> {
 
 export async function uploadChallengeThumbnail(file: File): Promise<string> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=upload_challenge_thumbnail`,
     {
       method: "POST",
@@ -335,7 +336,7 @@ export async function uploadChallengeThumbnail(file: File): Promise<string> {
   if (data.status !== "SUCCESS")
     throw new Error(data.error || "ไม่สามารถอัปโหลด Thumbnail ได้");
 
-  const uploadResponse = await fetch(data.uploadUrl, {
+  const uploadResponse = await apiFetch(data.uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": file.type },
     body: file,
@@ -350,7 +351,7 @@ export async function uploadChallengeFile(
 ): Promise<{ fileName: string; fileUrl: string; contentType: string }> {
   const baseUrl = await getApiUrl();
   const contentType = file.type || "application/octet-stream";
-  const response = await fetch(`${baseUrl}/?action=upload_challenge_file`, {
+  const response = await apiFetch(`${baseUrl}/?action=upload_challenge_file`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ fileName: file.name, contentType }),
@@ -361,7 +362,7 @@ export async function uploadChallengeFile(
       data.error || "ไม่สามารถเตรียมการอัปโหลดไฟล์ Challenge ได้",
     );
 
-  const uploadResponse = await fetch(data.uploadUrl, {
+  const uploadResponse = await apiFetch(data.uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body: file,

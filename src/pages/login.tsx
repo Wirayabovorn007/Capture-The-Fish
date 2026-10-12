@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/apiFetch";
 import { useEffect, useRef, useState } from "react";
 import {
   signIn,
@@ -38,7 +39,7 @@ export default function Login() {
 
   // โหลด Config และตั้งค่า Amplify
   useEffect(() => {
-    fetch("/config.json")
+    apiFetch("/config.json")
       .then((res) => res.json())
       .then((config) => {
         Amplify.configure({

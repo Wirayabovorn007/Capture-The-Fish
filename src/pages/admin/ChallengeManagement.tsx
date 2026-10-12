@@ -1,3 +1,4 @@
+import { apiFetch } from "../../services/apiFetch";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { FormEvent } from "react";
@@ -545,11 +546,11 @@ export default function ChallengeManagement() {
     try {
       setIsUploadingFish(true);
       setMessage("");
-      const configResponse = await fetch("/config.json");
+      const configResponse = await apiFetch("/config.json");
       if (!configResponse.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
       const config = await configResponse.json();
       if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
-      const presignResponse = await fetch(
+      const presignResponse = await apiFetch(
         `${config.ALB_URL}/?action=upload_fish_image`,
         {
           method: "POST",
@@ -562,7 +563,7 @@ export default function ChallengeManagement() {
         throw new Error(
           presignData.error || "ไม่สามารถเตรียมการอัปโหลดรูปปลาได้",
         );
-      const uploadResponse = await fetch(presignData.uploadUrl, {
+      const uploadResponse = await apiFetch(presignData.uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
         body: file,

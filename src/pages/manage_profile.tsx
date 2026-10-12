@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/apiFetch";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Image as ImageIcon } from "lucide-react";
 import {
@@ -35,7 +36,7 @@ export default function ManageProfile() {
 
   useEffect(() => {
     // โหลด config.json เพื่อดึง Lambda URL
-    fetch("/config.json")
+    apiFetch("/config.json")
       .then((res) => res.json())
       .then((config) => {
         if (config.ALB_URL) {
@@ -83,7 +84,7 @@ export default function ManageProfile() {
     try {
       const fileName = `${Date.now()}_${file.name}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,7 +99,7 @@ export default function ManageProfile() {
         throw new Error(data.error || "ไม่สามารถขอลิงก์อัปโหลดได้");
       }
 
-      const uploadResponse = await fetch(data.uploadUrl, {
+      const uploadResponse = await apiFetch(data.uploadUrl, {
         method: "PUT",
         headers: {
           "Content-Type": file.type,

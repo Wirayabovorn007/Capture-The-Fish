@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 import { getAuthHeaders } from "../utils/auth";
 import type {
   StoryConfig,
@@ -7,7 +8,7 @@ import type {
 let apiUrl = "";
 async function getApiUrl() {
   if (apiUrl) return apiUrl;
-  const r = await fetch("/config.json");
+  const r = await apiFetch("/config.json");
   if (!r.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
   const c = await r.json();
   if (!c.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
@@ -22,7 +23,7 @@ async function readJson(r: Response) {
 export async function getStory(): Promise<StoryConfig | null> {
   const b = await getApiUrl();
   return (
-    (await readJson(await fetch(`${b}/?action=get_story&t=${Date.now()}`)))
+    (await readJson(await apiFetch(`${b}/?action=get_story&t=${Date.now()}`)))
       .story ?? null
   );
 }
@@ -31,7 +32,7 @@ export async function getAdminStory(): Promise<StoryConfig | null> {
   return (
     (
       await readJson(
-        await fetch(`${b}/?action=get_admin_story&t=${Date.now()}`, {
+        await apiFetch(`${b}/?action=get_admin_story&t=${Date.now()}`, {
           headers: await getAuthHeaders(false),
         }),
       )
@@ -41,7 +42,7 @@ export async function getAdminStory(): Promise<StoryConfig | null> {
 export async function getStoryProgress(): Promise<StoryProgress> {
   const b = await getApiUrl();
   const d = await readJson(
-    await fetch(`${b}/?action=get_story_progress&t=${Date.now()}`, {
+    await apiFetch(`${b}/?action=get_story_progress&t=${Date.now()}`, {
       headers: await getAuthHeaders(false),
     }),
   );
@@ -56,13 +57,13 @@ export async function uploadStoryImage(file: File): Promise<string> {
   if (!contentType.startsWith("image/"))
     throw new Error("รองรับเฉพาะไฟล์รูปภาพ");
   const d = await readJson(
-    await fetch(`${b}/?action=upload_story_image`, {
+    await apiFetch(`${b}/?action=upload_story_image`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify({ fileName: file.name, contentType }),
     }),
   );
-  const u = await fetch(d.uploadUrl, {
+  const u = await apiFetch(d.uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body: file,
@@ -76,7 +77,7 @@ export async function saveStory(
   const b = await getApiUrl();
   return (
     await readJson(
-      await fetch(`${b}/?action=save_story`, {
+      await apiFetch(`${b}/?action=save_story`, {
         method: "PUT",
         headers: await getAuthHeaders(),
         body: JSON.stringify(story),
@@ -90,7 +91,7 @@ export async function submitTreasureCode(
 ): Promise<TreasureSubmitResult> {
   const b = await getApiUrl();
   const d = await readJson(
-    await fetch(`${b}/?action=submit_treasure_code`, {
+    await apiFetch(`${b}/?action=submit_treasure_code`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify({ code }),

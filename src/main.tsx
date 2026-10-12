@@ -1,3 +1,4 @@
+import { apiFetch } from "./services/apiFetch";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Amplify } from "aws-amplify";
@@ -8,7 +9,7 @@ function Root() {
   const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
-    fetch("/config.json")
+    apiFetch("/config.json")
       .then((res) => res.json())
       .then((config) => {
         Amplify.configure({

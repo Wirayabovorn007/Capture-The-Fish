@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 import { getAuthHeaders } from "../utils/auth";
 
 export type AccountStatus = "active" | "suspended";
@@ -24,7 +25,7 @@ let apiUrl = "";
 
 async function getApiUrl() {
   if (apiUrl) return apiUrl;
-  const response = await fetch("/config.json");
+  const response = await apiFetch("/config.json");
   if (!response.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
   const config = await response.json();
   if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
@@ -40,7 +41,7 @@ async function readJson(response: Response) {
 
 export async function getUsers(): Promise<ManagedUser[]> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=list_users&t=${Date.now()}`,
     {
       headers: await getAuthHeaders(false),
@@ -52,7 +53,7 @@ export async function getUsers(): Promise<ManagedUser[]> {
 
 export async function heartbeat() {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=heartbeat`, {
+  const response = await apiFetch(`${baseUrl}/?action=heartbeat`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify({}),
@@ -62,7 +63,7 @@ export async function heartbeat() {
 
 export async function suspendUser(user: ManagedUser) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=suspend_user`, {
+  const response = await apiFetch(`${baseUrl}/?action=suspend_user`, {
     method: "PUT",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ email: user.email }),
@@ -72,7 +73,7 @@ export async function suspendUser(user: ManagedUser) {
 
 export async function unsuspendUser(user: ManagedUser) {
   const baseUrl = await getApiUrl();
-  const response = await fetch(`${baseUrl}/?action=unsuspend_user`, {
+  const response = await apiFetch(`${baseUrl}/?action=unsuspend_user`, {
     method: "PUT",
     headers: await getAuthHeaders(),
     body: JSON.stringify({ email: user.email }),
@@ -97,7 +98,7 @@ export type MyInventoryResponse = {
 
 export async function getMyInventory(): Promise<MyInventoryResponse> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=get_my_inventory&t=${Date.now()}`,
     {
       headers: await getAuthHeaders(false),
@@ -123,7 +124,7 @@ export type MyProfileStats = {
 
 export async function getMyProfileStats(): Promise<MyProfileStats> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=get_my_profile&t=${Date.now()}`,
     {
       headers: await getAuthHeaders(false),
@@ -153,7 +154,7 @@ export type LeaderboardPlayer = {
 
 export async function getLeaderboard(): Promise<LeaderboardPlayer[]> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=list_leaderboard&t=${Date.now()}`,
     {
       headers: await getAuthHeaders(false),
@@ -179,7 +180,7 @@ export type PublicStatistics = {
 
 export async function getPublicStatistics(): Promise<PublicStatistics> {
   const baseUrl = await getApiUrl();
-  const response = await fetch(
+  const response = await apiFetch(
     `${baseUrl}/?action=get_public_statistics&t=${Date.now()}`,
   );
   const data = await readJson(response);
