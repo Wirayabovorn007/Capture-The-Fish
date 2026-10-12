@@ -1,6 +1,6 @@
 {
-  "ALB_URL": "https://i2kktjs5h3.execute-api.us-east-1.amazonaws.com",
-  "USER_POOL_ID": "us-east-1_pz0lHsMOt",
-  "CLIENT_ID": "64c1lh8rni37f8bfa9kva551g2",
+  "ALB_URL": "https://3udyic08sg.execute-api.us-east-1.amazonaws.com",
+  "USER_POOL_ID": "us-east-1_gRSeEVzTD",
+  "CLIENT_ID": "54vk4jsqg6lnm07oqc5g84457h",
   "IMAGE_BUCKET": "ctf-images-bucket-350600952414"
 }

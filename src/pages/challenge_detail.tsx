@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 import TaskSetup from "../components/competition/Setup_task";
 import Task from "../components/competition/Task";
@@ -28,7 +28,6 @@ export default function Challenge_detail() {
 
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const navigate = useNavigate();
   const isAdminView = location.pathname.startsWith("/admin/");
   const PageNavbar = isAdminView ? AdminNavbar : Navbar;
   const challengeId = searchParams.get("id");
@@ -138,18 +137,26 @@ export default function Challenge_detail() {
         <PageNavbar />
 
         {fromStoryPreview && (
-          <div className="fixed left-6 top-32 z-[100] flex items-center gap-2">
-            <div className="rounded-full bg-[#b01414] px-4 py-2 text-xs font-bold text-white shadow-lg">
-              ADMIN PREVIEW
+          <aside aria-label="Challenge preview mode" className="pointer-events-none fixed inset-0 z-[90]">
+          {/* Thin frame and restrained edge glow: no full-screen red overlay. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-[6px] rounded-xl border border-[#b01414]/45 shadow-[0_0_8px_rgba(176,20,20,0.10)] sm:inset-[10px] sm:rounded-2xl"
+          />
+          {/* One compact two-line preview panel; eye icon spans both lines. */}
+          <div className="pointer-events-auto absolute left-5 top-4 flex items-center gap-3 rounded-xl border border-[#b01414]/35 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm sm:left-8 sm:top-5">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-9 w-9 shrink-0 text-[#b01414]">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-xs font-bold tracking-wide text-[#b01414]">CHALLENGE PREVIEW MODE</span>
+              <a href="/story/preview" className="text-xs font-medium text-[#5a5151] underline underline-offset-2 transition hover:text-[#b01414] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b01414]">
+                กลับ Story Preview
+              </a>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate("/story/preview")}
-              className="rounded-full border border-[#d8d2cf] bg-white px-4 py-2 text-xs font-bold text-[#403a38] shadow-lg transition hover:border-[#b01414] hover:bg-[#fff7f7] hover:text-[#b01414]"
-            >
-              ← กลับ Story Preview
-            </button>
           </div>
+        </aside>
         )}
 
         {/* =====================================================
