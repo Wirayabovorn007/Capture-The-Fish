@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/apiFetch";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Reveal from "../components/effects/Reveal";
@@ -33,7 +34,7 @@ type InventoryFish = {
 };
 
 async function getApiUrl() {
-  const response = await fetch("/config.json");
+  const response = await apiFetch("/config.json");
   if (!response.ok) throw new Error("โหลด config.json ไม่สำเร็จ");
   const config = await response.json();
   if (!config.ALB_URL) throw new Error("ไม่พบ ALB_URL ใน config.json");
@@ -238,8 +239,8 @@ export default function FishCollection() {
         const baseUrl = await getApiUrl();
         const headers = await getAuthHeaders(false);
         const [catalogResponse, inventoryResponse] = await Promise.all([
-          fetch(`${baseUrl}/?action=list_fishes&t=${Date.now()}`, { headers }),
-          fetch(`${baseUrl}/?action=get_my_inventory&t=${Date.now()}`, {
+          apiFetch(`${baseUrl}/?action=list_fishes&t=${Date.now()}`, { headers }),
+          apiFetch(`${baseUrl}/?action=get_my_inventory&t=${Date.now()}`, {
             headers,
           }),
         ]);
