@@ -48,7 +48,10 @@ export function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       } catch { /* Preserve original body and request. */ }
     }
     if (action && ACTION_SERVICE[action] && /\.execute-api\.[^.]+\.amazonaws\.com$/.test(u.hostname)) {
-      u.pathname = "/" + ACTION_SERVICE[action];
+      // Mixed public/protected services use a separate JWT-protected route.
+      // The Lambda still checks Cognito GetUser and Admin group as before.
+      const JWT_ACTIONS = new Set(["bulk_challenge_action", "create_challenge", "delete_challenge", "get_admin_story", "get_my_inventory", "get_story_progress", "import_challenges", "list_admin_challenges", "list_fishes", "list_leaderboard", "save_story", "submit_flag", "submit_treasure_code", "update_challenge"]);
+      u.pathname = (JWT_ACTIONS.has(action) ? "/auth/" : "/") + ACTION_SERVICE[action];
       return fetch(u.toString(), init);
     }
   } catch { /* Keep existing fetch behavior for non-URL inputs. */ }
