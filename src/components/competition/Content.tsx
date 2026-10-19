@@ -1,63 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, Lock, Swords, Orbit } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, ChevronDown } from "lucide-react";
+import ChallengeCard from "../challenges/ChallengeCard";
 
 import Reveal from "../effects/Reveal";
 
 import { getChallenges } from "../../services/challengeApi";
 import { getMyProfileStats } from "../../services/userApi";
 import type { Challenge } from "../../types/challenge";
-
-type Difficulty = "Easy" | "Medium" | "Hard";
-type Variant = "matrix" | "lock" | "knife";
-
-const difficultyColor: Record<Difficulty, string> = {
-  Easy: "text-green-500",
-  Medium: "text-orange-500",
-  Hard: "text-red-600",
-};
-
-const variantBg: Record<Variant, string> = {
-  matrix: "bg-gradient-to-br from-emerald-900 via-emerald-700 to-black",
-  lock: "bg-gradient-to-br from-violet-900 via-purple-600 to-purple-900",
-  knife: "bg-gradient-to-br from-red-800 via-red-600 to-red-900",
-};
-
-const variantIcon: Record<Variant, React.ElementType> = {
-  matrix: Orbit,
-  lock: Lock,
-  knife: Swords,
-};
-
-/* =============================================================
-   Helper
-============================================================= */
-
-function getVariant(category: string): Variant {
-  const value = category.toLowerCase();
-
-  if (value.includes("web") || value.includes("osint")) {
-    return "matrix";
-  }
-
-  if (value.includes("crypto") || value.includes("forensic")) {
-    return "lock";
-  }
-
-  return "knife";
-}
-
-function getDifficultyClass(difficulty: string) {
-  if (
-    difficulty === "Easy" ||
-    difficulty === "Medium" ||
-    difficulty === "Hard"
-  ) {
-    return difficultyColor[difficulty];
-  }
-
-  return "text-gray-500";
-}
 
 /* =============================================================
    Count-up hook
@@ -505,66 +454,3 @@ function FilterSelect({
   );
 }
 
-/* =============================================================
-   Challenge Card
-============================================================= */
-
-function ChallengeCard({ challenge }: { challenge: Challenge }) {
-  const variant = getVariant(challenge.category);
-
-  const Icon = variantIcon[variant];
-
-  return (
-    <article className="group overflow-hidden rounded-xl border border-gray-200 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-      <div
-        className={`flex aspect-[2.1/1] items-center justify-center overflow-hidden rounded-lg ${variantBg[variant]}`}
-      >
-        {challenge.thumbnailUrl ? (
-          <img
-            src={challenge.thumbnailUrl}
-            alt={`${challenge.title} thumbnail`}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <Icon
-            className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
-            strokeWidth={1.5}
-          />
-        )}
-      </div>
-
-      <div className="pt-5">
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
-          <span
-            className={`font-medium ${getDifficultyClass(
-              challenge.difficulty,
-            )}`}
-          >
-            {challenge.difficulty}
-          </span>
-
-          <span className="text-gray-300">|</span>
-
-          <span className="text-gray-400">{challenge.category}</span>
-        </div>
-
-        <h3 className="mb-2 truncate whitespace-nowrap text-lg font-bold text-gray-800">
-          {challenge.title}
-        </h3>
-
-        <p className="mb-5 line-clamp-2 text-sm leading-6 text-gray-500">
-          {challenge.description}
-        </p>
-
-        <Link to={`/challenge?id=${encodeURIComponent(challenge.challengeId)}`}>
-          <button
-            type="button"
-            className="rounded-md bg-[#B01414] px-8 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#8F1010] active:scale-95"
-          >
-            ออกล่า
-          </button>
-        </Link>
-      </div>
-    </article>
-  );
-}

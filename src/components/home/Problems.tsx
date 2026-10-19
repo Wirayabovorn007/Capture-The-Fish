@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Lock, Orbit, Swords } from "lucide-react";
+import ChallengeCard from "../challenges/ChallengeCard";
 import { getChallenges } from "../../services/challengeApi";
 import type { Challenge } from "../../types/challenge";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
-
-type Variant = "matrix" | "lock" | "knife";
 
 type Problem = {
   id: string;
@@ -53,38 +51,6 @@ const tabs = [
     value: "expert",
   },
 ];
-
-const difficultyColor: Record<Difficulty, string> = {
-  Easy: "text-green-500",
-  Medium: "text-orange-500",
-  Hard: "text-red-600",
-};
-
-const variantBg: Record<Variant, string> = {
-  matrix: "bg-gradient-to-br from-emerald-900 via-emerald-700 to-black",
-  lock: "bg-gradient-to-br from-violet-900 via-purple-600 to-purple-900",
-  knife: "bg-gradient-to-br from-red-800 via-red-600 to-red-900",
-};
-
-const variantIcon: Record<Variant, React.ElementType> = {
-  matrix: Orbit,
-  lock: Lock,
-  knife: Swords,
-};
-
-function getVariant(category: string): Variant {
-  const value = category.toLowerCase();
-
-  if (value.includes("web") || value.includes("osint")) {
-    return "matrix";
-  }
-
-  if (value.includes("crypto") || value.includes("forensic")) {
-    return "lock";
-  }
-
-  return "knife";
-}
 
 export default function ProblemSlider() {
   const [activeTab, setActiveTab] = useState("all");
@@ -403,7 +369,11 @@ export default function ProblemSlider() {
                   "
                 >
                   {visibleProblems.map((problem) => (
-                    <ProblemCard key={problem.id} problem={problem} />
+                    <ChallengeCard
+                      key={problem.id}
+                      challenge={{ challengeId: problem.id, title: problem.title, difficulty: problem.difficulty, category: problem.category, description: problem.description, thumbnailUrl: problem.thumbnailUrl, objective: "", hint: "", hasContainer: false, containers: [] }}
+                      variant="user"
+                    />
                   ))}
                 </div>
               )}
@@ -492,111 +462,3 @@ export default function ProblemSlider() {
    Problem Card
 ============================================================= */
 
-function ProblemCard({ problem }: { problem: Problem }) {
-  const variant = getVariant(problem.category);
-  const Icon = variantIcon[variant];
-
-  return (
-    <article
-      className="
-        group
-        flex
-        h-[300px] sm:h-[320px] lg:h-[350px]
-        flex-col
-        overflow-hidden
-        rounded-xl
-        border
-        border-gray-200
-        bg-white
-        p-3 sm:p-4
-        transition-all
-        duration-300
-        hover:-translate-y-1
-        hover:shadow-md
-      "
-    >
-      {/* Challenge visual - same style as Competition page */}
-      <div
-        className={`
-          flex
-          aspect-[2.15/1]
-          shrink-0
-          items-center
-          justify-center
-          overflow-hidden
-          rounded-lg
-          ${variantBg[variant]}
-        `}
-      >
-        {problem.thumbnailUrl ? (
-          <img
-            src={problem.thumbnailUrl}
-            alt={problem.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <Icon
-            className="h-16 w-16 text-white/80 transition-transform duration-500 group-hover:scale-110"
-            strokeWidth={1.5}
-          />
-        )}
-      </div>
-
-      <div
-        className="
-          flex
-          flex-1
-          flex-col
-          px-1
-          pb-2
-          pt-3 sm:pt-4 lg:pt-5
-        "
-      >
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-          <span
-            className={`font-medium ${difficultyColor[problem.difficulty]}`}
-          >
-            {problem.difficulty}
-          </span>
-
-          <span className="text-gray-300">|</span>
-
-          <span className="text-gray-400">{problem.category}</span>
-        </div>
-
-        <h3 className="mb-2 truncate whitespace-nowrap text-base font-bold leading-tight text-gray-800 sm:text-lg lg:text-xl">
-          {problem.title}
-        </h3>
-
-        <p className="mb-4 line-clamp-2 text-sm leading-6 text-gray-500">
-          {problem.description}
-        </p>
-
-        <a
-          href={`/challenge?id=${encodeURIComponent(problem.id)}`}
-          className="mt-auto w-fit"
-        >
-          <button
-            type="button"
-            className="
-              w-fit
-              rounded-md
-              bg-[#B01414]
-              px-6 sm:px-8 lg:px-10
-              py-2 sm:py-2.5 lg:py-3
-              text-xs sm:text-sm
-              font-semibold
-              text-white
-              transition-all
-              duration-200
-              hover:bg-[#8F1010]
-              active:scale-95
-            "
-          >
-            ออกล่า
-          </button>
-        </a>
-      </div>
-    </article>
-  );
-}
