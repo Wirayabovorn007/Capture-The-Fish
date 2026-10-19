@@ -211,8 +211,8 @@ export default function ChallengeManagement() {
     const items = Array.isArray(parsed)
       ? parsed
       : parsed &&
-          typeof parsed === "object" &&
-          Array.isArray((parsed as { challenges?: unknown[] }).challenges)
+        typeof parsed === "object" &&
+        Array.isArray((parsed as { challenges?: unknown[] }).challenges)
         ? (parsed as { challenges: unknown[] }).challenges
         : null;
     if (!items || items.length === 0) {
@@ -365,8 +365,8 @@ export default function ChallengeManagement() {
       [field]: value,
       ...(field === "title" && !isEditing
         ? {
-            challengeId: createChallengeId(value),
-          }
+          challengeId: createChallengeId(value),
+        }
         : {}),
     }));
   };
@@ -381,9 +381,9 @@ export default function ChallengeManagement() {
       containers: prev.containers.map((container) =>
         container.id === id
           ? {
-              ...container,
-              [field]: value,
-            }
+            ...container,
+            [field]: value,
+          }
           : container,
       ),
     }));
@@ -686,30 +686,30 @@ export default function ChallengeManagement() {
       fishReward:
         challenge.fishMode === "existing"
           ? {
-              fishId: challenge.selectedFishId,
-              name: "",
-              imageUrl: "",
-              rarity: "common",
-              amount: Math.max(1, Number(challenge.fishAmount) || 1),
-            }
+            fishId: challenge.selectedFishId,
+            name: "",
+            imageUrl: "",
+            rarity: "common",
+            amount: Math.max(1, Number(challenge.fishAmount) || 1),
+          }
           : {
-              name: challenge.fishName.trim(),
-              imageUrl: challenge.fishImageUrl,
-              amount: Math.max(1, Number(challenge.fishAmount) || 1),
-              rarity: challenge.fishRarity,
-              description: challenge.fishDescription.trim(),
-              xp: Math.max(1, Number(challenge.fishXp) || 1),
-            },
+            name: challenge.fishName.trim(),
+            imageUrl: challenge.fishImageUrl,
+            amount: Math.max(1, Number(challenge.fishAmount) || 1),
+            rarity: challenge.fishRarity,
+            description: challenge.fishDescription.trim(),
+            xp: Math.max(1, Number(challenge.fishXp) || 1),
+          },
       containers: challenge.hasContainer
         ? challenge.containers.map(
-            ({ name, image, port, accessType, buttonLabel }) => ({
-              name: name.trim(),
-              image: image.trim(),
-              port: port.trim(),
-              accessType,
-              buttonLabel: buttonLabel.trim(),
-            }),
-          )
+          ({ name, image, port, accessType, buttonLabel }) => ({
+            name: name.trim(),
+            image: image.trim(),
+            port: port.trim(),
+            accessType,
+            buttonLabel: buttonLabel.trim(),
+          }),
+        )
         : [],
     };
 
@@ -1490,11 +1490,10 @@ export default function ChallengeManagement() {
 
               {message && (
                 <div
-                  className={`mt-6 rounded-xl border px-4 py-3 text-sm ${
-                    message.includes("สำเร็จ")
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-red-200 bg-red-50 text-red-700"
-                  }`}
+                  className={`mt-6 rounded-xl border px-4 py-3 text-sm ${message.includes("สำเร็จ")
+                    ? "border-green-200 bg-green-50 text-green-700"
+                    : "border-red-200 bg-red-50 text-red-700"
+                    }`}
                 >
                   {message}
                 </div>
@@ -1714,13 +1713,12 @@ export default function ChallengeManagement() {
                           </span>
 
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              item.status === "published"
-                                ? "bg-green-50 text-green-700"
-                                : item.status === "hidden"
-                                  ? "bg-[#f1efed] text-[#77716e]"
-                                  : "bg-amber-50 text-amber-700"
-                            }`}
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.status === "published"
+                              ? "bg-green-50 text-green-700"
+                              : item.status === "hidden"
+                                ? "bg-[#f1efed] text-[#77716e]"
+                                : "bg-amber-50 text-amber-700"
+                              }`}
                           >
                             {item.status ?? "published"}
                           </span>
@@ -1811,9 +1809,22 @@ export default function ChallengeManagement() {
                   onChange={(event) => setImportJson(event.target.value)}
                   rows={8}
                   spellCheck={false}
-                  placeholder={
-                    '[\n  {\n    "challengeId": "web-01",\n    "title": "Example",\n    "flag": "flag{example}"\n  }\n]'
-                  }
+                  placeholder={`[
+  {
+    "challengeId": "...",
+    "title": "...",
+    "description": "...",
+    "category": "...",
+    "difficulty": "...",
+    "points": ...,
+    "flag": "...",
+    "hints": [
+      "...",
+      "..."
+    ],
+    "isActive": ...
+  }
+]`}
                   className="min-h-[180px] w-full resize-none rounded-xl border border-[#d8d2cf] bg-[#faf9f8] px-4 py-3 font-mono text-xs leading-5 outline-none focus:border-[#b01414] focus:bg-white"
                 />
 

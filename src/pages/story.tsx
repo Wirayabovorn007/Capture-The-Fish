@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import ChallengeCard from "../components/challenges/ChallengeCard";
 import Footer from "../components/Footer";
 import { getAdminChallenges, getChallenges } from "../services/challengeApi";
 import {
@@ -416,63 +417,30 @@ function StoryTimelineCard({
       >
         {solved ? "✓" : String(index + 1).padStart(2, "0")}
       </div>
-      <article
-        className={`story-card ${dark ? "story-card-dark" : ""} ${locked && !preview ? "story-card-locked" : ""} group relative z-20 w-full max-w-[290px] rounded-lg border bg-white p-3 text-[#3B3535] shadow-sm ${locked && !preview ? "grayscale" : "cursor-pointer hover:-translate-y-2 hover:shadow-xl"} transition-all`}
-      >
-        <StoryImage challenge={challenge} />
-        <div className="p-3 pb-1 pt-2">
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="font-medium text-green-600">
-              {challenge.difficulty}
-            </span>
-            <span className="text-gray-400">●</span>
-            <span className={solved ? "text-green-600" : "text-gray-400"}>
-              {solved ? "Completed" : "0/1 flag"}
-            </span>
-          </div>
-          <h3 className="mt-1 text-xl font-bold">{challenge.title}</h3>
-          <p className="mt-1 line-clamp-2 text-gray-500">
-            {challenge.description}
-          </p>
-          <button
-            disabled={locked && !preview}
-            onClick={() =>
-              !(locked && !preview) &&
-              nav(
-                `${preview ? "/admin/challenge" : "/challenge"}?id=${encodeURIComponent(challenge.challengeId)}`,
-                preview
-                  ? {
-                      state: {
-                        previewChallenge: challenge,
-                        fromStoryPreview: true,
-                      },
-                    }
-                  : undefined,
-              )
-            }
-            className={`mt-2 px-4 py-1.5 text-white ${locked && !preview ? "bg-gray-400" : "bg-[#B01414] hover:bg-[#8F1010]"}`}
-          >
-            {locked && !preview
-              ? "🔒 Locked"
-              : solved
-                ? "ทำอีกครั้ง"
-                : "เริ่มทำ"}
-          </button>
-        </div>
-      </article>
-    </div>
-  );
-}
-function StoryImage({ challenge }: { challenge: Challenge }) {
-  return (
-    <div className="relative h-[105px] overflow-hidden rounded-sm bg-gradient-to-b from-[#112d08] via-[#257a14] to-[#3e9b25]">
-      {challenge.thumbnailUrl && (
-        <img
-          src={challenge.thumbnailUrl}
-          alt={challenge.title}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
+      <ChallengeCard
+        challenge={challenge}
+        variant="story"
+        index={index}
+        solved={solved}
+        locked={locked}
+        preview={preview}
+        dark={dark}
+        actionLabel={solved ? "ทำอีกครั้ง" : "เริ่มทำ"}
+        onAction={() =>
+          !(locked && !preview) &&
+          nav(
+            `${preview ? "/admin/challenge" : "/challenge"}?id=${encodeURIComponent(challenge.challengeId)}`,
+            preview
+              ? {
+                  state: {
+                    previewChallenge: challenge,
+                    fromStoryPreview: true,
+                  },
+                }
+              : undefined,
+          )
+        }
+      />
     </div>
   );
 }
