@@ -13,7 +13,7 @@ import logo from "../assets/home/Logo.png";
 const navLinks = [
   { icon: "fa-solid fa-bullseye", label: "แข่งขัน", href: "/competition" },
   { icon: "fa-solid fa-book-open", label: "เนื้อเรื่อง", href: "/story" },
-  { icon: "fa-solid fa-fish", label: "Fish Collection", href: "/collection" },
+  { icon: "fa-solid fa-fish", label: "ตู้ปลา", href: "/collection" },
   {
     icon: "fa-solid fa-ranking-star",
     label: "ตารางคะแนน",
