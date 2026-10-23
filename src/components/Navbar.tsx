@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getCurrentUser,
   fetchUserAttributes,
@@ -6,18 +6,141 @@ import {
   signOut,
 } from "aws-amplify/auth";
 import logo from "../assets/home/Logo.png";
-import comp from "../assets/home/Goal.png";
-import story from "../assets/home/Storytelling.png";
-import leaderboard from "../assets/home/Leaderboard.png";
-import contact from "../assets/home/Envelope.png";
 
+/* ------------------------------------------------------------------ */
+/*  Nav links – Font Awesome icons instead of PNG images               */
+/* ------------------------------------------------------------------ */
 const navLinks = [
-  { icon: comp, label: "แข่งขัน", href: "/competition" },
-  { icon: story, label: "เนื้อเรื่อง", href: "/story" },
-  { icon: story, label: "Fish Collection", href: "/collection" },
-  { icon: leaderboard, label: "ตารางคะแนน", href: "/leaderboard" },
-  { icon: contact, label: "ติดต่อเรา", href: "/contact" },
+  { icon: "fa-solid fa-bullseye", label: "แข่งขัน", href: "/competition" },
+  { icon: "fa-solid fa-book-open", label: "เนื้อเรื่อง", href: "/story" },
+  { icon: "fa-solid fa-fish", label: "Fish Collection", href: "/collection" },
+  {
+    icon: "fa-solid fa-ranking-star",
+    label: "ตารางคะแนน",
+    href: "/leaderboard",
+  },
+  { icon: "fa-solid fa-envelope", label: "ติดต่อเรา", href: "/contact" },
 ];
+
+/* ------------------------------------------------------------------ */
+/*  UI-only helper: detects whether the content behind the navbar is   */
+/*  dark so the navbar can switch colour automatically.                */
+/*                                                                     */
+/*  Tip: for sections with a background IMAGE/VIDEO, add               */
+/*  data-navbar-theme="dark" (or "light") to that section so the       */
+/*  navbar knows what to do.                                           */
+/* ------------------------------------------------------------------ */
+function parseColor(value: string): [number, number, number, number] | null {
+  const m = value.match(/rgba?\(([^)]+)\)/);
+  if (!m) return null;
+  const parts = m[1].split(/[,\s/]+/).filter(Boolean).map(parseFloat);
+  if (parts.length < 3) return null;
+  return [parts[0], parts[1], parts[2], parts[3] ?? 1];
+}
+
+function isDarkColor([r, g, b]: [number, number, number, number]) {
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance < 0.5;
+}
+
+function useBackdropIsDark(navRef: React.RefObject<HTMLElement | null>) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    let frame = 0;
+
+    const detect = () => {
+      const nav = navRef.current;
+      if (!nav) return;
+
+      const rect = nav.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+
+      const stack = document.elementsFromPoint(x, y);
+
+      for (const el of stack) {
+        if (nav.contains(el)) continue;
+
+        const forced = el
+          .closest("[data-navbar-theme]")
+          ?.getAttribute("data-navbar-theme");
+        if (forced === "dark") return setIsDark(true);
+        if (forced === "light") return setIsDark(false);
+
+        const color = parseColor(getComputedStyle(el).backgroundColor);
+        if (color && color[3] > 0.5) {
+          return setIsDark(isDarkColor(color));
+        }
+      }
+
+      setIsDark(false);
+    };
+
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(detect);
+    };
+
+    schedule();
+    const timer = window.setTimeout(schedule, 400);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("load", schedule);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("load", schedule);
+    };
+  }, [navRef]);
+
+  return isDark;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Colour tokens for each theme                                       */
+/* ------------------------------------------------------------------ */
+const themes = {
+  light: {
+    text: "text-[#B01414]",
+    border: "border-[#B01414]/30",
+    borderSoft: "border-[#B01414]/25",
+    divider: "bg-[#B01414]/40",
+    sectionBorder: "border-[#B01414]/10",
+    hoverFill: "hover:bg-[#B01414] hover:text-white",
+    underline: "after:bg-[#B01414]",
+    iconGlow: "group-hover:drop-shadow-[0_0_6px_rgba(176,20,20,0.5)]",
+    mobileHover: "hover:bg-[#B01414]/10",
+    mobileIconBg: "bg-[#B01414]/5 group-hover:bg-[#B01414]/10",
+    userName: "text-[#403a38] group-hover/nav:text-[#B01414]",
+    userNameMobile: "text-[#403a38]",
+    email: "text-gray-500",
+    avatar: "bg-gray-200 text-[#B01414]",
+    loginBtn: "bg-[#B01414] text-white hover:bg-[#C51A1A]",
+    glass: "border-white/20 bg-white/[0.10]",
+  },
+  dark: {
+    text: "text-white",
+    border: "border-white/40",
+    borderSoft: "border-white/35",
+    divider: "bg-white/40",
+    sectionBorder: "border-white/15",
+    hoverFill: "hover:bg-white hover:text-[#B01414]",
+    underline: "after:bg-white",
+    iconGlow: "group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]",
+    mobileHover: "hover:bg-white/10",
+    mobileIconBg: "bg-white/10 group-hover:bg-white/20",
+    userName: "text-white group-hover/nav:text-white/80",
+    userNameMobile: "text-white",
+    email: "text-white/70",
+    avatar: "bg-white/20 text-white",
+    loginBtn: "bg-white text-[#B01414] hover:bg-white/90",
+    glass: "border-white/20 bg-black/[0.18]",
+  },
+} as const;
 
 export default function Navbar() {
   const [user, setUser] = useState<{
@@ -28,6 +151,10 @@ export default function Navbar() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const navRef = useRef<HTMLDivElement>(null);
+  const isDark = useBackdropIsDark(navRef);
+  const t = isDark ? themes.dark : themes.light;
 
   useEffect(() => {
     checkUser();
@@ -75,18 +202,20 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 my-4 w-full px-3 sm:px-4">
       <div
-        className="
-        relative mx-auto w-full max-w-6xl
-        overflow-visible rounded-3xl
-        border border-white/20
-        bg-white/[0.10]
-        px-4 py-2.5
-        shadow-[0_8px_32px_rgba(0,0,0,0.04)]
-        backdrop-blur-xl backdrop-saturate-150
-        sm:rounded-full sm:px-6 sm:py-3
-        md:px-8
-        lg:px-12
-    "
+        ref={navRef}
+        className={`
+          relative mx-auto w-full max-w-6xl
+          overflow-visible rounded-3xl
+          border
+          ${t.glass}
+          px-4 py-2.5
+          shadow-[0_8px_32px_rgba(0,0,0,0.04)]
+          backdrop-blur-xl backdrop-saturate-150
+          transition-colors duration-300
+          sm:rounded-full sm:px-6 sm:py-3
+          md:px-8
+          lg:px-12
+        `}
       >
         {/* Glass effects */}
         <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.12] via-transparent to-transparent" />
@@ -102,27 +231,28 @@ export default function Navbar() {
             <img
               src={logo}
               alt="Brand Logo"
-              className="
-                                h-10 w-auto
-                                transition-all duration-500 ease-out
-                                group-hover:scale-105
-                                group-hover:rotate-[-2deg]
-                                group-hover:drop-shadow-[0_0_10px_rgba(176,20,20,0.45)]
-                                sm:h-12
-                                md:h-13
-                                lg:h-14
-                            "
+              className={`
+                h-10 w-auto
+                transition-all duration-500 ease-out
+                group-hover:scale-105
+                group-hover:rotate-[-2deg]
+                group-hover:drop-shadow-[0_0_10px_rgba(176,20,20,0.45)]
+                sm:h-12
+                md:h-13
+                lg:h-14
+                ${isDark ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.55)]" : ""}
+              `}
             />
 
             <span
               className="
-                                pointer-events-none absolute bottom-0.5 left-1/2
-                                h-2 w-8 -translate-x-1/2 rounded-full
-                                bg-[#B01414]/0 blur-md
-                                transition-all duration-500
-                                group-hover:w-12
-                                group-hover:bg-[#B01414]/40
-                            "
+                pointer-events-none absolute bottom-0.5 left-1/2
+                h-2 w-8 -translate-x-1/2 rounded-full
+                bg-[#B01414]/0 blur-md
+                transition-all duration-500
+                group-hover:w-12
+                group-hover:bg-[#B01414]/40
+              "
             />
           </a>
 
@@ -131,50 +261,51 @@ export default function Navbar() {
             {/* Nav Links */}
             <div
               className="
-                                mx-4 flex items-center gap-5
-                                sm:mx-6 sm:gap-6
-                                lg:mx-10 lg:gap-8
-                            "
+                mx-4 flex items-center gap-5
+                sm:mx-6 sm:gap-6
+                lg:mx-10 lg:gap-8
+              "
             >
               {navLinks.map(({ icon, label, href }) => (
                 <a
                   key={label}
                   href={href}
-                  className="
-                                        group relative flex flex-col items-center
-                                        gap-0.5 text-[#B01414]
-                                        transition-all duration-300 ease-out
-                                        hover:-translate-y-1
-                                    "
+                  className={`
+                    group relative flex flex-col items-center
+                    gap-1 ${t.text}
+                    transition-all duration-300 ease-out
+                    hover:-translate-y-1
+                  `}
                 >
-                  <img
-                    src={icon}
-                    alt=""
-                    className="
-                                            h-6 w-6
-                                            opacity-90
-                                            transition-all duration-300 ease-out
-                                            group-hover:scale-110
-                                            group-hover:-rotate-3
-                                            group-hover:opacity-100
-                                            group-hover:drop-shadow-[0_0_6px_rgba(176,20,20,0.5)]
-                                            sm:h-7 sm:w-7
-                                        "
+                  <i
+                    aria-hidden="true"
+                    className={`
+                      ${icon}
+                      flex h-6 w-6 items-center justify-center
+                      text-base
+                      opacity-90
+                      transition-all duration-300 ease-out
+                      group-hover:scale-110
+                      group-hover:-rotate-3
+                      group-hover:opacity-100
+                      ${t.iconGlow}
+                      sm:h-7 sm:w-7 sm:text-lg
+                    `}
                   />
 
                   <span
-                    className="
-                                            relative whitespace-nowrap
-                                            text-[10px] font-medium
-                                            transition-all duration-300
-                                            sm:text-xs
-                                            after:absolute after:-bottom-1
-                                            after:left-1/2 after:h-[2px]
-                                            after:w-0 after:-translate-x-1/2
-                                            after:bg-[#B01414]
-                                            after:transition-all after:duration-300
-                                            group-hover:after:w-full
-                                        "
+                    className={`
+                      relative whitespace-nowrap
+                      text-[10px] font-medium
+                      transition-all duration-300
+                      sm:text-xs
+                      after:absolute after:-bottom-1
+                      after:left-1/2 after:h-[2px]
+                      after:w-0 after:-translate-x-1/2
+                      ${t.underline}
+                      after:transition-all after:duration-300
+                      group-hover:after:w-full
+                    `}
                   >
                     {label}
                   </span>
@@ -184,7 +315,7 @@ export default function Navbar() {
 
             {/* Auth Section */}
             <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
-              <span className="h-6 w-px bg-[#B01414]/40" />
+              <span className={`h-6 w-px ${t.divider} transition-colors duration-300`} />
 
               {user ? (
                 <div className="flex items-center gap-2 sm:gap-3">
@@ -192,17 +323,16 @@ export default function Navbar() {
                   <button
                     onClick={handleLogout}
                     title="ออกจากระบบ"
-                    className="
-                                            flex h-8 w-8 items-center justify-center
-                                            rounded-full
-                                            border border-[#B01414]/30
-                                            text-[#B01414]
-                                            transition-all duration-300
-                                            hover:bg-[#B01414]
-                                            hover:text-white
-                                            active:scale-95
-                                            sm:h-9 sm:w-9
-                                        "
+                    className={`
+                      flex h-8 w-8 items-center justify-center
+                      rounded-full
+                      border ${t.border}
+                      ${t.text}
+                      transition-all duration-300
+                      ${t.hoverFill}
+                      active:scale-95
+                      sm:h-9 sm:w-9
+                    `}
                   >
                     <i className="fa-solid fa-right-from-bracket text-xs sm:text-sm" />
                   </button>
@@ -211,30 +341,34 @@ export default function Navbar() {
                   <a
                     href={profileHref}
                     className="
-                                            hidden cursor-pointer text-right
-                                            group/nav
-                                            lg:block
-                                        "
+                      hidden cursor-pointer text-right
+                      group/nav
+                      lg:block
+                    "
                   >
-                    <p className="text-xs font-bold text-[#403a38] transition-colors group-hover/nav:text-[#B01414]">
+                    <p
+                      className={`text-xs font-bold transition-colors ${t.userName}`}
+                    >
                       {user.username}
                     </p>
 
-                    <p className="text-[10px] text-gray-500">{user.email}</p>
+                    <p className={`text-[10px] transition-colors ${t.email}`}>
+                      {user.email}
+                    </p>
                   </a>
 
                   {/* Profile */}
                   <a
                     href={profileHref}
-                    className="
-                                            flex h-9 w-9 items-center justify-center
-                                            overflow-hidden rounded-full
-                                            border border-[#B01414]/30
-                                            bg-gray-200
-                                            font-bold text-[#B01414]
-                                            transition-transform hover:scale-105
-                                            sm:h-10 sm:w-10
-                                        "
+                    className={`
+                      flex h-9 w-9 items-center justify-center
+                      overflow-hidden rounded-full
+                      border ${t.border}
+                      ${t.avatar}
+                      font-bold
+                      transition-all hover:scale-105
+                      sm:h-10 sm:w-10
+                    `}
                   >
                     {user.profileImage ? (
                       <img
@@ -252,15 +386,14 @@ export default function Navbar() {
               ) : (
                 <a href="/login">
                   <button
-                    className="
-                                            whitespace-nowrap
-                                            bg-[#B01414]
-                                            px-4 py-2
-                                            text-xs text-white
-                                            transition-all
-                                            hover:bg-[#C51A1A]
-                                            sm:px-5 sm:py-2.5 sm:text-sm
-                                        "
+                    className={`
+                      whitespace-nowrap
+                      ${t.loginBtn}
+                      px-4 py-2
+                      text-xs
+                      transition-all
+                      sm:px-5 sm:py-2.5 sm:text-sm
+                    `}
                   >
                     เข้าสู่ระบบ
                   </button>
@@ -275,55 +408,42 @@ export default function Navbar() {
             aria-label={isMobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"}
             aria-expanded={isMobileMenuOpen}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="
-                            relative z-10
-                            flex h-10 w-10
-                            items-center justify-center
-                            rounded-full
-                            border border-[#B01414]/25
-                            text-[#B01414]
-                            transition-all duration-300
-                            hover:bg-[#B01414]
-                            hover:text-white
-                            active:scale-95
-                            md:hidden
-                        "
+            className={`
+              relative z-10
+              flex h-10 w-10
+              items-center justify-center
+              rounded-full
+              border ${t.borderSoft}
+              ${t.text}
+              transition-all duration-300
+              ${t.hoverFill}
+              active:scale-95
+              md:hidden
+            `}
           >
             <span className="relative flex h-4 w-5 flex-col justify-between">
               <span
                 className={`
-                                    h-[2px] w-full rounded-full bg-current
-                                    transition-all duration-300
-                                    ${
-                                      isMobileMenuOpen
-                                        ? "translate-y-[7px] rotate-45"
-                                        : ""
-                                    }
-                                `}
+                  h-[2px] w-full rounded-full bg-current
+                  transition-all duration-300
+                  ${isMobileMenuOpen ? "translate-y-[7px] rotate-45" : ""}
+                `}
               />
 
               <span
                 className={`
-                                    h-[2px] w-full rounded-full bg-current
-                                    transition-all duration-300
-                                    ${
-                                      isMobileMenuOpen
-                                        ? "scale-x-0 opacity-0"
-                                        : ""
-                                    }
-                                `}
+                  h-[2px] w-full rounded-full bg-current
+                  transition-all duration-300
+                  ${isMobileMenuOpen ? "scale-x-0 opacity-0" : ""}
+                `}
               />
 
               <span
                 className={`
-                                    h-[2px] w-full rounded-full bg-current
-                                    transition-all duration-300
-                                    ${
-                                      isMobileMenuOpen
-                                        ? "-translate-y-[7px] -rotate-45"
-                                        : ""
-                                    }
-                                `}
+                  h-[2px] w-full rounded-full bg-current
+                  transition-all duration-300
+                  ${isMobileMenuOpen ? "-translate-y-[7px] -rotate-45" : ""}
+                `}
               />
             </span>
           </button>
@@ -332,20 +452,20 @@ export default function Navbar() {
         {/* Mobile Menu */}
         <div
           className={`
-                        relative overflow-hidden transition-all duration-300 ease-in-out
-                        md:hidden
-                        ${
-                          isMobileMenuOpen
-                            ? "mt-3 max-h-[500px] opacity-100"
-                            : "max-h-0 opacity-0"
-                        }
-                    `}
+            relative overflow-hidden transition-all duration-300 ease-in-out
+            md:hidden
+            ${
+              isMobileMenuOpen
+                ? "mt-3 max-h-[500px] opacity-100"
+                : "max-h-0 opacity-0"
+            }
+          `}
         >
           <div
-            className="
-                            border-t border-[#B01414]/10
-                            px-1 pb-2 pt-3
-                        "
+            className={`
+              border-t ${t.sectionBorder}
+              px-1 pb-2 pt-3
+            `}
           >
             {/* Mobile Nav Links */}
             <div className="flex flex-col gap-1">
@@ -354,34 +474,33 @@ export default function Navbar() {
                   key={label}
                   href={href}
                   onClick={handleMobileLinkClick}
-                  className="
-                                        group flex items-center gap-3
-                                        rounded-2xl px-3 py-2.5
-                                        text-[#B01414]
-                                        transition-all duration-200
-                                        hover:bg-[#B01414]/10
-                                        active:scale-[0.98]
-                                    "
+                  className={`
+                    group flex items-center gap-3
+                    rounded-2xl px-3 py-2.5
+                    ${t.text}
+                    transition-all duration-200
+                    ${t.mobileHover}
+                    active:scale-[0.98]
+                  `}
                 >
                   <div
-                    className="
-                                            flex h-9 w-9 shrink-0
-                                            items-center justify-center
-                                            rounded-full
-                                            bg-[#B01414]/5
-                                            transition-all duration-200
-                                            group-hover:bg-[#B01414]/10
-                                        "
+                    className={`
+                      flex h-9 w-9 shrink-0
+                      items-center justify-center
+                      rounded-full
+                      ${t.mobileIconBg}
+                      transition-all duration-200
+                    `}
                   >
-                    <img
-                      src={icon}
-                      alt=""
-                      className="
-                                                h-6 w-6
-                                                opacity-90
-                                                transition-transform duration-200
-                                                group-hover:scale-110
-                                            "
+                    <i
+                      aria-hidden="true"
+                      className={`
+                        ${icon}
+                        text-base
+                        opacity-90
+                        transition-transform duration-200
+                        group-hover:scale-110
+                      `}
                     />
                   </div>
 
@@ -391,7 +510,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Auth */}
-            <div className="mt-2 border-t border-[#B01414]/10 pt-2">
+            <div className={`mt-2 border-t ${t.sectionBorder} pt-2`}>
               {user ? (
                 <div className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5">
                   <a
@@ -400,14 +519,14 @@ export default function Navbar() {
                     className="flex min-w-0 items-center gap-3"
                   >
                     <div
-                      className="
-                                                flex h-10 w-10 shrink-0
-                                                items-center justify-center
-                                                overflow-hidden rounded-full
-                                                border border-[#B01414]/30
-                                                bg-gray-200
-                                                font-bold text-[#B01414]
-                                            "
+                      className={`
+                        flex h-10 w-10 shrink-0
+                        items-center justify-center
+                        overflow-hidden rounded-full
+                        border ${t.border}
+                        ${t.avatar}
+                        font-bold
+                      `}
                     >
                       {user.profileImage ? (
                         <img
@@ -423,11 +542,13 @@ export default function Navbar() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-[#403a38]">
+                      <p
+                        className={`truncate text-xs font-bold ${t.userNameMobile}`}
+                      >
                         {user.username}
                       </p>
 
-                      <p className="truncate text-[10px] text-gray-500">
+                      <p className={`truncate text-[10px] ${t.email}`}>
                         {user.email}
                       </p>
                     </div>
@@ -436,17 +557,16 @@ export default function Navbar() {
                   <button
                     onClick={handleLogout}
                     title="ออกจากระบบ"
-                    className="
-                                            flex h-9 w-9 shrink-0
-                                            items-center justify-center
-                                            rounded-full
-                                            border border-[#B01414]/30
-                                            text-[#B01414]
-                                            transition-all duration-300
-                                            hover:bg-[#B01414]
-                                            hover:text-white
-                                            active:scale-95
-                                        "
+                    className={`
+                      flex h-9 w-9 shrink-0
+                      items-center justify-center
+                      rounded-full
+                      border ${t.border}
+                      ${t.text}
+                      transition-all duration-300
+                      ${t.hoverFill}
+                      active:scale-95
+                    `}
                   >
                     <i className="fa-solid fa-right-from-bracket text-sm" />
                   </button>
@@ -458,16 +578,15 @@ export default function Navbar() {
                   className="block"
                 >
                   <button
-                    className="
-                                            w-full
-                                            rounded-xl
-                                            bg-[#B01414]
-                                            px-5 py-2.5
-                                            text-sm text-white
-                                            transition-all
-                                            hover:bg-[#C51A1A]
-                                            active:scale-[0.98]
-                                        "
+                    className={`
+                      w-full
+                      rounded-xl
+                      ${t.loginBtn}
+                      px-5 py-2.5
+                      text-sm
+                      transition-all
+                      active:scale-[0.98]
+                    `}
                   >
                     เข้าสู่ระบบ
                   </button>
